@@ -24,8 +24,6 @@ return new class extends Migration
             $table->foreignId('job_title_id')->nullable()->constrained('job_titles')->nullOnDelete();
             $table->string('seniority_level')->nullable();
             $table->unsignedSmallInteger('years_of_experience')->nullable();
-            $table->string('headline')->nullable();
-            $table->text('bio')->nullable();
             $table->string('linkedin_url')->nullable();
             $table->string('github_url')->nullable();
             $table->string('behance_url')->nullable();
@@ -35,6 +33,16 @@ return new class extends Migration
             $table->timestamp('profile_completion_updated_at')->nullable();
             $table->unsignedTinyInteger('onboarding_step')->default(1);
             $table->timestamp('onboarding_completed_at')->nullable();
+
+            $table->unsignedSmallInteger('notice_period_days')->nullable();
+            $table->date('available_from')->nullable();
+            $table->boolean('willing_to_relocate')->nullable();
+            $table->decimal('current_salary', 12, 2)->nullable();
+            $table->foreignId('current_currency_id')->nullable()->constrained('currencies')->nullOnDelete();
+            $table->decimal('expected_salary_min', 12, 2)->nullable();
+            $table->decimal('expected_salary_max', 12, 2)->nullable();
+            $table->foreignId('expected_currency_id')->nullable()->constrained('currencies')->nullOnDelete();
+
             $table->timestamps();
         });
     }
