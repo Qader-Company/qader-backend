@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('user_id')->unique()->constrained('users')->cascadeOnDelete();
             $table->string('whatsapp_country_code', 5)->nullable();
             $table->string('whatsapp_number', 20)->nullable();
+            $table->string('phone_country_code', 5)->nullable();
+            $table->string('phone_number', 20)->nullable();
             $table->date('date_of_birth')->nullable();
             $table->string('gender')->nullable();
             $table->foreignId('nationality_country_id')->nullable()->constrained('countries')->nullOnDelete();
