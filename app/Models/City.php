@@ -2,15 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
-class City extends Model
-{
-    protected $guarded = [];
-
-    public function country(): BelongsTo
-    {
-        return $this->belongsTo(Country::class);
-    }
-}
+/**
+ * @deprecated Use the Cities module model directly.
+ */
+class City extends \App\Modules\V1\Cities\Domain\Models\City {}

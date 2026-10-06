@@ -2,15 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-
-class Country extends Model
-{
-    protected $guarded = [];
-
-    public function cities(): HasMany
-    {
-        return $this->hasMany(City::class);
-    }
-}
+/**
+ * @deprecated Use the Countries module model directly.
+ */
+class Country extends \App\Modules\V1\Countries\Domain\Models\Country {}

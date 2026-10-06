@@ -1,0 +1,38 @@
+<?php
+
+namespace App\Modules\V1\Admins\Application\UseCases;
+
+use App\Modules\V1\Admins\Application\Contracts\AdminAvatarStorageInterface;
+use App\Modules\V1\Admins\Domain\Repositories\AdminRepositoryInterface;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Throwable;
+
+class CreateAdminUseCase
+{
+    public function __construct(
+        private readonly AdminRepositoryInterface $admins,
+        private readonly AdminAvatarStorageInterface $avatars
+    ) {}
+
+    public function execute(array $attributes): object
+    {
+        $roleIds = Arr::pull($attributes, 'role_ids');
+        $avatar = Arr::pull($attributes, 'avatar');
+        $avatarPath = $this->avatars->store($avatar);
+        $attributes['avatar'] = $avatarPath;
+
+        try {
+            return DB::transaction(
+                fn (): object => $this->admins->create(
+                    $attributes,
+                    $roleIds
+                )
+            );
+        } catch (Throwable $exception) {
+            $this->avatars->delete($avatarPath);
+
+            throw $exception;
+        }
+    }
+}

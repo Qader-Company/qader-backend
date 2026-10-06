@@ -2,15 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-
-class Skill extends Model
-{
-    protected $guarded = [];
-
-    public function talents(): BelongsToMany
-    {
-        return $this->belongsToMany(Talent::class, 'talent_skills');
-    }
-}
+/**
+ * @deprecated Use the Skills module model directly.
+ */
+class Skill extends \App\Modules\V1\Skills\Domain\Models\Skill {}

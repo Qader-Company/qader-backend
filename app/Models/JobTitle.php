@@ -2,9 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-
-class JobTitle extends Model
-{
-    protected $guarded = [];
-}
+/**
+ * @deprecated Use the JobTitles module model directly.
+ */
+class JobTitle extends \App\Modules\V1\JobTitles\Domain\Models\JobTitle {}

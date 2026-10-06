@@ -2,9 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-
-class Currency extends Model
-{
-    protected $guarded = [];
-}
+/**
+ * @deprecated Use the Currencies module model directly.
+ */
+class Currency extends \App\Modules\V1\Currencies\Domain\Models\Currency {}

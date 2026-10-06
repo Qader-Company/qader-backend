@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Enums\UserType;
 use App\Models\User;
+use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -31,7 +31,7 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
-            'type' => UserType::Talent,
+            'type' => PortalTypeEnum::TALENT,
             'remember_token' => Str::random(10),
         ];
     }

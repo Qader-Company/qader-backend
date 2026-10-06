@@ -2,15 +2,22 @@
 
 namespace App\Models;
 
-use App\Enums\UserType;
+use App\Modules\V1\Admins\Domain\Models\Admin;
+use App\Modules\V1\Authentication\Domain\Models\SocialAccount;
+use App\Modules\V1\Clients\Domain\Models\Client;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Modules\V1\Talents\Domain\Models\Talent;
+use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable([
     'first_name',
@@ -28,7 +35,7 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     public function talent(): HasOne
     {
@@ -45,6 +52,11 @@ class User extends Authenticatable
         return $this->hasOne(Admin::class);
     }
 
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -58,7 +70,7 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'is_active' => 'boolean',
             'password' => 'hashed',
-            'type' => UserType::class,
+            'type' => PortalTypeEnum::class,
         ];
     }
 }

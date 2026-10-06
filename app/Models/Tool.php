@@ -2,15 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-
-class Tool extends Model
-{
-    protected $guarded = [];
-
-    public function talents(): BelongsToMany
-    {
-        return $this->belongsToMany(Talent::class, 'talent_tools');
-    }
-}
+/**
+ * @deprecated Use the Tools module model directly.
+ */
+class Tool extends \App\Modules\V1\Tools\Domain\Models\Tool {}
