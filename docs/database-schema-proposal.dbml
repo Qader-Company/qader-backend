@@ -1,0 +1,2792 @@
+// QADER WEB - DATABASE SCHEMA PROPOSAL / مسودة للمراجعة فقط
+// Prepared: 2026-10-13, Africa/Cairo. Approval status: NOT APPROVED.
+// Deliverable: one DBML file. No new/edited migrations, no DB writes, no code changes.
+// DBML describes the PROPOSED TARGET, not an SQL script and not the deployed database.
+// يمكن مراجعة الملف كنص أو رسمه بأداة تدعم DBML. لم يتم رفعه لأي خدمة خارجية.
+//
+// ============================================================================
+// 01. فهم المشروع ونطاق المراجعة
+// ============================================================================
+// قادر وسيط تشغيلي للتوظيف: المرشح يقدم ملفه؛ فريق قادر يراجع ويقابل ويقيّم؛
+// المقبول والمتاح يظهر في marketplace؛ العميل يجمع مرشحين في squad داخل workspace؛
+// كل مرشح له offer/counteroffers ومقابلة وقرارات مستقلة؛ بعدها رسوم وعقود وتوظيف.
+// Managed: علاقة مستمرة ورسوم إدارة. One-time: placement برسوم مرة واحدة، والراتب
+// يدفعه العميل مباشرة حسب شاشة Build Your Team، فلا يضاف كله لمستحقات قادر.
+// يوجد كذلك توظيف عام من public job postings مع form generator وguest submissions؛
+// هذا مسار مختلف عن طلب الانضمام لشبكة المواهب ومختلف عن hiring request للعميل.
+//
+// ترتيب المرجعية: تصميم Qader web الحالي > وثائق الفلو المتخصصة > BRD/PRD/SRS.
+// الكود والمigrations يحددان الموجود فعلاً في المستودع، وليس سلوك المنتج النهائي.
+// تم قراءة نصوص كل العناصر الرئيسية داخل الأقسام الثلاثة: talent=63, admin=134,
+// client=60 (257 top-level nodes، تشمل فريمات أرقام/عناوين؛ ليست 257 شاشة مستقلة).
+// تم فحص صور 4 شاشات: squad, field generator, evaluation, payment confirmation.
+// المستبعد: App، design system، DRAFFFTTTT، وقسم trash داخل Qader web.
+// لم أفترض أن كل نص placeholder أو رابط بالـsidebar يعني feature مكتملة التصميم.
+//
+// Figma file: https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app
+// Web page: https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=629-4923
+// Talent: https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=3802-39310
+// Admin: https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=3802-39311
+// Client: https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=3802-39313
+//
+// Supporting business sources (relative to this file):
+// - BRD-V1.pdf: business/revenue/scope/process.
+// - PRD-V1.pdf: modules 3.1-3.8 and individual interview preference per talent.
+// - SRS-V1.pdf: FR-1..FR-9, privacy, contracts, billing, audit.
+// - Qader_Flow_01_Talent_Application_Approval.pdf: states, FX, premium services.
+// - Qader_Admin_Portal_Talent_Applications_Flow_Specification.pdf: sections 6-22,
+//   scheduling/session separation, rejection/reapply/visibility/audit policies.
+// - Methodology_Portals_Modules.pdf: especially 3.3 and 4, separate SaaS handoff.
+// Supporting repo: architecture/01,03,04,06,07,08,09,10,11,12,13;
+// ../database/migrations/*.php; TalentApplications/Talents/Clients/Admins/
+// AccessControl/ProfessionalFields models, use cases, enum registry and seeders.
+//
+// ============================================================================
+// 02. كيفية قراءة الملف / الموجود مقابل المقترح
+// ============================================================================
+// [KEEP]      جدول موجود، منقول بحالته المنطقية النهائية من migrations.
+// [CHANGE]    جدول موجود؛ الإضافات/التعديلات موضحة في Note أو تعليقات الحقول.
+// [NEW]       جدول جديد مقترح لتدفق مؤكد في Figma؛ تفاصيل التخزين نفسها اقتراح هندسي.
+// [PROPOSED]  supporting design يحتاج اعتماد تفصيل/سياسة، وليس متطلباً محسومًا.
+// [DOC]       مطلوب في وثائق البيزنس ولم تثبت تفاصيله في الويب الحالي.
+// [DEFERRED]  حد تكامل لاحق؛ لا يبدأ تنفيذه ضمن أول دفعة migrations.
+// جميع الحالات، حتى NEW، تنتظر مراجعتك؛ الملف ليس تصريح تنفيذ.
+//
+// Baseline: 48 tables declared by 21 checked-in migration files.
+// لا يدعي هذا أن الـ48 جدول موجودة في قاعدة البيئة أو أن كل migration اتنفذت.
+// لم يتم الاتصال بقاعدة البيانات؛ DB engine/deployed migration status غير متحققين.
+// الملف يشمل migrations بتاريخ 2026_10_25 رغم أنها بعد تاريخ المراجعة؛ المصدر
+// هو الملفات الموجودة، وليس ترتيب تاريخ النشر أو افتراض أنها pending/deployed.
+// Types are logical DBML types: bigint/int represent the Laravel unsigned IDs
+// where applicable. Engine-specific unsigned/check/partial-index DDL comes later.
+// Unmarked fields on KEEP tables already exist. All fields on new tables are new.
+// Nullable timestamps mirror Laravel timestamps; new writes must populate them.
+// Indexes on CHANGE tables describe the target (including proposed additions).
+//
+// Existing coverage:
+// Identity: users/clients/admins/social_accounts + Sanctum/API key infrastructure.
+// RBAC: permissions/roles/3 Spatie pivots, portal-scoped but NOT workspace-scoped.
+// Talent: profile, languages/skills/tools, experiences/projects, work types/modes.
+// Lookups: countries/cities/languages/currencies + translations; fields + mapping.
+// Media: existing Spatie media, onboarding form registry + field configuration.
+// Applications: only id,talent_id UNIQUE,status default submitted,submitted_at,
+// created_at,updated_at. No reviewer, interview, evaluation, decision or history.
+// Clients/admins currently only id,user_id UNIQUE,timestamps; no company tables.
+// No existing business requests/offers/contracts/payments/workspaces/job forms.
+// Dependency gap: OtpService reads/deletes otps through ichtrojan/laravel-otp,
+// but none of the 21 repo migrations declares otps, and vendor is unavailable here.
+// Verify the package migration/deployment before auth work; do not mistake the
+// inventory of repo migrations for the complete live schema or invent OTP columns.
+//
+// ============================================================================
+// 03. قرارات السكيما المطلوب مراجعتها (defaults proposed, not silently approved)
+// ============================================================================
+// D01 - إعادة التقديم: Figma 802:4409 و3020:16356 تدعمان reapply، لكن الحالي
+// UNIQUE(talent_id) + firstOrCreate(talent_id) يمنع التاريخ. المقترح 1:N attempts،
+// UNIQUE(talent_id,attempt_number)، وactive_guard يمنع أكثر من محاولة نشطة.
+// التقديم للمقبول لا ينشئ محاولة جديدة تلقائياً. Reopen امتياز مستقل مع audit.
+// Existing talent FK changes CASCADE -> RESTRICT to retain application history.
+//
+// D02 - نسخة التقديم وقفل الملف: architecture/12 تقول snapshot لكن migration
+// 2026_09_06_000000 تحذف profile_snapshot والكود الحالي لا يحفظ أي نسخة.
+// المقترح submission_snapshot جديد بإصدار + تاريخ التقاط ومصدر واضحين؛ ليس ادعاء
+// أن الحقل موجود. Figma 757:11694 تمنع تعديل الملف أثناء المراجعة، خلاف وثائق
+// أقدم تسمح بالتعديل. المقترح قفل حقول التقديم أثناء UNDER_REVIEW وما بعده حتى
+// القرار؛ الكتابة لا تغير snapshot أبدًا. تعديل بعد القبول لا يغير المنشور تلقائيًا.
+// snapshot للطلبات القديمة: لا نخترع حالة تاريخية؛ أصل legacy_capture معلوم.
+// كذلك architecture/04 و06 تسمحان بالتقديم غير المكتمل، بينما الكود الحالي ينشئ
+// الطلب عند حفظ work-preferences وبعد اكتمال required_steps. المقترح الحفاظ على
+// شرط الحقول المطلوبة المعتمدة من Figma مع السماح بنقص الاختياري، وتوثيق معنى
+// completion بدقة؛ لا نضيف submit endpoint ولا نغير الحقول المطلوبة في هذه المهمة.
+// توزيع الحقول الحالي يضع CV في work-preferences وsummary في personal-information،
+// بينما Figma تعرض CV في Basic Info وsummary في Skills؛ هذه مواءمة API لاحقة،
+// لا تحتاج جداول جديدة أو تكرار أعمدة.
+//
+// D03 - المقابلات المتعددة: PDF تقول second interview خارج V1، لكن Figma
+// 881:10802 و1045:17994 تعرض Round1/Round2 وتسمح Schedule Interview بعد التقييم.
+// Figma هي الأساس: ندعم rounds متعددة، مع فصل round عن محاولات إعادة الجدولة.
+// لا نحول INTERVIEW_IN_PROGRESS إلى application status؛ هي session status فقط.
+//
+// D04 - حدود الحالات: acceptance=accepted في المقترح؛ بعض docs تستخدم approved.
+// لا نغير البيانات مباشرة؛ نفحص القيم الفعلية ونحول aliases في backfill لاحقًا.
+// users.is_active للحساب؛ talents.availability_status للتوفر؛ marketplace.visibility
+// للظهور؛ talent_applications.status لقرار الطلب. لا نحشرها في status واحد.
+// blacklist منفصل على مستوى talent؛ قائمة Rejected تضم المحظورين، لكن فك الحظر
+// لا يلغي سبب رفض قديم ولا يمنح قبولًا. الهويات غير النشطة لا تظهر بالmarketplace.
+//
+// D05 - quotas/deadlines: Figma تمنح المرشح cancellation/reschedule واحدة، بينما
+// PDF تقترح محاولتي scheduling. هذان عدادان مختلفان. نحفظ actor وسبب كل attempt.
+// admin cancellation لا يستهلك quota المرشح. مهلة offer=48h وdecision=1 day
+// مستمدة من نسخ UI، تحتاج اعتماد policy. Overdue يعني متابعة يدوية، لا رفض تلقائي.
+// Figma 3670:34090/4292:111785 توضح warning عند إغلاق admin بسبب عدم الرد؛
+// لذلك talent_account_warnings تحتفظ بكل warning ومصدره وإلغائه. عدد الفرص
+// وسياسة suspension/expiry غير محسومة؛ لا نخلط warning أو suspension مع blacklist.
+//
+// D06 - اختيار الموعد: application يختار فيه talent موعدًا من slots. في hiring
+// يوجد client+talent واختيار أوقات للطرفين؛ ترتيب أولوية/تقاطع الاختيارات غير مكتمل.
+// المقترح slot_responses ثم تأكيد مشترك transaction؛ لا يتم تأكيد موعد بمجرد
+// توليد slots أو اعتماد reschedule request. بيانات الاقتراح الزمني optional لأن
+// admin screen تعرضها بينما نموذج talent الحالي لا يطلبها.
+//
+// D07 - الرسوم: contract types fixed/percentage/both + override لكل professional
+// field واضحة. أساس النسبة (شهري/سنوي/إجمالي)، الضريبة والتقريب غير محسومة.
+// نحفظ fee rules version وsnapshot على الفاتورة والعقد. Fixed rule currency required؛
+// percentage basis required عند وجود نسبة. لا نستخدم نسب/مبالغ demo كـdefaults.
+// Payment screen 4362:57196 تعرض salary subtotal=30,200 وtransfer=3,600 مع رسوم
+// غير محددة. لا يمكن اشتقاق إجمالي صحيح منها. total_due=NULL حتى تأكيد الرسوم.
+// تأكيد الرواتب ورفع receipt والتحقق من التحويل ثلاث عمليات مختلفة.
+//
+// D08 - التقييم: Figma أربع criteria 1..5، والـPDF weights/criteria مختلفة.
+// لا نزرع الستة أو نفسر badge 35% كوزن مؤكد. الوزن configurable+snapshot؛
+// الصيغة المقترحة sum(rating/5*weight) عندما sum(weight)=100.
+// Annual Salary في report مقابل monthly في offers: salary_period صريح.
+// ranking يحتاج cohort/time/method، فلا نخزن Top15% كحقيقة دون أساس أو كـdefault.
+//
+// D09 - الحذف: Figma delete client تقول حذف دائم يشمل العقود والتاريخ.
+// اقتراح يحتاج اعتماد مخالف لهذا النص: أرشفة الهوية/workspace مع الاحتفاظ
+// بتاريخ العقود والمدفوعات/audit. حذف draft child فقط يسمح cascade؛ السجلات
+// المالية والتشغيلية restrict. لا تنفذ أي حذف أو retention policy قبل حسم القرار.
+// كذلك delete form مع submissions تقترح أرشفة للحفاظ على إجابات تاريخية.
+//
+// D10 - الخدمات المدفوعة: talent feedback/early reapply وclient opinion منفصلة
+// عن access subscription. المقترح شراء client يكون للworkspace عن talent محدد؛
+// يلزم اعتماد هل الشراء لكل client أو workspace، ولكل report version أم lifetime.
+// عرض فوري للclient opinion المنشور، أما طلب profile review قد ينتظر تنفيذ خبير.
+// سعر 100EGP/250EGP/$10 وضمان14 يوم أمثلة/نصوص تحتاج سياسة معتمدة.
+// early reapply بعد تحقق الدفع يغير الأهلية مع audit؛ لا يتجاوز blacklist.
+// Internal decision reason والتقرير المنشور ورسالة المرشح حقول منفصلة.
+//
+// D11 - access subscription من BRD/SRS: لا شاشة شراء/تجديد واضحة في الأقسام
+// الحالية. DOC tables فقط مع اقتراح workspace scope، لا نفترض gate مطبق بالفعل.
+// SRS تخفي الاسم/الصورة/CV قبل التعاقد، وبعض صور marketplace placeholders تحمل
+// وجوهاً؛ شاشة3649:29356 تقول personal/contact available after contracting.
+// نعتمد إخفاء الهوية/الاتصال حتى executed contract إلى أن تعتمد disclosure matrix.
+// شراء expert opinion لا يمنح CV/phone/email/contact access.
+//
+// D12 - العملات: الحالي decimal(12,2)، المقترح الجديد decimal(18,4)؛ اعتماد توحيد
+// precision مطلوب لدعم عملات 3 decimals. تحويلات append-only وبنفس base currency.
+// الأصل لا يستبدل بقيمة محولة. quotes تحفظ المعدل المستعمل للعرض/الالتزام، وتحتاج
+// سياسة retention للعرض فقط. لا يتم اختيار مزود FX أو معدل فعلي في هذه المسودة.
+//
+// D13 - Projects/Tasks/Attendance: Figma يعرض navigation/cards وبعض مزايا managed،
+// دون شاشات تشغيل كافية. Methodology تقول SaaS مستقل؛ BRD/PRD تقول portal مدمجة.
+// المقترح مؤقتاً service_provisions كحد تسليم فقط. لا توجد هنا جداول تشغيل مختلقة
+// للمشروعات/التاسكات/الحضور/payroll؛ تصميم هذا الجزء وإقامة بياناته قرار منفصل.
+//
+// D14 - Jobs/Form generator مؤكد بالويب. لا نعيد استخدام Laravel jobs أو
+// talent_applications أو professional_form_fields كأسئلة عشوائية. الأربع identity
+// fields ثابتة؛ الأسئلة من catalog؛ submissions تربط بإصدار غير قابل للتغيير.
+// Start Hiring Process بـ4414:76117 لا يوضح هل يعني vetting أم request للعميل؛
+// المقترح تحويل اختياري موثق لtalent application بعد التحقق، وليس قبولًا تلقائيًا.
+//
+// D15 - workspace/candidate invitations وSave Job أزرار موجودة أو دعم منطقي
+// لعضويات الفرق، لكن التفاصيل غير مكتملة. جداول PROPOSED تنتظر اعتماد السلوك.
+// workspaces.owner_client_id 1:N؛ members M:N. client ≠ company ≠ workspace.
+// Spatie teams=false الآن؛ workspace_roles منفصلة بدل منح عضو صلاحيات عالمية.
+// Marketing يقول Request Access/Get Approved بينما إنشاء workspace الفعلي يقول
+// now active. المقترح active حسب الفلو الفعلي؛ لا approval pipeline للشركات دون حسم.
+//
+// D16 - industry experience/main specialization ظاهرة في marketplace ولا توجد
+// لها حقول onboarding واضحة. المقترح admin-curated ضمن approved projection.
+// Skills & Proficiency عنوان فقط؛ لا نعيد proficiency/years/is_primary المحذوفة
+// من talent_skills بناءً على عنوان دون مدخل واضح. Public content/FAQ static حاليًا؛
+// لا CMS ولا matching AI ولا chat backend مستنتج من نصوص marketing.
+//
+// ============================================================================
+// 04. State transitions and cross-table constraints (mandatory when implemented)
+// ============================================================================
+// C01 Tenant isolation:
+// Every request/contract/invoice/member action checks active workspace membership.
+// Member-role, invitation-role, created_by_member, request->contract->invoice lines
+// must all refer to the same workspace. Explicit IDs do not replace tenant checks.
+// Add composite FK constraints where engine supports suitable parent unique keys;
+// enforce remaining cross-aggregate rules inside the owning transactional service.
+// user.type must match its one-to-one client/admin/talent profile.
+//
+// C02 Applications:
+// submitted -> under_review -> interview_required -> interview_scheduled ->
+// waiting_result -> accepted/rejected; waiting_result -> interview_required for
+// a NEW interview round; under_review may reject; authorized closure -> closed.
+// Reschedule returns scheduled -> required; all-slots-rejected remains required.
+// Terminal attempts are immutable except explicit audited reopen/reapply policy edits.
+// active_guard=1 iff status is active, NULL iff terminal; CHECK plus unique pair.
+// Transactions lock talent row to allocate next attempt_number and enforce eligibility.
+// Reapply requires rejected/closed eligible previous attempt, reapply_at reached or
+// settled early-reapply entitlement, active verified account and NO active blacklist.
+// Migration must backfill active_guard according to status before enabling constraints.
+//
+// C03 Marketplace:
+// accepted application + approved projection visibility=visible + eligible availability
+// + active verified account + no current blacklist => eligible result. Whether
+// notice_period counts as available is D04 policy; proposed yes with explicit notice.
+// Changes to private live profile never bypass reviewer approval of public projection.
+// Profile completion/platform-access permission is not talent approval. Existing
+// TalentPlatformAccessService uses completion + application existence only.
+// Gate marketplace/hiring separately; pending applicants retain their review dashboard.
+//
+// C04 Hiring:
+// draft -> awaiting_response/negotiating -> interview_scheduling (if required)
+// -> interview_scheduled -> awaiting_decisions -> accepted -> ready_for_contract
+// -> contracted; no-interview route requires accepted offer before accepted.
+// Reject/cancel are terminal; on_hold is resumable. Hold/cancel atomically cancel
+// open slots, active interviews and pending offers/decision deadlines; keep history.
+// Resume creates fresh activities/offer version; does not reactivate old cancelled rows.
+// Exactly one current sent offer per item (transaction lock + engine-specific active
+// uniqueness during implementation). Counteroffer supersedes current offer atomically.
+// accepted_offer_id must reference this item and status accepted; parent_offer too.
+// Post-interview continue requires two valid, current, opposite-party decisions.
+// Replacement stays in same hiring request, different talent, no cycles; at most
+// one immediate successor via unique replaces_item_id. Whole-request progress derives
+// from current non-replaced items, excluding retired predecessors; do not double count.
+// Parent completed when every current item terminal; all-cancelled parent=cancelled;
+// mixed outcomes completed with per-item results; all-on-hold display is derived.
+//
+// C05 Scheduling:
+// Exactly one interview context; interview round_number unique per context.
+// Slot dates UTC, end>start, future on publication; display timezone IANA retained.
+// Confirm within deadline, lock interview and interviewer calendar identities,
+// check overlap against scheduled interviews, choose exactly one same-interview slot,
+// set selected_slot_id and scheduling round selected, cancel other available slots.
+// Reschedule/cancel frees booking but retains historical slot/participant rows.
+// Multiple interviewers must all be free; lock them in stable order to avoid races.
+// All-slots rejection recorded on scheduling round with actor/reason (audit event).
+// Pair decision belongs to hiring-context interview for the SAME request item.
+// Timer/UI labels Ready/Join are computed from scheduled time; no extra tables.
+//
+// C06 Money/work terms:
+// Amount and currency paired, nonnegative salary/fees, min<=max, percentage 0..100,
+// FX rates >0; both rate rows share base currency and correspond to source/target.
+// Decimal arithmetic only; round by configured currency exponent at invoice issuance.
+// work_type full_time/part_time; work_mode remote/onsite/hybrid; schedule JSON schema:
+// weekdays=[0..6] unique, timezone IANA, start_local/end_local OR daily_hours,
+// hybrid_onsite_days subset of weekdays; location required for onsite/hybrid.
+// At contract signing copy accepted offer + fee version into immutable terms_snapshot.
+//
+// C07 Media/data retention:
+// Use existing media for talent.cv, talent_project.images (max5, 5MB), workspace.logo
+// (5MB), workspace.tax_card, application submission_cv, form_answer.upload,
+// payment.receipt (10MB), contract_document.file/signature evidence.
+// Snapshot original submission CV as an application-owned immutable media copy;
+// live talent CV collection is single-file and replacement currently deletes old CV.
+// Validate MIME/size per collection; CV UI differs PDF/DOC vs DOCX, approve exact
+// matrix before implementation. Tax card only required for is_company=true.
+// Private downloads require authorization/signed URLs; polymorphic media has no
+// physical owner FK so deletion and owner matching must be enforced by service.
+// country/city combinations must match; don't infer age column from birthdate label.
+//
+// C08 Billing/access:
+// NULL fees ≠ zero fees. total_due only after fee rule approval and line calculation.
+// salary_reference line is informational; line included_in_total=false.
+// Final invoices immutable, later correction via explicit adjustment/refund.
+// Payment currency=invoice currency, cumulative verified payment <= agreed balance
+// unless an explicit overpayment policy is approved. Receipt may be accepted for
+// review during pending_fees but no paid state/entitlement until final amount agreed.
+// Settled payment + published audience-appropriate report => entitlement once.
+// Refresh/retry/webhook must use idempotency key; no duplicate grant or contract.
+// Only fully executed required documents yield contracted disclosure/engagement.
+// Subscription periods for same workspace/plan must not overlap accidentally.
+//
+// C09 Forms:
+// Four identity fields always required. job title server-filled from published
+// posting; do not trust hidden client field. Published versions immutable.
+// form_field.version must equal submission.version, unique answer per question.
+// Typed JSON validated against frozen type/rules/options; uploaded media owned by
+// that submission/answer. No auto-merge/verification merely because email matches.
+// Copy form copies field configuration to new draft, never submissions.
+// Counts/CSV exports derived from submissions, subject to admin permission.
+//
+// C10 Audit/reliability:
+// State/assignment/blacklist/reapply changes + workflow_event + notification outbox
+// written atomically. Actual actor and on_behalf_of party always separate.
+// Save old/new assignment IDs in event.changes for reviewer/reassignment history.
+// No status-by-boolean, floating money, mutable signed terms, or sensitive raw audit dump.
+// Internal_notes exactly one target; reports/orders/evaluations/applications/talent
+// must agree on talent and application IDs. Refunds/withdrawal cannot silently grant access.
+// Settings/rules/deadlines copied at action time so later changes aren't retroactive.
+// No-response admin closure + warning + any approved suspension action are atomic;
+// one warning per offer/category. Warning count is derived, not an unchecked counter.
+//
+// ============================================================================
+// 05. ترتيب التنفيذ بعد مراجعتك فقط (لا تنفيذ في هذه المهمة)
+// ============================================================================
+// A. Audit real migration state/data, then application attempts + audit + blacklist
+//    + interviews + evaluations + approved visibility. Preserve current onboarding.
+// B. Clients/workspaces/membership authorization + help requests + marketplace.
+// C. Contract configuration + draft squad/request items + offers/replacements/decisions.
+// D. Invoice/receipt verification + contract documents/signatures + engagements.
+// E. Public job postings/forms/submissions (independent delivery slice).
+// F. Premium fulfillment/access + FX; subscriptions only after D11 resolved.
+// G. Separate work-management SaaS after D13 decision; never infer attendance tables.
+// Backfill strategy: new nullable columns first, inspect duplicates/statuses, capture
+// legacy snapshots honestly, assign stable codes, populate guards, then add constraints.
+// Do not edit historical migrations; create focused future migrations only after approval.
+// No runtime tests or migrations are required for this documentation-only change.
+//
+// ============================================================================
+// 06. خريطة الشاشات إلى مجموعات الجداول (مراجع مباشرة للمراجعة)
+// ============================================================================
+// Onboarding -> Talent/Reference/media:
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=671-9328
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=676-10812
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=676-11369
+// Review/reviewer/history -> Applications/Evaluation/workflow_events:
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=848-10876
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=1078-10504
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=1030-9753
+// Slots/rounds -> Interviews:
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=881-10802
+// Workspace/company identity -> Workspace:
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=4287-55632
+// Marketplace/paid opinion -> approved profiles + expert_reports + service_orders:
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=3260-24102
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=3260-27929
+// Squad/mixed contract types -> Hiring + Commercial:
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=3730-38377
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=3916-42854
+// Per-item journey/decisions -> Hiring + Interviews:
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=3290-38355
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=4032-56278
+// No-response warnings -> talent_account_warnings:
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=3670-34090
+// Payment/receipt -> invoices/lines/payments (not automatically paid):
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=4362-57196
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=4457-77401
+// Hiring completion -> Contracts/engagements:
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=3649-29356
+// Assistance -> Support/internal_notes/workflow_events:
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=3941-42237
+// Public jobs + fixed identity/questions + submissions -> JobsForms:
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=4541-62666
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=4549-65134
+// https://www.figma.com/design/Ey9gKqsJd8qx1aBMgefEQB/qader-app?node-id=4414-76117
+//
+
+Project qader_web_schema_review {
+  Note: 'Review-only target schema; no migrations or live database changes. See decisions D01-D16 and constraints C01-C10.'
+}
+
+// [CHANGE] users
+Table users [headercolor: #fef3c7] {
+  id bigint [pk, increment]
+  first_name varchar(255) [not null]
+  last_name varchar(255) [not null]
+  email varchar(255) [not null]
+  email_verified_at timestamp
+  password varchar(255) [not null]
+  type varchar(255) [not null, note: 'talent | client | admin']
+  avatar varchar(255)
+  is_active boolean [not null, default: true]
+  last_login_at timestamp
+  remember_token varchar(100)
+  timezone varchar(64) [note: 'ADD: IANA timezone; UTC when unset']
+  locale varchar(10) [note: 'ADD: en/ar preference']
+  suspended_at timestamp [note: 'ADD']
+  suspension_reason text [note: 'ADD: internal only']
+  deleted_at timestamp [note: 'ADD: retention proposal D09']
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (email, type) [unique]
+    type
+  }
+  Note: '[CHANGE] Existing identity. ADD timezone, locale, suspended_at, suspension_reason, deleted_at. Keep UNIQUE(email,type); do not move workspace identity here.'
+}
+
+// [CHANGE] clients
+Table clients [headercolor: #fef3c7] {
+  id bigint [pk, increment]
+  user_id bigint [not null, unique]
+  phone_country_code varchar(5) [note: 'ADD']
+  phone_number varchar(20) [note: 'ADD']
+  created_at timestamp
+  updated_at timestamp
+  Note: '[CHANGE] Existing one-to-one profile. ADD contact fields; admins also localized display name. Phone is not a login identifier.'
+}
+
+// [CHANGE] admins
+Table admins [headercolor: #fef3c7] {
+  id bigint [pk, increment]
+  user_id bigint [not null, unique]
+  phone_country_code varchar(5) [note: 'ADD']
+  phone_number varchar(20) [note: 'ADD']
+  display_name_ar varchar(255) [note: 'ADD; English display uses users first/last name']
+  created_at timestamp
+  updated_at timestamp
+  Note: '[CHANGE] Existing one-to-one profile. ADD contact fields; admins also localized display name. Phone is not a login identifier.'
+}
+
+// [KEEP] social_accounts
+Table social_accounts [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  provider varchar(255) [not null]
+  provider_user_id varchar(255) [not null]
+  email varchar(255) [not null]
+  name varchar(255)
+  avatar varchar(255)
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (provider, provider_user_id) [unique]
+    (email, provider)
+  }
+  Note: '[KEEP] Existing global provider identity uniqueness. Portal linking policy needs review; no silent cross-portal login.'
+}
+
+// [KEEP] permissions
+Table permissions [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  name varchar(255) [not null]
+  guard_name varchar(255) [not null]
+  portal varchar(255) [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (name, guard_name, portal) [unique]
+    portal
+  }
+  Note: '[KEEP] Existing Spatie portal scope. Reused by workspace_role_permissions only for portal=client.'
+}
+
+// [CHANGE] roles
+Table roles [headercolor: #fef3c7] {
+  id bigint [pk, increment]
+  name varchar(255) [not null]
+  guard_name varchar(255) [not null]
+  portal varchar(255) [not null]
+  is_active boolean [not null, default: true, note: 'ADD']
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (name, guard_name, portal) [unique]
+    portal
+  }
+  Note: '[CHANGE] Existing Spatie portal scope. ADD is_active and role_translations; these remain platform roles, not workspace roles.'
+}
+
+// [KEEP] model_has_permissions
+Table model_has_permissions [headercolor: #dbeafe] {
+  permission_id bigint [not null]
+  model_type varchar(255) [not null]
+  model_id bigint [not null]
+  indexes {
+    (permission_id, model_id, model_type) [pk]
+    (model_id, model_type)
+  }
+  Note: '[KEEP] Existing polymorphic Spatie assignment. model_id has no physical FK. config/permission.php teams=false.'
+}
+
+// [KEEP] model_has_roles
+Table model_has_roles [headercolor: #dbeafe] {
+  role_id bigint [not null]
+  model_type varchar(255) [not null]
+  model_id bigint [not null]
+  indexes {
+    (role_id, model_id, model_type) [pk]
+    (model_id, model_type)
+  }
+  Note: '[KEEP] Existing polymorphic Spatie assignment. model_id has no physical FK. config/permission.php teams=false.'
+}
+
+// [KEEP] role_has_permissions
+Table role_has_permissions [headercolor: #dbeafe] {
+  permission_id bigint [not null]
+  role_id bigint [not null]
+  indexes {
+    (permission_id, role_id) [pk]
+  }
+  Note: '[KEEP] Existing permission membership.'
+}
+
+// [NEW] role_translations
+Table role_translations [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  role_id bigint [not null]
+  locale varchar(10) [not null]
+  name varchar(255) [not null]
+  indexes {
+    (role_id, locale) [unique]
+  }
+  Note: '[NEW] Figma role Name EN/AR, 3037:36989.'
+}
+
+// [KEEP] countries
+Table countries [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  code char(2) [not null, unique]
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[KEEP] Existing active reference data; deactivate instead of deleting in business operations.'
+}
+
+// [KEEP] languages
+Table languages [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  code varchar(10) [not null, unique]
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[KEEP] Existing active reference data; deactivate instead of deleting in business operations.'
+}
+
+// [KEEP] currencies
+Table currencies [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  code char(3) [not null, unique]
+  symbol varchar(10)
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[KEEP] Existing active reference data; deactivate instead of deleting in business operations.'
+}
+
+// [KEEP] cities
+Table cities [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  country_id bigint [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[KEEP] Existing city must belong to selected country in every write.'
+}
+
+// [KEEP] professional_fields
+Table professional_fields [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  slug varchar(255) [not null, unique]
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[KEEP] Existing field classification; categories were removed from job_titles/skills/tools.'
+}
+
+// [KEEP] country_translations
+Table country_translations [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  country_id bigint [not null]
+  locale varchar(255) [not null]
+  name varchar(255) [not null]
+  indexes {
+    (country_id, locale) [unique]
+    locale
+  }
+  Note: '[KEEP] Existing translated names.'
+}
+
+// [KEEP] city_translations
+Table city_translations [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  city_id bigint [not null]
+  locale varchar(255) [not null]
+  name varchar(255) [not null]
+  indexes {
+    (city_id, locale) [unique]
+    locale
+  }
+  Note: '[KEEP] Existing translated names.'
+}
+
+// [KEEP] language_translations
+Table language_translations [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  language_id bigint [not null]
+  locale varchar(255) [not null]
+  name varchar(255) [not null]
+  indexes {
+    (language_id, locale) [unique]
+    locale
+  }
+  Note: '[KEEP] Existing translated names.'
+}
+
+// [KEEP] currency_translations
+Table currency_translations [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  currency_id bigint [not null]
+  locale varchar(255) [not null]
+  name varchar(255) [not null]
+  indexes {
+    (currency_id, locale) [unique]
+    locale
+  }
+  Note: '[KEEP] Existing translated names.'
+}
+
+// [CHANGE] professional_field_translations
+Table professional_field_translations [headercolor: #fef3c7] {
+  id bigint [pk, increment]
+  professional_field_id bigint [not null]
+  locale varchar(255) [not null]
+  name varchar(255) [not null]
+  description text [note: 'ADD']
+  indexes {
+    (professional_field_id, locale) [unique]
+    locale
+  }
+  Note: '[CHANGE] Existing translated names. ADD description shown in professional-field selection 3735:49023.'
+}
+
+// [KEEP] job_titles
+Table job_titles [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  name varchar(255) [not null]
+  slug varchar(255) [not null, unique]
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[KEEP] Existing; category column no longer exists after 2026_09_04.'
+}
+
+// [KEEP] skills
+Table skills [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  name varchar(255) [not null]
+  slug varchar(255) [not null, unique]
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[KEEP] Existing; category column no longer exists after 2026_09_04.'
+}
+
+// [KEEP] tools
+Table tools [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  name varchar(255) [not null]
+  slug varchar(255) [not null, unique]
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[KEEP] Existing; category column no longer exists after 2026_09_04.'
+}
+
+// [KEEP] job_title_professional_field
+Table job_title_professional_field [headercolor: #dbeafe] {
+  job_title_id bigint [not null]
+  professional_field_id bigint [not null]
+  indexes {
+    (job_title_id, professional_field_id) [pk]
+  }
+  Note: '[KEEP] Existing many-to-many field classification.'
+}
+
+// [KEEP] professional_field_skill
+Table professional_field_skill [headercolor: #dbeafe] {
+  professional_field_id bigint [not null]
+  skill_id bigint [not null]
+  indexes {
+    (professional_field_id, skill_id) [pk]
+  }
+  Note: '[KEEP] Existing many-to-many field classification.'
+}
+
+// [KEEP] professional_field_tool
+Table professional_field_tool [headercolor: #dbeafe] {
+  professional_field_id bigint [not null]
+  tool_id bigint [not null]
+  indexes {
+    (professional_field_id, tool_id) [pk]
+  }
+  Note: '[KEEP] Existing many-to-many field classification.'
+}
+
+// [KEEP] professional_form_fields
+Table professional_form_fields [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  key varchar(255) [not null, unique]
+  step varchar(255) [not null]
+  is_default boolean [not null, default: false]
+  is_required_by_default boolean [not null, default: false]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    step
+  }
+  Note: '[KEEP] Existing onboarding field registry, not the arbitrary job-question catalog. Seeded from ProfessionalFormFieldEnum.'
+}
+
+// [KEEP] professional_field_form_field
+Table professional_field_form_field [headercolor: #dbeafe] {
+  professional_field_id bigint [not null]
+  professional_form_field_id bigint [not null]
+  is_required boolean [not null, default: false]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (professional_field_id, professional_form_field_id) [pk]
+  }
+  Note: '[KEEP] Existing onboarding required-field configuration per professional field.'
+}
+
+// [CHANGE] talents
+Table talents [headercolor: #fef3c7] {
+  id bigint [pk, increment]
+  user_id bigint [not null, unique]
+  profile_completion_percentage tinyint [not null, default: 0]
+  onboarding_step varchar(255) [not null, default: 'personal-information']
+  profile_completion_details json
+  profile_completion_updated_at timestamp
+  professional_summary text
+  whatsapp_country_code varchar(5)
+  whatsapp_number varchar(20)
+  phone_country_code varchar(5)
+  phone_number varchar(20)
+  date_of_birth date
+  gender varchar(255)
+  religion varchar(50)
+  nationality_country_id bigint
+  residence_country_id bigint
+  residence_city_id bigint
+  professional_field_id bigint
+  willing_to_relocate boolean
+  job_title_id bigint
+  seniority_level varchar(255)
+  years_of_experience smallint
+  linkedin_url varchar(255)
+  github_url varchar(255)
+  behance_url varchar(255)
+  portfolio_url varchar(255)
+  onboarding_completed_at timestamp
+  notice_period_days smallint
+  current_salary decimal(12,2)
+  current_currency_id bigint
+  expected_salary_min decimal(12,2)
+  expected_salary_max decimal(12,2)
+  expected_currency_id bigint
+  public_code varchar(32) [unique, note: 'ADD: QDR display ID, backfill then NOT NULL']
+  availability_status varchar(32) [not null, default: 'unavailable', note: 'ADD: available | notice_period | unavailable; independent from approval']
+  availability_updated_at timestamp [note: 'ADD']
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    profile_completion_percentage
+    (job_title_id, seniority_level, years_of_experience)
+    (availability_status, professional_field_id)
+  }
+  Note: '[CHANGE] Existing profile plus explicitly marked additions. No application status here. Legacy salary precision unchanged until D12 is approved.'
+}
+
+// [KEEP] talent_languages
+Table talent_languages [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  talent_id bigint [not null]
+  language_id bigint [not null]
+  proficiency_level varchar(255) [not null, note: 'a1,a2,b1,b2,c1,c2,native']
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (talent_id, language_id) [unique]
+  }
+  Note: '[KEEP] Existing profile selection.'
+}
+
+// [KEEP] talent_skills
+Table talent_skills [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  talent_id bigint [not null]
+  skill_id bigint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (talent_id, skill_id) [unique]
+  }
+  Note: '[KEEP] Existing profile selection. No proficiency/years/is_primary columns: explicitly removed by alignment migration.'
+}
+
+// [KEEP] talent_tools
+Table talent_tools [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  talent_id bigint [not null]
+  tool_id bigint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (talent_id, tool_id) [unique]
+  }
+  Note: '[KEEP] Existing profile selection.'
+}
+
+// [KEEP] talent_experiences
+Table talent_experiences [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  talent_id bigint [not null]
+  job_title varchar(255) [not null]
+  company_name varchar(255) [not null]
+  company_url varchar(255)
+  started_at date [not null]
+  ended_at date
+  currently_working boolean [not null, default: false]
+  responsibilities text
+  display_order smallint [not null, default: 0]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[KEEP] Existing work history; currently_working requires ended_at=NULL; end >= start.'
+}
+
+// [KEEP] talent_projects
+Table talent_projects [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  talent_id bigint [not null]
+  name varchar(255) [not null]
+  description text
+  url varchar(255)
+  display_order smallint [not null, default: 0]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[KEEP] Existing portfolio projects. Images use media collection images, not a parallel files table.'
+}
+
+// [KEEP] talent_work_types
+Table talent_work_types [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  talent_id bigint [not null]
+  work_type varchar(255) [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (talent_id, work_type) [unique]
+  }
+  Note: '[KEEP] Existing multiple work preferences.'
+}
+
+// [KEEP] talent_work_modes
+Table talent_work_modes [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  talent_id bigint [not null]
+  work_mode varchar(255) [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (talent_id, work_mode) [unique]
+  }
+  Note: '[KEEP] Existing multiple work preferences.'
+}
+
+// [KEEP] media
+Table media [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  model_type varchar(255) [not null]
+  model_id bigint [not null]
+  uuid uuid [unique]
+  collection_name varchar(255) [not null]
+  name varchar(255) [not null]
+  file_name varchar(255) [not null]
+  mime_type varchar(255)
+  disk varchar(255) [not null]
+  conversions_disk varchar(255)
+  size bigint [not null]
+  manipulations json [not null]
+  custom_properties json [not null]
+  generated_conversions json [not null]
+  responsive_images json [not null]
+  order_column int
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (model_type, model_id)
+    order_column
+  }
+  Note: '[KEEP] Existing Spatie polymorphic files. Collection ownership is enforced in application policies. Historical referenced files must not be replaced/deleted; see C07.'
+}
+
+// [CHANGE] talent_applications
+Table talent_applications [headercolor: #fef3c7] {
+  id bigint [pk, increment]
+  talent_id bigint [not null]
+  status varchar(255) [not null, default: 'submitted', note: 'submitted | under_review | interview_required | interview_scheduled | waiting_result | accepted | rejected | closed; map legacy approved after audit']
+  submitted_at timestamp [not null]
+  reference varchar(32) [unique, note: 'ADD; backfill then NOT NULL']
+  attempt_number int [not null, default: 1]
+  active_guard tinyint [note: '1 for active attempt, NULL for terminal; CHECK with status; D01/C02']
+  assigned_admin_id bigint
+  review_started_at timestamp
+  profile_locked_at timestamp
+  profile_completion_at_submission tinyint
+  submission_snapshot json [note: 'Immutable normalized profile, lookups and form policy snapshot; intentionally NEW, D02']
+  snapshot_version int
+  snapshot_captured_at timestamp
+  snapshot_origin varchar(32) [note: 'submission | legacy_capture; do not fabricate old profile state']
+  decision_at timestamp
+  decided_by_admin_id bigint
+  rejection_stage varchar(32) [note: 'initial_review | interview | scheduling']
+  rejection_category varchar(64)
+  internal_decision_reason text
+  talent_visible_message text
+  reapply_policy varchar(32) [note: 'allowed_after_date | not_allowed | early_paid_eligible']
+  reapply_at timestamp
+  priority varchar(16) [not null, default: 'normal', note: 'DOC: normal | high | urgent']
+  last_activity_at timestamp
+  version int [not null, default: 1, note: 'Optimistic lock']
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (talent_id, attempt_number) [unique]
+    (talent_id, active_guard) [unique]
+    (assigned_admin_id, status, submitted_at)
+    (status, submitted_at)
+    reapply_at
+  }
+  Note: '[CHANGE] Existing id,talent_id,status,submitted_at,timestamps. CHANGE remove UNIQUE(talent_id), add attempt uniqueness and one active attempt constraint C02. Every other field below is ADD. Never rewrite previous attempts.'
+}
+
+// [NEW] talent_blacklist_entries
+Table talent_blacklist_entries [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  talent_id bigint [not null]
+  application_id bigint
+  reason text [not null]
+  blocked_by_admin_id bigint [not null]
+  blocked_at timestamp [not null]
+  active_guard tinyint [note: '1 when active, NULL after removal; CHECK with removed_at']
+  removed_at timestamp
+  removed_by_admin_id bigint
+  removal_reason text
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (talent_id, active_guard) [unique]
+  }
+  Note: '[NEW] Figma 3130:26016 / 3130:26553. Block is talent-wide; removing a block does not accept/reopen old applications.'
+}
+
+// [NEW] talent_marketplace_profiles
+Table talent_marketplace_profiles [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  talent_id bigint [not null, unique]
+  application_id bigint [not null]
+  job_title_id bigint [not null]
+  professional_field_id bigint [not null]
+  seniority_level varchar(32) [not null]
+  years_of_experience smallint [not null]
+  public_summary text
+  main_specialization varchar(255)
+  salary_min decimal(18,4) [not null]
+  salary_max decimal(18,4) [not null]
+  currency_id bigint [not null]
+  salary_period varchar(16) [not null, default: 'month']
+  visibility varchar(16) [not null, default: 'hidden', note: 'visible | hidden']
+  public_profile_snapshot json [not null, note: 'Approved safe experiences/projects/languages/work preferences; never raw private profile']
+  approved_at timestamp [not null]
+  approved_by_admin_id bigint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (visibility, professional_field_id, job_title_id, seniority_level)
+    (currency_id, salary_min, salary_max)
+  }
+  Note: '[NEW] Approved public projection, separate from editable submission. Figma 3260:24102 and admin acceptance; DOC supports approved overrides. Application must belong to talent and be accepted.'
+}
+
+// [NEW] marketplace_profile_skills
+Table marketplace_profile_skills [headercolor: #dcfce7] {
+  marketplace_profile_id bigint [not null]
+  skill_id bigint [not null]
+  indexes {
+    (marketplace_profile_id, skill_id) [pk]
+  }
+  Note: '[NEW] Filterable approved skill set. No inferred proficiency rating.'
+}
+
+// [NEW] industries
+Table industries [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  slug varchar(255) [not null, unique]
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[NEW] Workspace industry and marketplace industry experience; not interchangeable with professional field.'
+}
+
+// [NEW] industry_translations
+Table industry_translations [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  industry_id bigint [not null]
+  locale varchar(10) [not null]
+  name varchar(255) [not null]
+  indexes {
+    (industry_id, locale) [unique]
+  }
+  Note: '[NEW] Translated industry catalog.'
+}
+
+// [NEW] marketplace_profile_industries
+Table marketplace_profile_industries [headercolor: #dcfce7] {
+  marketplace_profile_id bigint [not null]
+  industry_id bigint [not null]
+  indexes {
+    (marketplace_profile_id, industry_id) [pk]
+  }
+  Note: '[NEW] Figma 3260:24102 Industry Experience. Admin-curated until capture source is agreed, D16.'
+}
+
+// [NEW] workspaces
+Table workspaces [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  owner_client_id bigint [not null]
+  name varchar(255) [not null]
+  slug varchar(255) [not null, unique]
+  industry_id bigint [not null]
+  description text [not null]
+  is_company boolean [not null]
+  country_id bigint [not null]
+  city_id bigint
+  size_band varchar(32)
+  website_url varchar(2048)
+  commercial_registration_number varchar(100)
+  status varchar(32) [not null, default: 'active', note: 'active | suspended | archived; approval pending not evidenced by workspace flow']
+  timezone varchar(64) [not null]
+  default_currency_id bigint
+  deleted_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (owner_client_id, status)
+  }
+  Note: '[NEW] Figma 3174:19565,3166:18282,4287:55632. Company/business belongs to workspace; client is an individual account.'
+}
+
+// [NEW] workspace_social_links
+Table workspace_social_links [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  workspace_id bigint [not null]
+  platform varchar(32) [not null]
+  url varchar(2048) [not null]
+  display_order smallint [not null, default: 0]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[NEW] Add Link in workspace setup.'
+}
+
+// [NEW] workspace_members
+Table workspace_members [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  workspace_id bigint [not null]
+  client_id bigint [not null]
+  status varchar(16) [not null, default: 'active', note: 'active | suspended | removed']
+  joined_at timestamp [not null]
+  removed_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (workspace_id, client_id) [unique]
+    (client_id, status)
+  }
+  Note: '[NEW] One client can belong to many workspaces. Owner must also have an active member row; owner changes atomic. Members are client identities, not hired talents.'
+}
+
+// [NEW] workspace_roles
+Table workspace_roles [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  workspace_id bigint [not null]
+  key varchar(100) [not null]
+  name_en varchar(255) [not null]
+  name_ar varchar(255)
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (workspace_id, key) [unique]
+  }
+  Note: '[NEW] Figma 4178:54523 and reused role dialog. Dedicated scope because existing Spatie teams=false. Workspace-local authorization only.'
+}
+
+// [NEW] workspace_role_permissions
+Table workspace_role_permissions [headercolor: #dcfce7] {
+  workspace_role_id bigint [not null]
+  permission_id bigint [not null]
+  indexes {
+    (workspace_role_id, permission_id) [pk]
+  }
+  Note: '[NEW] Only permissions.portal=client may be attached.'
+}
+
+// [NEW] workspace_member_roles
+Table workspace_member_roles [headercolor: #dcfce7] {
+  workspace_member_id bigint [not null]
+  workspace_role_id bigint [not null]
+  indexes {
+    (workspace_member_id, workspace_role_id) [pk]
+  }
+  Note: '[NEW] Member and role must belong to the same workspace; C01 validation required.'
+}
+
+// [PROPOSED] workspace_invitations
+Table workspace_invitations [headercolor: #f3e8ff] {
+  id bigint [pk, increment]
+  workspace_id bigint [not null]
+  email varchar(255) [not null]
+  role_id bigint
+  invited_by_member_id bigint [not null]
+  token_hash char(64) [not null, unique]
+  status varchar(16) [not null, default: 'pending', note: 'pending | accepted | revoked | expired']
+  expires_at timestamp [not null]
+  accepted_by_client_id bigint
+  accepted_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (workspace_id, email, status)
+  }
+  Note: '[PROPOSED] Supporting membership flow; exact invitation UI not designed. Do not implement until membership scope approved.'
+}
+
+// [NEW] contract_types
+Table contract_types [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  code varchar(32) [not null, unique, note: 'managed | one_time']
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[NEW] System-defined managed and one_time types, 3916:38766. Pricing details versioned separately.'
+}
+
+// [NEW] contract_type_versions
+Table contract_type_versions [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  contract_type_id bigint [not null]
+  version_number int [not null]
+  status varchar(16) [not null, default: 'draft', note: 'draft | published | retired']
+  name_en varchar(255) [not null]
+  name_ar varchar(255) [not null]
+  description_en text
+  description_ar text
+  terms_en text
+  terms_ar text
+  default_work_type varchar(32)
+  default_work_mode varchar(32)
+  default_schedule json [note: 'Validated weekdays, local start/end, timezone, hybrid onsite days, location']
+  published_at timestamp
+  created_by_admin_id bigint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (contract_type_id, version_number) [unique]
+  }
+  Note: '[NEW] 3916:42854. Published versions immutable. Fee cadence and percentage basis require D07 approval.'
+}
+
+// [NEW] contract_type_benefits
+Table contract_type_benefits [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  contract_type_version_id bigint [not null]
+  name_en varchar(255) [not null]
+  name_ar varchar(255)
+  display_order smallint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (contract_type_version_id, display_order) [unique]
+  }
+  Note: '[NEW] Ordered benefits per published configuration.'
+}
+
+// [NEW] contract_fee_rules
+Table contract_fee_rules [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  contract_type_version_id bigint [not null]
+  professional_field_id bigint
+  scope_key varchar(64) [not null, note: 'default when field NULL, field:<id> otherwise; CHECK/transaction invariant']
+  fee_type varchar(32) [not null, note: 'fixed | percentage | fixed_percentage']
+  fixed_amount decimal(18,4)
+  fixed_currency_id bigint
+  percentage decimal(7,4)
+  percentage_basis varchar(32) [note: 'monthly_salary | annual_salary | contract_total; D07']
+  billing_frequency varchar(16) [not null, note: 'monthly | one_time']
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (contract_type_version_id, scope_key) [unique]
+  }
+  Note: '[NEW] Default + professional-field override; never hard-code Figma sample amounts. One default rule and at most one override per field/version.'
+}
+
+// [NEW] hiring_requests
+Table hiring_requests [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  workspace_id bigint [not null]
+  reference varchar(32) [not null, unique]
+  created_by_member_id bigint [not null]
+  assigned_admin_id bigint
+  currency_id bigint [not null]
+  status varchar(32) [not null, default: 'draft', note: 'draft | submitted | in_progress | completed | cancelled; aggregate rules C04']
+  submitted_at timestamp
+  closed_at timestamp
+  version int [not null, default: 1]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (workspace_id, status, created_at)
+    (assigned_admin_id, status)
+  }
+  Note: '[NEW] One workspace request, many independently progressing items. Draft is the persisted squad; no second cart model.'
+}
+
+// [NEW] hiring_request_items
+Table hiring_request_items [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  hiring_request_id bigint [not null]
+  talent_id bigint [not null]
+  replaces_item_id bigint [unique]
+  reference varchar(32) [not null, unique]
+  job_title_id bigint [not null]
+  contract_type_version_id bigint [not null]
+  interview_required boolean [not null]
+  status varchar(32) [not null, default: 'draft', note: 'draft | awaiting_response | negotiating | interview_scheduling | interview_scheduled | awaiting_decisions | accepted | ready_for_contract | contracted | rejected | cancelled | on_hold | replaced']
+  resume_status varchar(32) [note: 'Saved pre-hold stage; never resurrect cancelled interviews/offers']
+  active_guard tinyint [note: '1 active, NULL terminal; prevents duplicate active talent in request']
+  accepted_offer_id bigint
+  held_at timestamp
+  cancelled_at timestamp
+  closed_at timestamp
+  last_activity_at timestamp
+  closure_reason_code varchar(64) [note: 'talent_rejected | client_rejected | no_response | cancelled | replaced; separate from actor']
+  version int [not null, default: 1]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (hiring_request_id, talent_id, active_guard) [unique]
+    (hiring_request_id, status)
+    (talent_id, status, created_at)
+  }
+  Note: '[NEW] Figma 3290:38355,3955:51181. Never overwrite the original talent when selecting a replacement. Same-request replacements form a chain.'
+}
+
+// [NEW] hiring_offers
+Table hiring_offers [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  request_item_id bigint [not null]
+  version_number int [not null]
+  parent_offer_id bigint
+  origin_party varchar(16) [not null, note: 'client | talent']
+  created_by_user_id bigint [not null]
+  on_behalf_of_user_id bigint
+  salary_amount decimal(18,4) [not null]
+  currency_id bigint [not null]
+  salary_period varchar(16) [not null, default: 'month']
+  work_type varchar(32) [not null]
+  work_mode varchar(32) [not null]
+  notice_period_days smallint
+  contract_duration_months smallint
+  proposed_start_date date
+  work_schedule json [not null, note: 'C06: weekdays, local times or daily hours, timezone, hybrid onsite days, location']
+  message text
+  status varchar(16) [not null, default: 'draft', note: 'draft | sent | accepted | rejected | superseded | withdrawn | expired']
+  sent_at timestamp
+  response_due_at timestamp
+  responded_at timestamp
+  responded_by_user_id bigint
+  response_on_behalf_of_user_id bigint
+  response_reason text
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (request_item_id, version_number) [unique]
+    (status, response_due_at)
+  }
+  Note: '[NEW] Versioned offer/counteroffer terms. Figma 3670:31371,3733:40359,4292:113232. Draft terms can change; sent terms immutable.'
+}
+
+// [NEW] hiring_item_decisions
+Table hiring_item_decisions [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  request_item_id bigint [not null]
+  interview_id bigint [not null]
+  party varchar(16) [not null, note: 'client | talent']
+  decision varchar(16) [not null, note: 'continue | reject']
+  decided_by_user_id bigint [not null]
+  on_behalf_of_user_id bigint
+  reason text
+  decided_at timestamp [not null]
+  withdrawn_at timestamp [note: 'Cancellation of decision, 4308:55492; preserve audit']
+  active_guard tinyint [note: '1 current decision, NULL withdrawn']
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (interview_id, party, active_guard) [unique]
+  }
+  Note: '[NEW] Independent client/talent post-interview choices. Figma 4032:56278/57814/58772/61781; admin acts on behalf without hiding actual actor.'
+}
+
+// [NEW] replacement_candidates
+Table replacement_candidates [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  original_item_id bigint [not null]
+  talent_id bigint [not null]
+  proposed_by_admin_id bigint
+  match_score decimal(5,2)
+  match_reasons json
+  status varchar(32) [not null, note: 'suggested | contacted | available | unavailable | presented | accepted | rejected']
+  contacted_at timestamp
+  contact_note text
+  selected_item_id bigint [unique]
+  decided_by_user_id bigint
+  decided_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (original_item_id, talent_id) [unique]
+  }
+  Note: '[NEW] Suggested candidates and contact/approval status; selecting one creates a new request item. 3411:21862 and 4263:58209.'
+}
+
+// [PROPOSED] candidate_invitations
+Table candidate_invitations [headercolor: #f3e8ff] {
+  id bigint [pk, increment]
+  hiring_request_id bigint [not null]
+  email varchar(255) [not null]
+  invited_by_member_id bigint [not null]
+  token_hash char(64) [not null, unique]
+  expires_at timestamp [not null]
+  status varchar(16) [not null, note: 'pending | accepted | expired | revoked']
+  talent_id bigint
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (hiring_request_id, email) [unique]
+  }
+  Note: '[PROPOSED] Invite candidate button at 3730:38377; onboarding/conversion not designed, D15. Never auto-approve invited talent.'
+}
+
+// [NEW] interviews
+Table interviews [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  application_id bigint
+  request_item_id bigint
+  round_number smallint [not null]
+  category varchar(32) [not null, note: 'hr | technical | general | final | behavioral | panel | group | phone | portfolio | other']
+  session_status varchar(32) [not null, note: 'awaiting_slots | selecting_slot | scheduled | ready | started | completed | no_show | cancelled']
+  selected_slot_id bigint [unique]
+  scheduled_start_at timestamp
+  scheduled_end_at timestamp
+  actual_start_at timestamp
+  actual_end_at timestamp
+  decision_due_at timestamp [note: 'Hiring decisions: snapshot configured 1-day period, not a hard-coded UI sample']
+  created_by_admin_id bigint [not null]
+  notes_internal text
+  completed_by_user_id bigint
+  version int [not null, default: 1]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (application_id, round_number) [unique]
+    (request_item_id, round_number) [unique]
+    (session_status, scheduled_start_at)
+  }
+  Note: '[NEW] Shared scheduling engine, two explicit contexts. Exactly ONE of application_id/request_item_id is non-null (CHECK). Each row is a logical interview round; reschedules are scheduling rounds below.'
+}
+
+// [NEW] interview_participants
+Table interview_participants [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  interview_id bigint [not null]
+  user_id bigint [not null]
+  participant_role varchar(16) [not null, note: 'interviewer | talent | client']
+  attendance varchar(16) [not null, default: 'unknown', note: 'unknown | attended | no_show | excused']
+  joined_at timestamp
+  left_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (interview_id, user_id) [unique]
+    (user_id, interview_id)
+  }
+  Note: '[NEW] One/multiple interviewers and talent/client attendees. Actual attendance distinct from booking choice.'
+}
+
+// [NEW] interview_scheduling_rounds
+Table interview_scheduling_rounds [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  interview_id bigint [not null]
+  sequence_number int [not null]
+  scheduling_mode varchar(16) [not null, note: 'manual | automatic']
+  generation_config json [note: 'DOC: date range, weekdays, available hours, timezone, duration, buffer, max slots']
+  policy_snapshot json [not null, note: 'Attempt/cancellation limits and response deadline policy used for this round']
+  status varchar(32) [not null, note: 'draft | offered | selected | rejected_all | expired | cancelled']
+  created_by_admin_id bigint [not null]
+  published_at timestamp
+  selection_due_at timestamp
+  closed_at timestamp
+  reason text
+  initiated_by_user_id bigint
+  quota_party varchar(16) [note: 'talent | client | admin | system; snapshot quota responsibility']
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (interview_id, sequence_number) [unique]
+    (status, selection_due_at)
+  }
+  Note: '[NEW] Every published set of available slots. Talent reschedule quota counts party-caused events only; admin cancellation does not consume it.'
+}
+
+// [NEW] interview_slots
+Table interview_slots [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  scheduling_round_id bigint [not null]
+  starts_at timestamp [not null]
+  ends_at timestamp [not null]
+  timezone varchar(64) [not null]
+  mode varchar(16) [not null, note: 'online | offline']
+  meeting_provider varchar(64)
+  meeting_url text
+  meeting_access_encrypted text [note: 'Optional meeting ID/passcode; never expose before authorized joining']
+  location_address text
+  location_map_url varchar(2048)
+  status varchar(32) [not null, default: 'available', note: 'available | selected | expired | cancelled | rejected_by_talent']
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (scheduling_round_id, starts_at, ends_at) [unique]
+    (starts_at, ends_at)
+  }
+  Note: '[NEW] Online/offline properties belong to each slot; Figma allows different days/locations per choice. selected_slot must belong to same interview.'
+}
+
+// [NEW] interview_slot_responses
+Table interview_slot_responses [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  slot_id bigint [not null]
+  user_id bigint [not null]
+  response varchar(16) [not null, note: 'preferred | accepted | declined']
+  responded_at timestamp [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (slot_id, user_id) [unique]
+  }
+  Note: '[NEW] Party selections/preferences permit a common client/talent slot; exact selection protocol D06. One confirmed slot chosen transactionally.'
+}
+
+// [NEW] interview_reschedule_requests
+Table interview_reschedule_requests [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  interview_id bigint [not null]
+  original_slot_id bigint [not null]
+  requested_by_user_id bigint [not null]
+  reason text [not null]
+  proposed_start_at timestamp
+  proposed_end_at timestamp
+  proposed_timezone varchar(64)
+  status varchar(16) [not null, default: 'pending', note: 'pending | approved | declined | withdrawn']
+  reviewed_by_admin_id bigint
+  reviewed_at timestamp
+  review_note text
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (interview_id, status)
+  }
+  Note: '[NEW] 4315:68038 / 4315:68393. Talent UI requires reason; admin screen includes proposed time; optional until collected.'
+}
+
+// [NEW] evaluation_criteria
+Table evaluation_criteria [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  key varchar(100) [not null, unique]
+  name_en varchar(255) [not null]
+  name_ar varchar(255)
+  default_weight decimal(5,2)
+  is_active boolean [not null, default: true]
+  display_order smallint [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[NEW] Figma four criteria rated 1-5. DOC six criteria/weights is not authoritative; configurable catalog, seed only approved criteria.'
+}
+
+// [NEW] talent_evaluations
+Table talent_evaluations [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  application_id bigint [not null]
+  interview_id bigint
+  stage_key varchar(64) [not null, note: 'profile or interview:<id>; matches interview_id when set']
+  version_number int [not null]
+  evaluator_admin_id bigint [not null]
+  status varchar(16) [not null, note: 'draft | submitted | superseded']
+  overall_score decimal(5,2)
+  recommended_salary_min decimal(18,4)
+  recommended_salary_max decimal(18,4)
+  currency_id bigint
+  salary_period varchar(16) [note: 'month | year; UI currently conflicts, D08']
+  hr_report text
+  technical_report text
+  psychology_report text
+  final_feedback text
+  submitted_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (application_id, stage_key, version_number) [unique]
+  }
+  Note: '[NEW] 1008:13597,1030:9753,1045:17994. Immutable submitted revisions; evaluation is not application decision. Internal fields never sold directly.'
+}
+
+// [NEW] evaluation_scores
+Table evaluation_scores [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  evaluation_id bigint [not null]
+  criterion_id bigint [not null]
+  label_snapshot varchar(255) [not null]
+  weight decimal(5,2) [not null]
+  rating tinyint [not null]
+  comment text
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (evaluation_id, criterion_id) [unique]
+  }
+  Note: '[NEW] Snapshot criterion label and weight so changing catalog does not change historical score. rating 1..5; score 0..100; weights sum=100 when submitted.'
+}
+
+// [NEW] evaluation_tips
+Table evaluation_tips [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  evaluation_id bigint [not null]
+  title varchar(255) [not null]
+  description text [not null]
+  priority varchar(16) [not null, note: 'low | medium | high']
+  display_order smallint [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[NEW] Named tips with priority and order, Figma 1008:13597.'
+}
+
+// [NEW] expert_reports
+Table expert_reports [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  talent_id bigint [not null]
+  application_id bigint [not null]
+  evaluation_id bigint
+  audience varchar(16) [not null, note: 'talent | client']
+  kind varchar(32) [not null, note: 'profile_review | rejection_feedback | hiring_opinion']
+  version_number int [not null]
+  status varchar(16) [not null, note: 'draft | published | withdrawn']
+  strengths text
+  improvement_areas text
+  final_feedback text
+  published_content json [note: 'Allowlisted score breakdown, tips, CV review, salary analysis; excludes internal/private notes']
+  overall_score decimal(5,2)
+  rank_percentile decimal(5,2)
+  rank_population int
+  ranking_as_of timestamp
+  ranking_method varchar(255)
+  published_at timestamp
+  published_by_admin_id bigint
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (application_id, audience, kind, version_number) [unique]
+  }
+  Note: '[NEW] Curated audience-specific publication, not unrestricted exposure of internal evaluations. Figma 3098:15273 / 3260:27929.'
+}
+
+// [NEW] talent_account_warnings
+Table talent_account_warnings [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  talent_id bigint [not null]
+  offer_id bigint [not null]
+  category varchar(32) [not null, note: 'no_response']
+  issued_by_admin_id bigint [not null]
+  reason text [not null]
+  policy_snapshot json [not null]
+  issued_at timestamp [not null]
+  expires_at timestamp
+  revoked_at timestamp
+  revoked_by_admin_id bigint
+  revocation_reason text
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (offer_id, category) [unique]
+    (talent_id, revoked_at, expires_at)
+  }
+  Note: '[NEW] Figma 3670:34090 and 4292:111785: admin no-response closure issues a warning. Warnings are not blacklist entries; suspension threshold is policy, not the sample remaining=1.'
+}
+
+// [NEW] help_requests
+Table help_requests [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  reference varchar(32) [not null, unique]
+  workspace_id bigint
+  created_by_user_id bigint
+  source varchar(16) [not null, note: 'public | workspace']
+  contact_name varchar(255) [not null]
+  contact_email varchar(255)
+  contact_phone varchar(32)
+  country_id bigint
+  preferred_contact varchar(16) [not null, note: 'email | whatsapp | phone']
+  help_type varchar(64) [not null]
+  title varchar(255)
+  description text
+  assigned_admin_id bigint
+  status varchar(16) [not null, default: 'new', note: 'new | in_progress | closed']
+  started_at timestamp
+  closed_at timestamp
+  closed_by_admin_id bigint
+  closure_outcome varchar(32) [note: 'hiring_request_created | clarified | issue_identified']
+  resolution_details text
+  linked_hiring_request_id bigint
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (assigned_admin_id, status, created_at)
+    (workspace_id, status)
+  }
+  Note: '[NEW] 3884:35731,3921:46209,3941:42237. Also handles public hiring support with nullable workspace and captured contact details.'
+}
+
+// [NEW] job_postings
+Table job_postings [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  professional_field_id bigint [not null]
+  job_title_id bigint
+  title varchar(255) [not null, note: 'Public role title can be free text']
+  slug varchar(255) [not null, unique]
+  summary text [not null]
+  about_role text [not null]
+  work_type varchar(32) [not null]
+  work_mode varchar(32) [not null]
+  seniority_level varchar(32)
+  country_id bigint
+  city_id bigint
+  department varchar(255)
+  status varchar(16) [not null, default: 'draft', note: 'draft | published | closed | archived']
+  published_at timestamp
+  closed_at timestamp
+  created_by_admin_id bigint [not null]
+  deleted_at timestamp [note: 'Archive form with submissions; D09']
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (status, professional_field_id, published_at)
+  }
+  Note: '[NEW] 4541:62666 / 4528:95530. Qader public openings; workspace ownership not evidenced. Do not use jobs (Laravel queue).'
+}
+
+// [NEW] job_posting_sections
+Table job_posting_sections [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  job_posting_id bigint [not null]
+  section varchar(32) [not null, note: 'responsibility | requirement | qualification | benefit']
+  content text [not null]
+  display_order smallint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (job_posting_id, section, display_order) [unique]
+  }
+  Note: '[NEW] Ordered public responsibilities, requirements, what-we-look-for and optional benefits.'
+}
+
+// [NEW] job_posting_skills
+Table job_posting_skills [headercolor: #dcfce7] {
+  job_posting_id bigint [not null]
+  skill_id bigint [not null]
+  indexes {
+    (job_posting_id, skill_id) [pk]
+  }
+  Note: '[NEW] Searchable skills on public job cards.'
+}
+
+// [NEW] job_question_catalog
+Table job_question_catalog [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  key varchar(100) [not null, unique]
+  professional_field_id bigint
+  label varchar(255) [not null]
+  prompt text
+  input_type varchar(32) [not null, note: 'text | textarea | number | select | multiselect | url | file | date']
+  validation_rules json [note: 'Whitelisted rules only; never executable rule strings from users']
+  options json [note: 'Versioned key/label pairs copied into form fields']
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[NEW] 4549:65134 Choose existing fields. Separate from onboarding registry. No freeform question creation required by current UI.'
+}
+
+// [NEW] job_forms
+Table job_forms [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  job_posting_id bigint [not null, unique]
+  title varchar(255) [not null]
+  description text
+  public_token varchar(100) [not null, unique]
+  is_active boolean [not null, default: false]
+  created_by_admin_id bigint [not null]
+  deleted_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  Note: '[NEW] One versioned form per job; copy action creates new form/posting identities, not duplicated submissions.'
+}
+
+// [NEW] job_form_versions
+Table job_form_versions [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  job_form_id bigint [not null]
+  version_number int [not null]
+  status varchar(16) [not null, note: 'draft | published | retired']
+  identity_fields_snapshot json [not null, note: 'Exactly four fixed required fields: name,email,mobile,job_title; title server-filled']
+  published_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (job_form_id, version_number) [unique]
+  }
+  Note: '[NEW] Immutable when published; old submissions render exact historical fields and job identity.'
+}
+
+// [NEW] job_form_fields
+Table job_form_fields [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  form_version_id bigint [not null]
+  catalog_question_id bigint [not null]
+  field_key varchar(100) [not null]
+  label varchar(255) [not null]
+  prompt text
+  input_type varchar(32) [not null]
+  is_required boolean [not null, default: false]
+  validation_rules json
+  options json
+  display_order smallint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (form_version_id, field_key) [unique]
+    (form_version_id, display_order) [unique]
+  }
+  Note: '[NEW] Selected additional questions; snapshots retain labels/types/options despite catalog changes.'
+}
+
+// [NEW] job_form_submissions
+Table job_form_submissions [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  form_version_id bigint [not null]
+  applicant_user_id bigint
+  applicant_name varchar(255) [not null]
+  email varchar(255) [not null]
+  mobile_number varchar(32) [not null]
+  job_title_snapshot varchar(255) [not null]
+  status varchar(32) [not null, default: 'received', note: 'received | reviewed | converted | archived']
+  submission_key uuid [not null, unique, note: 'Idempotency key; email alone is not unique']
+  consent_at timestamp [not null]
+  submitted_at timestamp [not null]
+  converted_talent_id bigint
+  converted_application_id bigint
+  converted_by_admin_id bigint
+  converted_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (form_version_id, submitted_at)
+    email
+  }
+  Note: '[NEW] Guest submissions permitted by public Figma form. Not automatically a vetted talent. Start Hiring Process conversion requires D14.'
+}
+
+// [NEW] job_form_answers
+Table job_form_answers [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  submission_id bigint [not null]
+  form_field_id bigint [not null]
+  value json
+  media_id bigint
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (submission_id, form_field_id) [unique]
+  }
+  Note: '[NEW] Submission and field must share a form version. Typed JSON value; selected values must exist in frozen options. File answers use attached media.'
+}
+
+// [PROPOSED] saved_job_postings
+Table saved_job_postings [headercolor: #f3e8ff] {
+  user_id bigint [not null]
+  job_posting_id bigint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (user_id, job_posting_id) [pk]
+  }
+  Note: '[PROPOSED] Save Job is visible at 4528:95530; logged-in persistence proposed, guest behavior unspecified.'
+}
+
+// [NEW] currency_exchange_rates
+Table currency_exchange_rates [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  base_currency_id bigint [not null]
+  currency_id bigint [not null]
+  rate_to_base decimal(24,12) [not null]
+  source varchar(64) [not null]
+  effective_at timestamp [not null]
+  fetched_at timestamp [not null]
+  created_by_admin_id bigint
+  indexes {
+    (base_currency_id, currency_id, effective_at) [unique]
+  }
+  Note: '[NEW] DOC architecture/08 + Flow01. Append-only historical rates; 1 currency unit = rate_to_base base units. No provider integration implied.'
+}
+
+// [NEW] currency_conversion_quotes
+Table currency_conversion_quotes [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  source_currency_id bigint [not null]
+  target_currency_id bigint [not null]
+  source_rate_id bigint [not null]
+  target_rate_id bigint [not null]
+  effective_rate decimal(24,12) [not null]
+  original_amount decimal(18,4) [not null]
+  converted_amount decimal(18,4) [not null]
+  quoted_at timestamp [not null]
+  expires_at timestamp
+  Note: '[NEW] Immutable issued conversion quote: even display conversions return quote ID/rate snapshot. Retention for uncommitted quotes is D12; financial quotes retained.'
+}
+
+// [NEW] invoices
+Table invoices [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  reference varchar(32) [not null, unique]
+  workspace_id bigint
+  payer_user_id bigint [not null]
+  hiring_request_id bigint
+  currency_id bigint [not null]
+  status varchar(32) [not null, default: 'draft', note: 'draft | pending_fees | issued | partially_paid | paid | void | refunded']
+  fee_status varchar(16) [not null, default: 'pending', note: 'pending | confirmed | not_applicable']
+  salary_subtotal decimal(18,4) [not null, default: 0, note: 'Informational including direct-placement salary references']
+  subtotal decimal(18,4)
+  fees_total decimal(18,4)
+  tax_total decimal(18,4)
+  total_due decimal(18,4) [note: 'NULL until final fee confirmation; never invented sample totals']
+  salary_confirmed_by_user_id bigint
+  salary_confirmed_at timestamp
+  final_confirmed_by_user_id bigint
+  final_confirmed_at timestamp
+  issued_at timestamp
+  due_at timestamp
+  paid_at timestamp
+  period_start date
+  period_end date
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (workspace_id, status, created_at)
+    (payer_user_id, created_at)
+  }
+  Note: '[NEW] A payment batch is a draft invoice with item lines. Figma 4362:57196: salary confirmation is not settlement and fees may be unknown.'
+}
+
+// [NEW] invoice_lines
+Table invoice_lines [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  invoice_id bigint [not null]
+  request_item_id bigint
+  contract_id bigint
+  subscription_id bigint
+  line_type varchar(32) [not null, note: 'managed_salary | salary_reference | management_fee | placement_fee | subscription | premium_service | tax | adjustment']
+  description varchar(255) [not null]
+  quantity decimal(12,4) [not null, default: 1]
+  unit_amount decimal(18,4)
+  line_total decimal(18,4)
+  included_in_total boolean [not null, default: true]
+  pricing_snapshot json [note: 'Rule/version, basis, rate, amounts, rounding, benefits/terms where needed']
+  conversion_quote_id bigint
+  display_order smallint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (invoice_id, display_order) [unique]
+  }
+  Note: '[NEW] Immutable issued lines and fee snapshots. Direct placement salary_reference is excluded from amount due to Qader; managed salary is collectable.'
+}
+
+// [NEW] payments
+Table payments [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  invoice_id bigint [not null]
+  payer_user_id bigint [not null]
+  currency_id bigint [not null]
+  amount decimal(18,4) [not null]
+  method varchar(32) [not null, note: 'bank_transfer | gateway']
+  status varchar(32) [not null, default: 'pending', note: 'pending | receipt_submitted | under_review | succeeded | rejected | failed | partially_refunded | refunded']
+  idempotency_key uuid [not null, unique]
+  provider varchar(64)
+  provider_reference varchar(255)
+  bank_details_snapshot json [note: 'Beneficiary/account details shown when payment created; no Figma sample bank details seeded']
+  receipt_media_id bigint
+  submitted_at timestamp
+  verified_by_admin_id bigint
+  verified_at timestamp
+  verification_note text
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (provider, provider_reference) [unique]
+    (invoice_id, status)
+  }
+  Note: '[NEW] Bank transfers with manual verification first. Multiple partial attempts per invoice. Receipt upload alone never sets succeeded. 4457:77401.'
+}
+
+// [PROPOSED] payment_refunds
+Table payment_refunds [headercolor: #f3e8ff] {
+  id bigint [pk, increment]
+  payment_id bigint [not null]
+  amount decimal(18,4) [not null]
+  reason text [not null]
+  status varchar(16) [not null, note: 'requested | approved | succeeded | failed']
+  idempotency_key uuid [not null, unique]
+  approved_by_admin_id bigint
+  refunded_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  Note: '[PROPOSED] Refund support required if premium guarantee in 3089:16895 is approved. Amount never exceeds unrefunded settled payment.'
+}
+
+// [NEW] service_products
+Table service_products [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  code varchar(64) [not null, unique]
+  audience varchar(16) [not null, note: 'talent | client']
+  name varchar(255) [not null]
+  amount decimal(18,4) [not null]
+  currency_id bigint [not null]
+  benefits json [not null, note: 'Versioned snapshot copied to order; early reapply policy not automatic']
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[NEW] Profile review, rejection feedback/early reapply, client expert opinion. UI sample prices differ; configuration only.'
+}
+
+// [NEW] service_orders
+Table service_orders [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  product_id bigint [not null]
+  buyer_user_id bigint [not null]
+  workspace_id bigint
+  talent_id bigint [not null]
+  application_id bigint [not null]
+  invoice_id bigint [not null, unique]
+  product_snapshot json [not null]
+  status varchar(32) [not null, note: 'awaiting_payment | paid | in_progress | fulfilled | cancelled | refunded']
+  fulfillment_due_at timestamp
+  fulfilled_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (workspace_id, talent_id, status)
+    (buyer_user_id, status)
+  }
+  Note: '[NEW] Invoice settlement buys fulfillment/access, not a talent approval. Scope proposed: talent user for own report; workspace for client opinion (D10).'
+}
+
+// [NEW] expert_report_access
+Table expert_report_access [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  service_order_id bigint [not null]
+  report_id bigint [not null]
+  granted_at timestamp [not null]
+  expires_at timestamp
+  revoked_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (service_order_id, report_id) [unique]
+  }
+  Note: '[NEW] Entitlement granted once payment succeeds and report is published. Private evaluation access is never implied. Refund revocation policy D10.'
+}
+
+// [DOC] subscription_plans
+Table subscription_plans [headercolor: #e5e7eb] {
+  id bigint [pk, increment]
+  code varchar(64) [not null, unique]
+  name varchar(255) [not null]
+  amount decimal(18,4) [not null]
+  currency_id bigint [not null]
+  interval_unit varchar(16) [not null]
+  interval_count smallint [not null]
+  entitlements json [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[DOC] BRD/PRD/SRS require access subscriptions; checkout/gating not confirmed by active web screens. D11 before implementation.'
+}
+
+// [DOC] workspace_subscriptions
+Table workspace_subscriptions [headercolor: #e5e7eb] {
+  id bigint [pk, increment]
+  workspace_id bigint [not null]
+  plan_id bigint [not null]
+  status varchar(16) [not null, note: 'pending | active | expired | cancelled']
+  plan_snapshot json [not null]
+  starts_at timestamp [not null]
+  ends_at timestamp [not null]
+  cancelled_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (workspace_id, status, ends_at)
+  }
+  Note: '[DOC] Proposed workspace-level access subscription; period/plan snapshot preserves paid entitlements. No global users.is_subscribed flag.'
+}
+
+// [NEW] contracts
+Table contracts [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  reference varchar(32) [not null, unique]
+  workspace_id bigint [not null]
+  request_item_id bigint [not null, unique]
+  accepted_offer_id bigint [not null]
+  contract_type_version_id bigint [not null]
+  talent_id bigint [not null]
+  status varchar(32) [not null, note: 'draft | awaiting_signatures | signed | active | completed | terminated | cancelled']
+  final_salary decimal(18,4) [not null]
+  currency_id bigint [not null]
+  salary_period varchar(16) [not null, default: 'month']
+  terms_snapshot json [not null, note: 'Accepted work schedule, pricing rule/version, benefits, agreed terms']
+  start_date date [not null]
+  end_date date
+  executed_at timestamp
+  terminated_at timestamp
+  termination_reason text
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (workspace_id, status, start_date)
+    (talent_id, status)
+  }
+  Note: '[NEW] Figma contracted states + BRD contract documents. One contract per successful item; company and talent documents are children. Complete signing/renewal UI not yet evidenced.'
+}
+
+// [NEW] contract_documents
+Table contract_documents [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  contract_id bigint [not null]
+  document_type varchar(16) [not null, note: 'company | talent | amendment']
+  version_number int [not null]
+  media_id bigint [not null]
+  sha256 char(64) [not null]
+  status varchar(16) [not null, note: 'draft | issued | executed | superseded']
+  issued_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (contract_id, document_type, version_number) [unique]
+  }
+  Note: '[NEW] Versioned private media; replacing a document invalidates old pending signatures, never old evidence.'
+}
+
+// [NEW] contract_signatures
+Table contract_signatures [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  document_id bigint [not null]
+  signer_user_id bigint [not null]
+  party varchar(16) [not null, note: 'qader | client | talent']
+  status varchar(16) [not null, note: 'pending | signed | declined']
+  signed_at timestamp
+  signature_method varchar(32)
+  evidence_media_id bigint
+  provider_reference varchar(255)
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (document_id, signer_user_id, party) [unique]
+  }
+  Note: '[NEW] Signature acknowledgment tied to exact document version/hash. No particular e-signature provider assumed.'
+}
+
+// [NEW] engagements
+Table engagements [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  contract_id bigint [not null, unique]
+  status varchar(32) [not null, note: 'waiting_to_start | active | on_hold | ended | cancelled']
+  actual_start_date date
+  actual_end_date date
+  end_reason text
+  created_at timestamp
+  updated_at timestamp
+  Note: '[NEW] Hired Talents and waiting-to-start, 3621:28756/3649:29356/4310:66763. Hiring a talent is not workspace membership.'
+}
+
+// [DEFERRED] workspace_service_provisions
+Table workspace_service_provisions [headercolor: #e5e7eb] {
+  id bigint [pk, increment]
+  workspace_id bigint [not null]
+  contract_id bigint [not null]
+  service_code varchar(64) [not null]
+  external_tenant_id varchar(255)
+  portal_url varchar(2048)
+  status varchar(16) [not null, note: 'pending | provisioning | active | suspended | failed | revoked']
+  provisioned_at timestamp
+  revoked_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (workspace_id, contract_id, service_code) [unique]
+  }
+  Note: '[DEFERRED] Methodology describes separate SaaS; web only nav/cards. Proposed handoff boundary, not a full project/task/payroll/attendance model.'
+}
+
+// [NEW] internal_notes
+Table internal_notes [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  application_id bigint
+  help_request_id bigint
+  request_item_id bigint
+  author_admin_id bigint [not null]
+  body text [not null]
+  edited_at timestamp
+  deleted_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (application_id, created_at)
+    (help_request_id, created_at)
+    (request_item_id, created_at)
+  }
+  Note: '[NEW] Applications/help requests/hiring operations. Exactly one target FK non-null. Internal-only; edited notes also produce audit events.'
+}
+
+// [NEW] workflow_events
+Table workflow_events [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  aggregate_type varchar(64) [not null]
+  aggregate_id bigint [not null]
+  workspace_id bigint
+  actor_user_id bigint
+  actor_kind varchar(16) [not null, note: 'user | system']
+  on_behalf_of_user_id bigint
+  event_type varchar(100) [not null, note: 'status_changed, reviewer_assigned, reapply_changed, hold, resumed, rejected_on_behalf, decision_withdrawn, etc.']
+  from_status varchar(32)
+  to_status varchar(32)
+  reason text
+  changes json [note: 'Only allowlisted changed fields; no passwords/tokens/payment secrets']
+  correlation_id uuid
+  deduplication_key varchar(255) [unique]
+  occurred_at timestamp [not null]
+  indexes {
+    (aggregate_type, aggregate_id, occurred_at)
+    (workspace_id, occurred_at)
+  }
+  Note: '[NEW] Append-only business audit with actual actor and represented party. Polymorphic target is deliberate exception; target validation/retention in service. Existing api_key events are insufficient.'
+}
+
+// [NEW] notifications
+Table notifications [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  workspace_id bigint
+  workflow_event_id bigint
+  type varchar(100) [not null]
+  safe_payload json [not null]
+  read_at timestamp
+  deduplication_key varchar(255) [not null, unique]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (user_id, read_at, created_at)
+  }
+  Note: '[NEW] In-app bell and email delivery. Durable user notification; workflow event created in same transaction with recipient messages.'
+}
+
+// [NEW] notification_deliveries
+Table notification_deliveries [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  notification_id bigint [not null]
+  channel varchar(16) [not null, note: 'database | email']
+  status varchar(16) [not null, default: 'pending', note: 'pending | processing | sent | failed']
+  attempt_count smallint [not null, default: 0]
+  next_attempt_at timestamp
+  sent_at timestamp
+  last_error text
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (notification_id, channel) [unique]
+    (status, next_attempt_at)
+  }
+  Note: '[NEW] After-commit dispatch/retry record; acts as durable outbox. Same notification may have in-app and email channels; no email sent by schema task.'
+}
+
+// [PROPOSED] workflow_policy_versions
+Table workflow_policy_versions [headercolor: #f3e8ff] {
+  id bigint [pk, increment]
+  key varchar(100) [not null]
+  version_number int [not null]
+  value json [not null]
+  effective_at timestamp [not null]
+  created_by_admin_id bigint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (key, version_number) [unique]
+  }
+  Note: '[PROPOSED] DOC operational configuration: scheduling attempts, talent cancellations, response windows, reapply duration, join-before minutes. Publish immutable policy snapshots.'
+}
+
+// [PROPOSED] newsletter_subscribers
+Table newsletter_subscribers [headercolor: #f3e8ff] {
+  id bigint [pk, increment]
+  email varchar(255) [not null, unique]
+  status varchar(16) [not null, note: 'pending | subscribed | unsubscribed']
+  consented_at timestamp
+  confirmed_at timestamp
+  unsubscribed_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  Note: '[PROPOSED] Public Subscribe form visible; double opt-in/consent policy not defined. No marketing CMS inferred from static landing copy.'
+}
+
+// [KEEP] password_reset_tokens
+Table password_reset_tokens [headercolor: #dbeafe] {
+  email varchar(255) [not null]
+  token varchar(255) [not null]
+  created_at timestamp
+  Note: '[KEEP] Existing table has neither primary key nor portal column. Current auth uses OTP/token flow. If Laravel broker is activated, resolve portal scoping first.'
+}
+
+// [KEEP] sessions
+Table sessions [headercolor: #dbeafe] {
+  id varchar(255) [pk]
+  user_id bigint
+  ip_address varchar(45)
+  user_agent text
+  payload longtext [not null]
+  last_activity int [not null]
+  indexes {
+    user_id
+    last_activity
+  }
+  Note: '[KEEP] Existing user_id is indexed but not constrained by a physical FK.'
+}
+
+// [KEEP] personal_access_tokens
+Table personal_access_tokens [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  tokenable_type varchar(255) [not null]
+  tokenable_id bigint [not null]
+  name text [not null]
+  token char(64) [not null, unique]
+  abilities text
+  last_used_at timestamp
+  expires_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (tokenable_type, tokenable_id)
+    expires_at
+  }
+  Note: '[KEEP] Existing Sanctum polymorphic access/refresh/verification tokens. No new auth tokens table.'
+}
+
+// [KEEP] api_keys
+Table api_keys [headercolor: #dbeafe] {
+  id int [pk, increment]
+  name varchar(255) [not null]
+  key varchar(64) [not null]
+  active boolean [not null, default: true]
+  deleted_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    name
+    key
+  }
+  Note: '[KEEP] Existing API integration keys; int IDs, not bigint.'
+}
+
+// [KEEP] api_key_access_events
+Table api_key_access_events [headercolor: #dbeafe] {
+  id int [pk, increment]
+  api_key_id int [not null]
+  ip_address varchar(45) [not null]
+  url text [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: '[KEEP] Existing technical audit, not business workflow history.'
+}
+
+// [KEEP] api_key_admin_events
+Table api_key_admin_events [headercolor: #dbeafe] {
+  id int [pk, increment]
+  api_key_id int [not null]
+  ip_address varchar(45) [not null]
+  event varchar(255) [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    event
+  }
+  Note: '[KEEP] Existing technical audit, not business workflow history.'
+}
+
+// [KEEP] cache
+Table cache [headercolor: #dbeafe] {
+  key varchar(255) [pk]
+  value mediumtext [not null]
+  expiration bigint [not null]
+  indexes {
+    expiration
+  }
+  Note: '[KEEP] Existing Laravel cache.'
+}
+
+// [KEEP] cache_locks
+Table cache_locks [headercolor: #dbeafe] {
+  key varchar(255) [pk]
+  owner varchar(255) [not null]
+  expiration bigint [not null]
+  indexes {
+    expiration
+  }
+  Note: '[KEEP] Existing Laravel cache lock.'
+}
+
+// [KEEP] jobs
+Table jobs [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  queue varchar(255) [not null]
+  payload longtext [not null]
+  attempts smallint [not null]
+  reserved_at int
+  available_at int [not null]
+  created_at int [not null]
+  indexes {
+    queue
+  }
+  Note: '[KEEP] Existing Laravel queue jobs. Business vacancies use job_postings.'
+}
+
+// [KEEP] job_batches
+Table job_batches [headercolor: #dbeafe] {
+  id varchar(255) [pk]
+  name varchar(255) [not null]
+  total_jobs int [not null]
+  pending_jobs int [not null]
+  failed_jobs int [not null]
+  failed_job_ids longtext [not null]
+  options mediumtext
+  cancelled_at int
+  created_at int [not null]
+  finished_at int
+  Note: '[KEEP] Existing Laravel batches.'
+}
+
+// [KEEP] failed_jobs
+Table failed_jobs [headercolor: #dbeafe] {
+  id bigint [pk, increment]
+  uuid varchar(255) [not null, unique]
+  connection text [not null]
+  queue text [not null]
+  payload longtext [not null]
+  exception longtext [not null]
+  failed_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  indexes {
+    (connection, queue, failed_at)
+  }
+  Note: '[KEEP] Existing Laravel failed jobs.'
+}
+
+// Explicit foreign-key delete policies. Cross-row rules are documented in C01-C10.
+Ref: clients.user_id > users.id [delete: cascade]
+Ref: admins.user_id > users.id [delete: cascade]
+Ref: social_accounts.user_id > users.id [delete: cascade]
+Ref: model_has_permissions.permission_id > permissions.id [delete: cascade]
+Ref: model_has_roles.role_id > roles.id [delete: cascade]
+Ref: role_has_permissions.permission_id > permissions.id [delete: cascade]
+Ref: role_has_permissions.role_id > roles.id [delete: cascade]
+Ref: role_translations.role_id > roles.id [delete: cascade]
+Ref: cities.country_id > countries.id [delete: cascade]
+Ref: country_translations.country_id > countries.id [delete: cascade]
+Ref: city_translations.city_id > cities.id [delete: cascade]
+Ref: language_translations.language_id > languages.id [delete: cascade]
+Ref: currency_translations.currency_id > currencies.id [delete: cascade]
+Ref: professional_field_translations.professional_field_id > professional_fields.id [delete: cascade]
+Ref: job_title_professional_field.job_title_id > job_titles.id [delete: cascade]
+Ref: job_title_professional_field.professional_field_id > professional_fields.id [delete: cascade]
+Ref: professional_field_skill.professional_field_id > professional_fields.id [delete: cascade]
+Ref: professional_field_skill.skill_id > skills.id [delete: cascade]
+Ref: professional_field_tool.professional_field_id > professional_fields.id [delete: cascade]
+Ref: professional_field_tool.tool_id > tools.id [delete: cascade]
+Ref: professional_field_form_field.professional_field_id > professional_fields.id [delete: cascade]
+Ref: professional_field_form_field.professional_form_field_id > professional_form_fields.id [delete: cascade]
+Ref: talents.user_id > users.id [delete: cascade]
+Ref: talents.nationality_country_id > countries.id [delete: set null]
+Ref: talents.residence_country_id > countries.id [delete: set null]
+Ref: talents.residence_city_id > cities.id [delete: set null]
+Ref: talents.professional_field_id > professional_fields.id [delete: set null]
+Ref: talents.job_title_id > job_titles.id [delete: set null]
+Ref: talents.current_currency_id > currencies.id [delete: set null]
+Ref: talents.expected_currency_id > currencies.id [delete: set null]
+Ref: talent_languages.talent_id > talents.id [delete: cascade]
+Ref: talent_languages.language_id > languages.id [delete: restrict]
+Ref: talent_skills.talent_id > talents.id [delete: cascade]
+Ref: talent_skills.skill_id > skills.id [delete: restrict]
+Ref: talent_tools.talent_id > talents.id [delete: cascade]
+Ref: talent_tools.tool_id > tools.id [delete: restrict]
+Ref: talent_experiences.talent_id > talents.id [delete: cascade]
+Ref: talent_projects.talent_id > talents.id [delete: cascade]
+Ref: talent_work_types.talent_id > talents.id [delete: cascade]
+Ref: talent_work_modes.talent_id > talents.id [delete: cascade]
+Ref: talent_applications.talent_id > talents.id [delete: restrict]
+Ref: talent_applications.assigned_admin_id > admins.id [delete: restrict]
+Ref: talent_applications.decided_by_admin_id > admins.id [delete: restrict]
+Ref: talent_blacklist_entries.talent_id > talents.id [delete: restrict]
+Ref: talent_blacklist_entries.application_id > talent_applications.id [delete: restrict]
+Ref: talent_blacklist_entries.blocked_by_admin_id > admins.id [delete: restrict]
+Ref: talent_blacklist_entries.removed_by_admin_id > admins.id [delete: restrict]
+Ref: talent_marketplace_profiles.talent_id > talents.id [delete: restrict]
+Ref: talent_marketplace_profiles.application_id > talent_applications.id [delete: restrict]
+Ref: talent_marketplace_profiles.job_title_id > job_titles.id [delete: restrict]
+Ref: talent_marketplace_profiles.professional_field_id > professional_fields.id [delete: restrict]
+Ref: talent_marketplace_profiles.currency_id > currencies.id [delete: restrict]
+Ref: talent_marketplace_profiles.approved_by_admin_id > admins.id [delete: restrict]
+Ref: marketplace_profile_skills.marketplace_profile_id > talent_marketplace_profiles.id [delete: cascade]
+Ref: marketplace_profile_skills.skill_id > skills.id [delete: restrict]
+Ref: industry_translations.industry_id > industries.id [delete: cascade]
+Ref: marketplace_profile_industries.marketplace_profile_id > talent_marketplace_profiles.id [delete: cascade]
+Ref: marketplace_profile_industries.industry_id > industries.id [delete: restrict]
+Ref: workspaces.owner_client_id > clients.id [delete: restrict]
+Ref: workspaces.industry_id > industries.id [delete: restrict]
+Ref: workspaces.country_id > countries.id [delete: restrict]
+Ref: workspaces.city_id > cities.id [delete: restrict]
+Ref: workspaces.default_currency_id > currencies.id [delete: restrict]
+Ref: workspace_social_links.workspace_id > workspaces.id [delete: cascade]
+Ref: workspace_members.workspace_id > workspaces.id [delete: restrict]
+Ref: workspace_members.client_id > clients.id [delete: restrict]
+Ref: workspace_roles.workspace_id > workspaces.id [delete: restrict]
+Ref: workspace_role_permissions.workspace_role_id > workspace_roles.id [delete: cascade]
+Ref: workspace_role_permissions.permission_id > permissions.id [delete: restrict]
+Ref: workspace_member_roles.workspace_member_id > workspace_members.id [delete: cascade]
+Ref: workspace_member_roles.workspace_role_id > workspace_roles.id [delete: cascade]
+Ref: workspace_invitations.workspace_id > workspaces.id [delete: restrict]
+Ref: workspace_invitations.role_id > workspace_roles.id [delete: restrict]
+Ref: workspace_invitations.invited_by_member_id > workspace_members.id [delete: restrict]
+Ref: workspace_invitations.accepted_by_client_id > clients.id [delete: restrict]
+Ref: contract_type_versions.contract_type_id > contract_types.id [delete: restrict]
+Ref: contract_type_versions.created_by_admin_id > admins.id [delete: restrict]
+Ref: contract_type_benefits.contract_type_version_id > contract_type_versions.id [delete: restrict]
+Ref: contract_fee_rules.contract_type_version_id > contract_type_versions.id [delete: restrict]
+Ref: contract_fee_rules.professional_field_id > professional_fields.id [delete: restrict]
+Ref: contract_fee_rules.fixed_currency_id > currencies.id [delete: restrict]
+Ref: hiring_requests.workspace_id > workspaces.id [delete: restrict]
+Ref: hiring_requests.created_by_member_id > workspace_members.id [delete: restrict]
+Ref: hiring_requests.assigned_admin_id > admins.id [delete: restrict]
+Ref: hiring_requests.currency_id > currencies.id [delete: restrict]
+Ref: hiring_request_items.hiring_request_id > hiring_requests.id [delete: restrict]
+Ref: hiring_request_items.talent_id > talents.id [delete: restrict]
+Ref: hiring_request_items.replaces_item_id > hiring_request_items.id [delete: restrict]
+Ref: hiring_request_items.job_title_id > job_titles.id [delete: restrict]
+Ref: hiring_request_items.contract_type_version_id > contract_type_versions.id [delete: restrict]
+Ref: hiring_request_items.accepted_offer_id > hiring_offers.id [delete: restrict]
+Ref: hiring_offers.request_item_id > hiring_request_items.id [delete: restrict]
+Ref: hiring_offers.parent_offer_id > hiring_offers.id [delete: restrict]
+Ref: hiring_offers.created_by_user_id > users.id [delete: restrict]
+Ref: hiring_offers.on_behalf_of_user_id > users.id [delete: restrict]
+Ref: hiring_offers.currency_id > currencies.id [delete: restrict]
+Ref: hiring_offers.responded_by_user_id > users.id [delete: restrict]
+Ref: hiring_offers.response_on_behalf_of_user_id > users.id [delete: restrict]
+Ref: hiring_item_decisions.request_item_id > hiring_request_items.id [delete: restrict]
+Ref: hiring_item_decisions.interview_id > interviews.id [delete: restrict]
+Ref: hiring_item_decisions.decided_by_user_id > users.id [delete: restrict]
+Ref: hiring_item_decisions.on_behalf_of_user_id > users.id [delete: restrict]
+Ref: replacement_candidates.original_item_id > hiring_request_items.id [delete: restrict]
+Ref: replacement_candidates.talent_id > talents.id [delete: restrict]
+Ref: replacement_candidates.proposed_by_admin_id > admins.id [delete: restrict]
+Ref: replacement_candidates.selected_item_id > hiring_request_items.id [delete: restrict]
+Ref: replacement_candidates.decided_by_user_id > users.id [delete: restrict]
+Ref: candidate_invitations.hiring_request_id > hiring_requests.id [delete: restrict]
+Ref: candidate_invitations.invited_by_member_id > workspace_members.id [delete: restrict]
+Ref: candidate_invitations.talent_id > talents.id [delete: restrict]
+Ref: interviews.application_id > talent_applications.id [delete: restrict]
+Ref: interviews.request_item_id > hiring_request_items.id [delete: restrict]
+Ref: interviews.selected_slot_id > interview_slots.id [delete: restrict]
+Ref: interviews.created_by_admin_id > admins.id [delete: restrict]
+Ref: interviews.completed_by_user_id > users.id [delete: restrict]
+Ref: interview_participants.interview_id > interviews.id [delete: restrict]
+Ref: interview_participants.user_id > users.id [delete: restrict]
+Ref: interview_scheduling_rounds.interview_id > interviews.id [delete: restrict]
+Ref: interview_scheduling_rounds.created_by_admin_id > admins.id [delete: restrict]
+Ref: interview_scheduling_rounds.initiated_by_user_id > users.id [delete: restrict]
+Ref: interview_slots.scheduling_round_id > interview_scheduling_rounds.id [delete: restrict]
+Ref: interview_slot_responses.slot_id > interview_slots.id [delete: restrict]
+Ref: interview_slot_responses.user_id > users.id [delete: restrict]
+Ref: interview_reschedule_requests.interview_id > interviews.id [delete: restrict]
+Ref: interview_reschedule_requests.original_slot_id > interview_slots.id [delete: restrict]
+Ref: interview_reschedule_requests.requested_by_user_id > users.id [delete: restrict]
+Ref: interview_reschedule_requests.reviewed_by_admin_id > admins.id [delete: restrict]
+Ref: talent_evaluations.application_id > talent_applications.id [delete: restrict]
+Ref: talent_evaluations.interview_id > interviews.id [delete: restrict]
+Ref: talent_evaluations.evaluator_admin_id > admins.id [delete: restrict]
+Ref: talent_evaluations.currency_id > currencies.id [delete: restrict]
+Ref: evaluation_scores.evaluation_id > talent_evaluations.id [delete: restrict]
+Ref: evaluation_scores.criterion_id > evaluation_criteria.id [delete: restrict]
+Ref: evaluation_tips.evaluation_id > talent_evaluations.id [delete: restrict]
+Ref: expert_reports.talent_id > talents.id [delete: restrict]
+Ref: expert_reports.application_id > talent_applications.id [delete: restrict]
+Ref: expert_reports.evaluation_id > talent_evaluations.id [delete: restrict]
+Ref: expert_reports.published_by_admin_id > admins.id [delete: restrict]
+Ref: talent_account_warnings.talent_id > talents.id [delete: restrict]
+Ref: talent_account_warnings.offer_id > hiring_offers.id [delete: restrict]
+Ref: talent_account_warnings.issued_by_admin_id > admins.id [delete: restrict]
+Ref: talent_account_warnings.revoked_by_admin_id > admins.id [delete: restrict]
+Ref: help_requests.workspace_id > workspaces.id [delete: restrict]
+Ref: help_requests.created_by_user_id > users.id [delete: restrict]
+Ref: help_requests.country_id > countries.id [delete: restrict]
+Ref: help_requests.assigned_admin_id > admins.id [delete: restrict]
+Ref: help_requests.closed_by_admin_id > admins.id [delete: restrict]
+Ref: help_requests.linked_hiring_request_id > hiring_requests.id [delete: restrict]
+Ref: job_postings.professional_field_id > professional_fields.id [delete: restrict]
+Ref: job_postings.job_title_id > job_titles.id [delete: restrict]
+Ref: job_postings.country_id > countries.id [delete: restrict]
+Ref: job_postings.city_id > cities.id [delete: restrict]
+Ref: job_postings.created_by_admin_id > admins.id [delete: restrict]
+Ref: job_posting_sections.job_posting_id > job_postings.id [delete: cascade]
+Ref: job_posting_skills.job_posting_id > job_postings.id [delete: cascade]
+Ref: job_posting_skills.skill_id > skills.id [delete: restrict]
+Ref: job_question_catalog.professional_field_id > professional_fields.id [delete: restrict]
+Ref: job_forms.job_posting_id > job_postings.id [delete: restrict]
+Ref: job_forms.created_by_admin_id > admins.id [delete: restrict]
+Ref: job_form_versions.job_form_id > job_forms.id [delete: restrict]
+Ref: job_form_fields.form_version_id > job_form_versions.id [delete: restrict]
+Ref: job_form_fields.catalog_question_id > job_question_catalog.id [delete: restrict]
+Ref: job_form_submissions.form_version_id > job_form_versions.id [delete: restrict]
+Ref: job_form_submissions.applicant_user_id > users.id [delete: restrict]
+Ref: job_form_submissions.converted_talent_id > talents.id [delete: restrict]
+Ref: job_form_submissions.converted_application_id > talent_applications.id [delete: restrict]
+Ref: job_form_submissions.converted_by_admin_id > admins.id [delete: restrict]
+Ref: job_form_answers.submission_id > job_form_submissions.id [delete: restrict]
+Ref: job_form_answers.form_field_id > job_form_fields.id [delete: restrict]
+Ref: job_form_answers.media_id > media.id [delete: restrict]
+Ref: saved_job_postings.user_id > users.id [delete: cascade]
+Ref: saved_job_postings.job_posting_id > job_postings.id [delete: cascade]
+Ref: currency_exchange_rates.base_currency_id > currencies.id [delete: restrict]
+Ref: currency_exchange_rates.currency_id > currencies.id [delete: restrict]
+Ref: currency_exchange_rates.created_by_admin_id > admins.id [delete: restrict]
+Ref: currency_conversion_quotes.source_currency_id > currencies.id [delete: restrict]
+Ref: currency_conversion_quotes.target_currency_id > currencies.id [delete: restrict]
+Ref: currency_conversion_quotes.source_rate_id > currency_exchange_rates.id [delete: restrict]
+Ref: currency_conversion_quotes.target_rate_id > currency_exchange_rates.id [delete: restrict]
+Ref: invoices.workspace_id > workspaces.id [delete: restrict]
+Ref: invoices.payer_user_id > users.id [delete: restrict]
+Ref: invoices.hiring_request_id > hiring_requests.id [delete: restrict]
+Ref: invoices.currency_id > currencies.id [delete: restrict]
+Ref: invoices.salary_confirmed_by_user_id > users.id [delete: restrict]
+Ref: invoices.final_confirmed_by_user_id > users.id [delete: restrict]
+Ref: invoice_lines.invoice_id > invoices.id [delete: restrict]
+Ref: invoice_lines.request_item_id > hiring_request_items.id [delete: restrict]
+Ref: invoice_lines.contract_id > contracts.id [delete: restrict]
+Ref: invoice_lines.subscription_id > workspace_subscriptions.id [delete: restrict]
+Ref: invoice_lines.conversion_quote_id > currency_conversion_quotes.id [delete: restrict]
+Ref: payments.invoice_id > invoices.id [delete: restrict]
+Ref: payments.payer_user_id > users.id [delete: restrict]
+Ref: payments.currency_id > currencies.id [delete: restrict]
+Ref: payments.receipt_media_id > media.id [delete: restrict]
+Ref: payments.verified_by_admin_id > admins.id [delete: restrict]
+Ref: payment_refunds.payment_id > payments.id [delete: restrict]
+Ref: payment_refunds.approved_by_admin_id > admins.id [delete: restrict]
+Ref: service_products.currency_id > currencies.id [delete: restrict]
+Ref: service_orders.product_id > service_products.id [delete: restrict]
+Ref: service_orders.buyer_user_id > users.id [delete: restrict]
+Ref: service_orders.workspace_id > workspaces.id [delete: restrict]
+Ref: service_orders.talent_id > talents.id [delete: restrict]
+Ref: service_orders.application_id > talent_applications.id [delete: restrict]
+Ref: service_orders.invoice_id > invoices.id [delete: restrict]
+Ref: expert_report_access.service_order_id > service_orders.id [delete: restrict]
+Ref: expert_report_access.report_id > expert_reports.id [delete: restrict]
+Ref: subscription_plans.currency_id > currencies.id [delete: restrict]
+Ref: workspace_subscriptions.workspace_id > workspaces.id [delete: restrict]
+Ref: workspace_subscriptions.plan_id > subscription_plans.id [delete: restrict]
+Ref: contracts.workspace_id > workspaces.id [delete: restrict]
+Ref: contracts.request_item_id > hiring_request_items.id [delete: restrict]
+Ref: contracts.accepted_offer_id > hiring_offers.id [delete: restrict]
+Ref: contracts.contract_type_version_id > contract_type_versions.id [delete: restrict]
+Ref: contracts.talent_id > talents.id [delete: restrict]
+Ref: contracts.currency_id > currencies.id [delete: restrict]
+Ref: contract_documents.contract_id > contracts.id [delete: restrict]
+Ref: contract_documents.media_id > media.id [delete: restrict]
+Ref: contract_signatures.document_id > contract_documents.id [delete: restrict]
+Ref: contract_signatures.signer_user_id > users.id [delete: restrict]
+Ref: contract_signatures.evidence_media_id > media.id [delete: restrict]
+Ref: engagements.contract_id > contracts.id [delete: restrict]
+Ref: workspace_service_provisions.workspace_id > workspaces.id [delete: restrict]
+Ref: workspace_service_provisions.contract_id > contracts.id [delete: restrict]
+Ref: internal_notes.application_id > talent_applications.id [delete: restrict]
+Ref: internal_notes.help_request_id > help_requests.id [delete: restrict]
+Ref: internal_notes.request_item_id > hiring_request_items.id [delete: restrict]
+Ref: internal_notes.author_admin_id > admins.id [delete: restrict]
+Ref: workflow_events.workspace_id > workspaces.id [delete: restrict]
+Ref: workflow_events.actor_user_id > users.id [delete: restrict]
+Ref: workflow_events.on_behalf_of_user_id > users.id [delete: restrict]
+Ref: notifications.user_id > users.id [delete: restrict]
+Ref: notifications.workspace_id > workspaces.id [delete: restrict]
+Ref: notifications.workflow_event_id > workflow_events.id [delete: restrict]
+Ref: notification_deliveries.notification_id > notifications.id [delete: restrict]
+Ref: workflow_policy_versions.created_by_admin_id > admins.id [delete: restrict]
+Ref: api_key_access_events.api_key_id > api_keys.id [delete: no action]
+Ref: api_key_admin_events.api_key_id > api_keys.id [delete: no action]
+
+TableGroup Identity {
+  users
+  clients
+  admins
+  social_accounts
+}
+
+TableGroup Access {
+  permissions
+  roles
+  model_has_permissions
+  model_has_roles
+  role_has_permissions
+  role_translations
+}
+
+TableGroup Reference {
+  countries
+  languages
+  currencies
+  cities
+  professional_fields
+  country_translations
+  city_translations
+  language_translations
+  currency_translations
+  professional_field_translations
+  job_titles
+  skills
+  tools
+  job_title_professional_field
+  professional_field_skill
+  professional_field_tool
+  professional_form_fields
+  professional_field_form_field
+  industries
+  industry_translations
+}
+
+TableGroup Talent {
+  talents
+  talent_languages
+  talent_skills
+  talent_tools
+  talent_experiences
+  talent_projects
+  talent_work_types
+  talent_work_modes
+}
+
+TableGroup Infrastructure {
+  media
+  password_reset_tokens
+  sessions
+  personal_access_tokens
+  api_keys
+  api_key_access_events
+  api_key_admin_events
+  cache
+  cache_locks
+  jobs
+  job_batches
+  failed_jobs
+}
+
+TableGroup Applications {
+  talent_applications
+  talent_blacklist_entries
+  talent_marketplace_profiles
+  marketplace_profile_skills
+  marketplace_profile_industries
+  talent_account_warnings
+}
+
+TableGroup Workspace {
+  workspaces
+  workspace_social_links
+  workspace_members
+  workspace_roles
+  workspace_role_permissions
+  workspace_member_roles
+  workspace_invitations
+}
+
+TableGroup Commercial {
+  contract_types
+  contract_type_versions
+  contract_type_benefits
+  contract_fee_rules
+}
+
+TableGroup Hiring {
+  hiring_requests
+  hiring_request_items
+  hiring_offers
+  hiring_item_decisions
+  replacement_candidates
+  candidate_invitations
+}
+
+TableGroup Interviews {
+  interviews
+  interview_participants
+  interview_scheduling_rounds
+  interview_slots
+  interview_slot_responses
+  interview_reschedule_requests
+}
+
+TableGroup Evaluation {
+  evaluation_criteria
+  talent_evaluations
+  evaluation_scores
+  evaluation_tips
+  expert_reports
+}
+
+TableGroup Support {
+  help_requests
+}
+
+TableGroup JobsForms {
+  job_postings
+  job_posting_sections
+  job_posting_skills
+  job_question_catalog
+  job_forms
+  job_form_versions
+  job_form_fields
+  job_form_submissions
+  job_form_answers
+  saved_job_postings
+}
+
+TableGroup Finance {
+  currency_exchange_rates
+  currency_conversion_quotes
+  invoices
+  invoice_lines
+  payments
+  payment_refunds
+  service_products
+  service_orders
+  expert_report_access
+  subscription_plans
+  workspace_subscriptions
+}
+
+TableGroup Contracts {
+  contracts
+  contract_documents
+  contract_signatures
+  engagements
+}
+
+TableGroup PostContract {
+  workspace_service_provisions
+}
+
+TableGroup Operations {
+  internal_notes
+  workflow_events
+  notifications
+  notification_deliveries
+  workflow_policy_versions
+  newsletter_subscribers
+}
+
+// Inventory: KEEP=41, CHANGE=7, NEW=60, PROPOSED=6, DOC=2, DEFERRED=1; TOTAL=117
