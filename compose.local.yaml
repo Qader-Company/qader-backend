@@ -1,0 +1,25 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    image: qader-backend-local-app
+  queue:
+    image: qader-backend-local-app
+  scheduler:
+    image: qader-backend-local-app
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+      additional_contexts:
+        app: service:app
+    image: qader-backend-local-nginx
+    ports:
+      - "127.0.0.1:8000:80"
+  mysql:
+    ports:
+      - "127.0.0.1:3307:3306"
+  redis:
+    ports:
+      - "127.0.0.1:6380:6379"

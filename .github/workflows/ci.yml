@@ -1,0 +1,110 @@
+name: CI and Deploy
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, gd, exif, bcmath, pdo_sqlite, sqlite3, zip
+          coverage: none
+      - uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: cp .env.example .env && php artisan key:generate
+      - run: php artisan test
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+          SESSION_DRIVER: array
+
+  build:
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/php/Dockerfile
+          target: app
+          push: true
+          tags: |
+            ghcr.io/qader-company/qader-backend-app:${{ github.sha }}
+            ghcr.io/qader-company/qader-backend-app:${{ github.ref_name }}
+          cache-from: type=gha,scope=php
+          cache-to: type=gha,mode=max,scope=php
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/nginx/Dockerfile
+          build-contexts: |
+            app=docker-image://ghcr.io/qader-company/qader-backend-app:${{ github.sha }}
+          push: true
+          tags: |
+            ghcr.io/qader-company/qader-backend-nginx:${{ github.sha }}
+            ghcr.io/qader-company/qader-backend-nginx:${{ github.ref_name }}
+          cache-from: type=gha,scope=nginx
+          cache-to: type=gha,mode=max,scope=nginx
+
+  deploy-testing:
+    if: ${{ false }}
+    needs: build
+    # if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: testing
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.TESTING_SSH_KEY }}
+      - name: Deploy testing
+        env:
+          HOST: ${{ secrets.TESTING_HOST }}
+          KNOWN_HOSTS: ${{ secrets.TESTING_KNOWN_HOSTS }}
+          SHA: ${{ github.sha }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$KNOWN_HOSTS" >> ~/.ssh/known_hosts
+          ssh -o BatchMode=yes -o ConnectTimeout=60 deploy@"$HOST" "bash /opt/qader/testing/scripts/deploy.sh testing $SHA"
+
+  deploy-production:
+    if: ${{ false }}
+    needs: build
+    # if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.PRODUCTION_SSH_KEY }}
+      - name: Deploy production
+        env:
+          HOST: ${{ secrets.PRODUCTION_HOST }}
+          KNOWN_HOSTS: ${{ secrets.PRODUCTION_KNOWN_HOSTS }}
+          SHA: ${{ github.sha }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$KNOWN_HOSTS" >> ~/.ssh/known_hosts
+          ssh -o BatchMode=yes -o ConnectTimeout=60 deploy@"$HOST" "bash /opt/qader/production/scripts/deploy.sh production $SHA"

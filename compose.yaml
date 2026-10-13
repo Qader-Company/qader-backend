@@ -1,0 +1,63 @@
+x-laravel: &laravel
+  image: ${APP_IMAGE:-ghcr.io/qader-company/qader-backend-app:main}
+  env_file: .env
+  working_dir: /var/www/html
+  restart: unless-stopped
+  volumes:
+    - uploads:/var/www/html/storage/app/public
+    - private_files:/var/www/html/storage/app/private
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_started
+  networks: [backend]
+
+services:
+  app:
+    <<: *laravel
+    command: php-fpm
+  queue:
+    <<: *laravel
+    command: php artisan queue:work redis --tries=3 --timeout=90
+  scheduler:
+    <<: *laravel
+    command: php artisan schedule:work
+  nginx:
+    image: ${NGINX_IMAGE:-ghcr.io/qader-company/qader-backend-nginx:main}
+    restart: unless-stopped
+    depends_on: [app]
+    volumes:
+      - uploads:/var/www/html/public/storage:ro
+    networks: [backend]
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    networks: [backend]
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks: [backend]
+
+networks:
+  backend: {}
+volumes:
+  mysql_data: {}
+  redis_data: {}
+  uploads: {}
+  private_files: {}
