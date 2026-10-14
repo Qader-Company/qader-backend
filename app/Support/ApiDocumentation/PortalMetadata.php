@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Support\ApiDocumentation;
+
+use Knuckles\Camel\Extraction\ExtractedEndpointData;
+use Knuckles\Scribe\Extracting\Strategies\Strategy;
+
+class PortalMetadata extends Strategy
+{
+    public function __invoke(ExtractedEndpointData $endpointData, array $settings = []): ?array
+    {
+        $segments = explode('/', $endpointData->route->uri());
+        $isAuth = ($segments[2] ?? null) === 'auth';
+        $isLogout = $endpointData->route->uri() === 'api/v1/auth/logout';
+        $portal = $isAuth ? ($isLogout ? 'talent' : $segments[3]) : $segments[2];
+        $module = $isAuth ? 'auth' : ($segments[3] ?? 'general');
+
+        if (! in_array($portal, PortalRouteMatcher::PORTALS, true)) {
+            throw new \LogicException('Assign this API route to a documentation portal: '.$endpointData->route->uri());
+        }
+
+        $metadata = [
+            'title' => $endpointData->metadata->title ?: EndpointNames::for($endpointData->route),
+            'groupName' => $portal,
+            'subgroup' => $module,
+            'authenticated' => in_array('auth:sanctum', $endpointData->route->gatherMiddleware(), true),
+        ];
+
+        if ($isLogout) {
+            $metadata['description'] = 'Shared logout endpoint for talent, client, and admin. Use the token for the relevant portal.';
+        }
+
+        if ($portal === 'talent' && in_array($module, ['profile', 'onboarding'], true)
+            && in_array($endpointData->httpMethods[0], ['POST', 'PATCH'], true)) {
+            $metadata['description'] = 'Field catalogue with default validation rules. Use GET /api/v1/talent/onboarding/form-fields for the visible and required fields for the selected profession. Omit fields that are not enabled for that profession.';
+        }
+
+        return $metadata;
+    }
+}

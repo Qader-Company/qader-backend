@@ -15,3 +15,8 @@ public/storage
 public/build
 coverage
 .phpunit.cache
+.scribe
+public/docs
+public/vendor/scribe
+public/vendor/.scribe-tmp
+resources/views/scribe

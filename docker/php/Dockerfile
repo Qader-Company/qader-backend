@@ -10,8 +10,13 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 FROM php-base AS vendor
+ARG INSTALL_DEV_DEPENDENCIES=false
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --no-progress --prefer-dist --no-scripts --optimize-autoloader
+RUN if [ "$INSTALL_DEV_DEPENDENCIES" = "true" ]; then \
+        composer install --no-interaction --no-progress --prefer-dist --no-scripts; \
+    else \
+        composer install --no-dev --no-interaction --no-progress --prefer-dist --no-scripts --optimize-autoloader; \
+    fi
 
 FROM node:22-alpine AS assets
 WORKDIR /app
@@ -23,13 +28,18 @@ COPY public ./public
 RUN npm run build
 
 FROM php-base AS app
+ARG INSTALL_DEV_DEPENDENCIES=false
 COPY . .
 COPY --from=vendor /var/www/html/vendor ./vendor
 COPY --from=assets /app/public/build ./public/build
 RUN mkdir -p storage/app/private storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwX storage bootstrap/cache \
-    && composer dump-autoload --no-dev --optimize \
+    && if [ "$INSTALL_DEV_DEPENDENCIES" = "true" ]; then \
+        mkdir -p resources/views/scribe public/vendor/scribe .scribe \
+        && chown -R www-data:www-data resources/views/scribe public/vendor .scribe \
+        && composer dump-autoload; \
+    else composer dump-autoload --no-dev --optimize; fi \
     && php artisan package:discover --ansi
 USER www-data
 CMD ["php-fpm"]

@@ -3,7 +3,11 @@ services:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
+      args:
+        INSTALL_DEV_DEPENDENCIES: "true"
     image: qader-backend-local-app
+    volumes:
+      - scribe_assets:/var/www/html/public/vendor
   queue:
     image: qader-backend-local-app
   scheduler:
@@ -15,6 +19,8 @@ services:
       additional_contexts:
         app: service:app
     image: qader-backend-local-nginx
+    volumes:
+      - scribe_assets:/var/www/html/public/vendor:ro
     ports:
       - "127.0.0.1:8000:80"
   mysql:
@@ -23,3 +29,6 @@ services:
   redis:
     ports:
       - "127.0.0.1:6380:6379"
+
+volumes:
+  scribe_assets: {}
