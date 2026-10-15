@@ -11,4 +11,5 @@ Route::post('/maintenance/{command}', MaintenanceCommandController::class)
         'seed',
         'optimize-clear',
         'create-api-key',
+        'queue-work',
     ]);
