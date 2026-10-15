@@ -7,6 +7,7 @@ use App\Modules\V1\Authentication\Domain\Models\SocialAccount;
 use App\Modules\V1\Clients\Domain\Models\Client;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Modules\V1\Talents\Domain\Models\Talent;
+use App\Modules\V1\Users\Domain\Models\UserDevice;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -55,6 +56,11 @@ class User extends Authenticatable
     public function socialAccounts(): HasMany
     {
         return $this->hasMany(SocialAccount::class);
+    }
+
+    public function userDevices(): HasMany
+    {
+        return $this->hasMany(UserDevice::class);
     }
 
     /**

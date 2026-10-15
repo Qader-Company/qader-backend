@@ -22,6 +22,9 @@ This folder is the official reference for how Qader is built. Its architectural 
 9. [09 — Token-Based Authentication](09-web-and-mobile-auth.md)
 10. [10 — Authentication Implementation Record](10-authentication-implementation-record.md)
 11. [11 — Talent Personal Information](11-talent-personal-information.md)
+12. [12 — Talent Onboarding and Application](12-talent-onboarding-and-application.md)
+13. [13 — Reference Data Modules](13-reference-data-modules.md)
+14. [Project Memory — Arabic](../project-memory.ar.md)
 
 ## Qader Mapping
 

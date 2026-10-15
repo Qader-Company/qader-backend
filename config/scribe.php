@@ -51,7 +51,7 @@ return [
         'name' => 'Authorization',
         'use_value' => null,
         'placeholder' => '{YOUR_ACCESS_TOKEN}',
-        'extra_info' => 'Use the appropriate Sanctum token for authenticated endpoints. API routes also require the X-Authorization API key header.',
+        'extra_info' => 'Use the appropriate Sanctum token for authenticated endpoints.',
     ],
 
     'postman' => [
@@ -85,7 +85,6 @@ return [
                     'data' => [
                         'Content-Type' => 'application/json',
                         'Accept' => 'application/json',
-                        'X-Authorization' => '{YOUR_API_KEY}',
                     ],
                 ],
             ],

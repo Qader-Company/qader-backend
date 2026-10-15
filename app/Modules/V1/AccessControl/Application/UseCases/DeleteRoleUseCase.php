@@ -23,6 +23,12 @@ class DeleteRoleUseCase
             );
         }
 
+        if ($this->roles->isAssigned($roleId, $portal)) {
+            throw new DomainException(
+                __('admins.assigned_role_cannot_be_deleted')
+            );
+        }
+
         DB::transaction(
             fn () => $this->roles->delete($roleId, $portal)
         );

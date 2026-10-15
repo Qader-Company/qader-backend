@@ -31,4 +31,9 @@ interface RoleRepositoryInterface
         PortalTypeEnum $portal,
         string $name
     ): bool;
+
+    public function isAssigned(
+        int $roleId,
+        PortalTypeEnum $portal
+    ): bool;
 }

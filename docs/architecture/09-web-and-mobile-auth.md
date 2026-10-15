@@ -18,6 +18,7 @@ POST   /api/v1/auth/talent/login
 PATCH  /api/v1/auth/talent/email-verification
 POST   /api/v1/auth/talent/refresh
 POST   /api/v1/auth/talent/social/google/login
+GET    /api/v1/auth/me
 DELETE /api/v1/auth/logout
 ```
 
@@ -30,7 +31,9 @@ The same routes exist for `client`. `admin` is never publicly registered.
 3. Successful verification, password login, and Google login return `access_token` and `refresh_token`.
 4. Protected API calls send the access token as a bearer token.
 5. The refresh endpoint accepts a refresh token only and returns a new access/refresh pair.
-6. Logout revokes the bearer token used for the request.
+6. Password and social login may include `fcm_token` and `platform`; a successful login upserts the matching `user_devices` record.
+7. Access and refresh tokens issued together share one `token_family_id`.
+8. Logout revokes the complete token family and removes its device registration when no other token family uses it.
 
 Password reset uses the same pattern: OTP verification returns a limited `reset_password_token`, which is required to submit the new password.
 
@@ -41,6 +44,7 @@ Password reset uses the same pattern: OTP verification returns a limited `reset_
 - Web clients keep tokens out of persistent browser storage where possible. Prefer in-memory state and a deliberate renewal strategy.
 - Native clients store tokens only in Keychain or Keystore.
 - Never log tokens, place them in URLs, or include them in crash reports.
+- Send `fcm_token` only with login. If notification permission is denied, omit both `fcm_token` and `platform`; login still succeeds.
 
 ## Google Provider Contract
 

@@ -72,6 +72,17 @@ class EloquentRoleRepository implements RoleRepositoryInterface
             ->exists();
     }
 
+    public function isAssigned(
+        int $roleId,
+        PortalTypeEnum $portal
+    ): bool {
+        $this->findModelOrFail($roleId, $portal);
+
+        return DB::table('model_has_roles')
+            ->where('role_id', $roleId)
+            ->exists();
+    }
+
     private function findOrFail(
         int $roleId,
         PortalTypeEnum $portal

@@ -2255,11 +2255,28 @@ Table sessions [headercolor: #dbeafe] {
   Note: '[KEEP] Existing user_id is indexed but not constrained by a physical FK.'
 }
 
-// [KEEP] personal_access_tokens
-Table personal_access_tokens [headercolor: #dbeafe] {
+// [NEW/S00] user_devices
+Table user_devices [headercolor: #dcfce7] {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  platform varchar(20) [not null, note: 'web | ios | android']
+  fcm_token text [not null, note: 'Encrypted at rest']
+  fcm_token_hash char(64) [not null, unique, note: 'SHA-256 lookup/deduplication key']
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (user_id, platform)
+  }
+  Note: '[NEW] S00. Created only when a successful login includes fcm_token. No separate device-registration endpoint.'
+}
+
+// [CHANGE/S00] personal_access_tokens
+Table personal_access_tokens [headercolor: #fef3c7] {
   id bigint [pk, increment]
   tokenable_type varchar(255) [not null]
   tokenable_id bigint [not null]
+  token_family_id char(36)
+  user_device_id bigint
   name text [not null]
   token char(64) [not null, unique]
   abilities text
@@ -2271,7 +2288,7 @@ Table personal_access_tokens [headercolor: #dbeafe] {
     (tokenable_type, tokenable_id)
     expires_at
   }
-  Note: '[KEEP] Existing Sanctum polymorphic access/refresh/verification tokens. No new auth tokens table.'
+  Note: '[CHANGE] S00. Access and refresh tokens issued together share token_family_id. user_device_id is nullable when login has no FCM token.'
 }
 
 // [KEEP] api_keys
@@ -2386,6 +2403,8 @@ Table failed_jobs [headercolor: #dbeafe] {
 Ref: clients.user_id > users.id [delete: cascade]
 Ref: admins.user_id > users.id [delete: cascade]
 Ref: social_accounts.user_id > users.id [delete: cascade]
+Ref: user_devices.user_id > users.id [delete: cascade]
+Ref: personal_access_tokens.user_device_id > user_devices.id [delete: set null]
 Ref: model_has_permissions.permission_id > permissions.id [delete: cascade]
 Ref: model_has_roles.role_id > roles.id [delete: cascade]
 Ref: role_has_permissions.permission_id > permissions.id [delete: cascade]
@@ -2675,6 +2694,7 @@ TableGroup Infrastructure {
   media
   password_reset_tokens
   sessions
+  user_devices
   personal_access_tokens
   api_keys
   api_key_access_events
@@ -2789,4 +2809,4 @@ TableGroup Operations {
   newsletter_subscribers
 }
 
-// Inventory: KEEP=41, CHANGE=7, NEW=60, PROPOSED=6, DOC=2, DEFERRED=1; TOTAL=117
+// Inventory: KEEP=40, CHANGE=8, NEW=61, PROPOSED=6, DOC=2, DEFERRED=1; TOTAL=118

@@ -29,6 +29,9 @@ Route::post('{type}/social/{provider}/login', [TokenAuthController::class, 'soci
 Route::delete('logout', [TokenAuthController::class, 'logout'])
     ->middleware(['auth:sanctum', 'throttle:auth-logout']);
 
+Route::get('me', [TokenAuthController::class, 'me'])
+    ->middleware(['auth:sanctum', 'abilities:'.TokenTypeEnum::ACCESS_TOKEN->value]);
+
 Route::post('{type}/refresh', [TokenAuthController::class, 'refresh'])
     ->where('type', $loginPortals)
     ->middleware(['auth:sanctum', 'abilities:'.TokenTypeEnum::REFRESH_TOKEN->value, 'throttle:auth-refresh']);

@@ -1,6 +1,6 @@
 # 10 — Authentication Implementation Record
 
-**Updated:** 2026-08-25  
+**Updated:** 2026-10-15
 **Scope:** the authentication foundation before Talent profile work begins.
 
 ## What Is Implemented
@@ -21,7 +21,9 @@
 - Registration and unverified login return a limited verification token.
 - Email verification, login, and Google login return an access/refresh token pair.
 - Password-reset verification returns a limited reset token.
-- Logout revokes the token used for the request.
+- Password and social login accept optional `fcm_token` and `platform` fields and upsert one encrypted `user_devices` record when supplied.
+- Access and refresh tokens share a `token_family_id`; refresh rotates the full pair and Logout revokes the full family.
+- `GET /api/v1/auth/me` restores the current user with granted roles and permissions.
 
 ### Endpoints
 
@@ -33,7 +35,7 @@ The public authentication surface is `routes/V1/public/auth.php`. It supports re
 - CSRF cookies and Laravel session authentication are intentionally not part of the public API authentication flow.
 - Google sign-in validates the configured server client ID as the ID-token audience and fails closed when it is missing.
 - Public authentication does not accept client-distributed API keys as a security control.
-- Internal routes still receive `api.key` by default through `AppServiceProvider`.
+- User-facing module routes do not receive `api.key`; it is opt-in for future server-to-server integrations.
 - Access-control routes require the existing `access` ability, not the obsolete `access_token` value.
 
 ## Legacy Code Removed
@@ -53,6 +55,19 @@ Before manual acceptance, set real values for:
 - `MAIL_*` so OTP emails are delivered;
 - `GOOGLE_CLIENT_ID` for Google ID-token verification;
 - `APP_URL` and `CORS_ALLOWED_ORIGINS` for the actual client domains.
+- `FIREBASE_CREDENTIALS` points to the Firebase service-account JSON; the FCM client reads `project_id` from that file.
+
+The service-account JSON stays in the existing private Docker volume at:
+
+```text
+/var/www/html/storage/app/private/firebase-service-account.json
+```
+
+Copy a downloaded local key into the running app container without adding it to Git:
+
+```bash
+docker compose cp ./firebase-service-account.json app:/var/www/html/storage/app/private/firebase-service-account.json
+```
 
 For production, use HTTPS and an exact CORS origin allowlist. Full token-handling rules are in [09 — Token-Based Authentication](09-web-and-mobile-auth.md).
 
@@ -73,11 +88,21 @@ php artisan queue:work
 
 Then read the one-time code from `storage/logs/laravel.log`. Do not expose the generated code in an API response. Replace the log mailer with a real provider before production acceptance.
 
+## FCM Test Command
+
+After a successful login stores a device and Firebase credentials are configured:
+
+```bash
+php artisan fcm:test USER_ID
+```
+
+The command sends directly to the latest device for that user. A confirmed `UNREGISTERED` response removes the invalid device record.
+
 ## Verification Performed
 
 - PHP syntax checks for the changed Auth classes and configuration.
 - Route registration checks for the unified `auth` contract.
-- Configuration checks for Sanctum token authentication and CORS settings.
+- Configuration checks for Sanctum token authentication, CORS, Firebase and the local FCM command.
 - No automated tests were written or run, by project agreement.
 
 ## Deliberately Deferred

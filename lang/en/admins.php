@@ -6,6 +6,7 @@ return [
     'cannot_deactivate_yourself' => 'You cannot deactivate your own account.',
     'owner_role_cannot_be_modified' => 'The platform owner role cannot be modified.',
     'owner_role_cannot_be_deleted' => 'The platform owner role cannot be deleted.',
+    'assigned_role_cannot_be_deleted' => 'A role assigned to an admin cannot be deleted.',
     'avatar_upload_failed' => 'The admin image could not be uploaded.',
     'invalid_roles' => 'One or more selected roles are invalid.',
     'owner_role_is_reserved' => 'The owner role name is reserved.',

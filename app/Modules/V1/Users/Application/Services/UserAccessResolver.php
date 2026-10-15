@@ -2,7 +2,6 @@
 
 namespace App\Modules\V1\Users\Application\Services;
 
-use App\Modules\V1\AccessControl\Application\Services\PermissionRegistry;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use BackedEnum;
@@ -10,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class UserAccessResolver
 {
-    /** @return array{roles: array<int, string>, unassigned_permissions: array<int, string>} */
+    /** @return array{roles: array<int, string>, permissions: array<int, string>} */
     public static function resolve(User $user): array
     {
         $portal = self::resolvePortal($user);
@@ -18,7 +17,7 @@ class UserAccessResolver
         if ($portal === null) {
             return [
                 'roles' => [],
-                'unassigned_permissions' => [],
+                'permissions' => [],
             ];
         }
 
@@ -59,16 +58,28 @@ class UserAccessResolver
             ->values()
             ->all();
 
-        $availablePermissions = array_values(array_diff(
-            PermissionRegistry::names($portal),
-            $assignedPermissions
-        ));
+        $directPermissions = DB::table('model_has_permissions')
+            ->join(
+                'permissions',
+                'permissions.id',
+                '=',
+                'model_has_permissions.permission_id'
+            )
+            ->where('model_has_permissions.model_type', $modelType)
+            ->where('model_has_permissions.model_id', $user->getKey())
+            ->where('permissions.portal', $portal->value)
+            ->pluck('permissions.name')
+            ->all();
 
-        sort($availablePermissions);
+        $permissions = array_values(array_unique([
+            ...$assignedPermissions,
+            ...$directPermissions,
+        ]));
+        sort($permissions);
 
         return [
             'roles' => $roles,
-            'unassigned_permissions' => $availablePermissions,
+            'permissions' => $permissions,
         ];
     }
 

@@ -70,6 +70,10 @@ class SocialLoginUseCase
             throw new UnauthorizedHttpException('', __('auth.credentials_mismatch'));
         }
 
+        $user = $this->users->update($user, [
+            'last_login_at' => now(),
+        ]);
+
         return ['user' => $user];
     }
 }

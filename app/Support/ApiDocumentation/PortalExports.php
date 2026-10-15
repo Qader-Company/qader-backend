@@ -26,13 +26,13 @@ class PortalExports
                         }
 
                         $operation = $pathItem[$method];
-                        $sharedLogout = $uri === '/api/v1/auth/logout' && $method === 'delete';
+                        $sharedAuth = self::isSharedAuthOperation($uri, $method);
 
-                        if (! $sharedLogout && ! str_starts_with($operation['x-apidog-folder'] ?? '', $portal.'/')) {
+                        if (! $sharedAuth && ! str_starts_with($operation['x-apidog-folder'] ?? '', $portal.'/')) {
                             continue;
                         }
 
-                        if ($sharedLogout) {
+                        if ($sharedAuth) {
                             $operation['tags'] = [$portal];
                             $operation['x-apidog-folder'] = $portal.'/auth';
                         }
@@ -52,24 +52,32 @@ class PortalExports
 
         if (! empty($paths['postman'])) {
             $collection = json_decode(file_get_contents($paths['postman']), true, flags: JSON_THROW_ON_ERROR);
-            $logout = null;
+            $sharedAuthItems = [];
 
             foreach ($collection['item'] as $group) {
                 foreach ($group['item'] as $module) {
                     foreach ($module['item'] ?? [] as $item) {
-                        if (self::isLogout($item)) {
-                            $logout = $item;
+                        if (self::isSharedAuthItem($item)) {
+                            $sharedAuthItems[] = $item;
                         }
                     }
                 }
             }
 
-            if ($logout) {
+            if ($sharedAuthItems) {
                 foreach ($collection['item'] as &$group) {
                     foreach ($group['item'] as &$module) {
-                        if ($group['name'] !== 'talent' && $module['name'] === 'auth'
-                            && ! array_filter($module['item'], self::isLogout(...))) {
-                            $module['item'][] = $logout;
+                        if ($group['name'] === 'talent' || $module['name'] !== 'auth') {
+                            continue;
+                        }
+
+                        foreach ($sharedAuthItems as $sharedAuthItem) {
+                            if (! array_filter(
+                                $module['item'],
+                                fn (array $item): bool => self::sameOperation($item, $sharedAuthItem)
+                            )) {
+                                $module['item'][] = $sharedAuthItem;
+                            }
                         }
                     }
                     unset($module);
@@ -81,12 +89,27 @@ class PortalExports
         }
     }
 
-    private static function isLogout(array $item): bool
+    private static function isSharedAuthOperation(string $uri, string $method): bool
+    {
+        return ($uri === '/api/v1/auth/logout' && $method === 'delete')
+            || ($uri === '/api/v1/auth/me' && $method === 'get');
+    }
+
+    private static function isSharedAuthItem(array $item): bool
     {
         $path = $item['request']['url']['path'] ?? '';
         $path = is_array($path) ? implode('/', $path) : $path;
+        $method = $item['request']['method'] ?? '';
 
-        return ($item['request']['method'] ?? '') === 'DELETE'
-            && ltrim($path, '/') === 'api/v1/auth/logout';
+        return self::isSharedAuthOperation('/'.ltrim($path, '/'), strtolower($method));
+    }
+
+    private static function sameOperation(array $first, array $second): bool
+    {
+        $firstPath = $first['request']['url']['path'] ?? '';
+        $secondPath = $second['request']['url']['path'] ?? '';
+
+        return ($first['request']['method'] ?? null) === ($second['request']['method'] ?? null)
+            && $firstPath === $secondPath;
     }
 }

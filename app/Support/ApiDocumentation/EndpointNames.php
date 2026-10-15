@@ -18,6 +18,7 @@ class EndpointNames
                 'login' => 'Login',
                 'socialLogin' => 'Social Login',
                 'logout' => 'Logout',
+                'me' => 'Get Current User',
                 'refresh' => 'Refresh Token',
                 'sendOtp' => 'Send OTP',
                 'verifyEmail' => 'Verify Email',

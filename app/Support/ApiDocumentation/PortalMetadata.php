@@ -11,8 +11,12 @@ class PortalMetadata extends Strategy
     {
         $segments = explode('/', $endpointData->route->uri());
         $isAuth = ($segments[2] ?? null) === 'auth';
-        $isLogout = $endpointData->route->uri() === 'api/v1/auth/logout';
-        $portal = $isAuth ? ($isLogout ? 'talent' : $segments[3]) : $segments[2];
+        $isSharedAuth = in_array(
+            $endpointData->route->uri(),
+            ['api/v1/auth/logout', 'api/v1/auth/me'],
+            true
+        );
+        $portal = $isAuth ? ($isSharedAuth ? 'talent' : $segments[3]) : $segments[2];
         $module = $isAuth ? 'auth' : ($segments[3] ?? 'general');
 
         if (! in_array($portal, PortalRouteMatcher::PORTALS, true)) {
@@ -26,8 +30,8 @@ class PortalMetadata extends Strategy
             'authenticated' => in_array('auth:sanctum', $endpointData->route->gatherMiddleware(), true),
         ];
 
-        if ($isLogout) {
-            $metadata['description'] = 'Shared logout endpoint for talent, client, and admin. Use the token for the relevant portal.';
+        if ($isSharedAuth) {
+            $metadata['description'] = 'Shared authentication endpoint for talent, client, and admin. Use the token for the relevant portal.';
         }
 
         if ($portal === 'talent' && in_array($module, ['profile', 'onboarding'], true)
