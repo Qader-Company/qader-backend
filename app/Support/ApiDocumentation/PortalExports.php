@@ -37,6 +37,14 @@ class PortalExports
                             $operation['x-apidog-folder'] = $portal.'/auth';
                         }
 
+                        if (empty($operation['responses'])) {
+                            $operation['responses'] = [
+                                'default' => [
+                                    'description' => 'Response depends on the operation outcome.',
+                                ],
+                            ];
+                        }
+
                         $operations[$method] = $operation;
                     }
 

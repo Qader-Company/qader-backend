@@ -12,7 +12,6 @@ use App\Modules\V1\Talents\Domain\ValueObjects\ReligionEnum;
 use App\Modules\V1\Talents\Domain\ValueObjects\SeniorityLevelEnum;
 use App\Modules\V1\Talents\Domain\ValueObjects\WorkModeEnum;
 use App\Modules\V1\Talents\Domain\ValueObjects\WorkTypeEnum;
-use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use Illuminate\Validation\Rule;
 
 class ProfessionalFieldFormValidationFactory implements ApplicationFormValidationFactoryInterface
@@ -66,6 +65,7 @@ class ProfessionalFieldFormValidationFactory implements ApplicationFormValidatio
             $prefix.'professional_field_id' => [
                 'sometimes',
                 'nullable',
+                'integer',
                 Rule::exists('professional_fields', 'id')
                     ->where('is_active', true),
             ],
@@ -74,21 +74,6 @@ class ProfessionalFieldFormValidationFactory implements ApplicationFormValidatio
                 'required',
                 'string',
                 'max:200',
-            ],
-            $prefix.'email' => [
-                'sometimes',
-                'required',
-                'email',
-                'max:255',
-                Rule::unique('users', 'email')
-                    ->where('type', PortalTypeEnum::TALENT->value)
-                    ->ignore($userId),
-            ],
-            $prefix.'professional_summary' => [
-                'sometimes',
-                'nullable',
-                'string',
-                'max:5000',
             ],
             $prefix.'phone_country_code' => [
                 'sometimes',
@@ -133,21 +118,25 @@ class ProfessionalFieldFormValidationFactory implements ApplicationFormValidatio
             $prefix.'nationality_country_id' => [
                 'sometimes',
                 'nullable',
+                'integer',
                 Rule::exists('countries', 'id')->where('is_active', true),
             ],
             $prefix.'residence_country_id' => [
                 'sometimes',
                 'nullable',
+                'integer',
                 Rule::exists('countries', 'id')->where('is_active', true),
             ],
             $prefix.'residence_city_id' => [
                 'sometimes',
                 'nullable',
+                'integer',
                 Rule::exists('cities', 'id')->where('is_active', true),
             ],
             $prefix.'languages' => ['sometimes', 'array'],
             $prefix.'languages.*.language_id' => [
                 'required',
+                'integer',
                 Rule::exists('languages', 'id')->where('is_active', true),
                 'distinct',
             ],
@@ -155,15 +144,29 @@ class ProfessionalFieldFormValidationFactory implements ApplicationFormValidatio
                 'required',
                 Rule::enum(LanguageProficiencyEnum::class),
             ],
+            $prefix.'cv' => [
+                'sometimes',
+                'nullable',
+                'file',
+                'mimes:pdf,doc,docx',
+                'max:10240',
+            ],
         ];
     }
 
     private function skillsAndExperiences(string $prefix): array
     {
         return [
+            $prefix.'professional_summary' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:5000',
+            ],
             $prefix.'job_title_id' => [
                 'sometimes',
                 'nullable',
+                'integer',
                 Rule::exists('job_titles', 'id')->where('is_active', true),
             ],
             $prefix.'seniority_level' => [
@@ -330,6 +333,7 @@ class ProfessionalFieldFormValidationFactory implements ApplicationFormValidatio
             $prefix.'current_currency_id' => [
                 'sometimes',
                 'nullable',
+                'integer',
                 Rule::exists('currencies', 'id')->where('is_active', true),
             ],
             $prefix.'expected_salary_min' => [
@@ -347,14 +351,8 @@ class ProfessionalFieldFormValidationFactory implements ApplicationFormValidatio
             $prefix.'expected_currency_id' => [
                 'sometimes',
                 'nullable',
+                'integer',
                 Rule::exists('currencies', 'id')->where('is_active', true),
-            ],
-            $prefix.'cv' => [
-                'sometimes',
-                'nullable',
-                'file',
-                'mimes:pdf,doc,docx',
-                'max:10240',
             ],
         ];
     }

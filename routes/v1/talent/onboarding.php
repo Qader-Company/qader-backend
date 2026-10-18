@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [TalentOnboardingController::class, 'show']);
 Route::get('form-fields', [ProfessionalFormFieldController::class, 'index']);
+Route::patch('professional-field', [TalentOnboardingController::class, 'selectProfessionalField']);
 Route::post('{step}', [TalentOnboardingController::class, 'saveStep'])
     ->whereIn('step', OnboardingStepEnum::values());
 Route::get('application', [TalentApplicationController::class, 'show'])

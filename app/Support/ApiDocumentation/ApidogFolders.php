@@ -12,8 +12,10 @@ class ApidogFolders extends OpenApiGenerator
         $pathItem['x-apidog-folder'] = $endpoint->metadata->groupName.'/'.$endpoint->metadata->subgroup;
         $pathItem['x-apidog-name'] = $endpoint->metadata->title;
 
-        if (isset($pathItem['requestBody']['content']['application/json']) && $endpoint->cleanBodyParameters) {
-            $pathItem['requestBody']['content']['application/json']['example'] = $endpoint->cleanBodyParameters;
+        if ($endpoint->cleanBodyParameters) {
+            foreach (array_keys($pathItem['requestBody']['content'] ?? []) as $contentType) {
+                $pathItem['requestBody']['content'][$contentType]['example'] = $endpoint->cleanBodyParameters;
+            }
         }
 
         // OpenAPI requires a response map. Response calls are disabled locally,

@@ -14,7 +14,17 @@ class DocumentationQueryParameters extends GetFromFormRequest
     {
         $this->readRequest = in_array($endpointData->httpMethods[0], ['GET', 'HEAD'], true);
 
-        return parent::__invoke($endpointData, $routeRules);
+        $parameters = parent::__invoke($endpointData, $routeRules);
+
+        foreach ($parameters ?? [] as $name => $parameter) {
+            $parameters[$name]['example'] = DocumentationExamples::for(
+                $name,
+                $endpointData->route->uri(),
+                $parameter['type'] ?? null,
+            );
+        }
+
+        return $parameters;
     }
 
     protected function isFormRequestMeantForThisStrategy(ReflectionClass $formRequestReflectionClass): bool

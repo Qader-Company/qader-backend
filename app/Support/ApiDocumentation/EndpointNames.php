@@ -32,6 +32,10 @@ class EndpointNames
         $module = $parts[0];
 
         if ($module === 'profile') {
+            if (($parts[1] ?? '') === 'media') {
+                return 'Download Profile Media';
+            }
+
             return $method === 'GET' ? 'Get Profile' : 'Update Profile';
         }
 
@@ -39,6 +43,7 @@ class EndpointNames
             return match ($parts[1] ?? '') {
                 '' => 'Get Onboarding Progress',
                 'form-fields' => 'Get Onboarding Form Fields',
+                'professional-field' => 'Select Professional Field',
                 'application' => 'Get Application',
                 default => 'Save '.Str::headline($parts[1]),
             };

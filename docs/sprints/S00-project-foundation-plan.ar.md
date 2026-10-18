@@ -1,6 +1,6 @@
 # S00 — تأسيس المشروع
 
-الحالة: **قيد التنفيذ — سكيما الـBackend المعتمدة نُفذت**  
+الحالة: **قيد التنفيذ — الـBackend منفذ، وتكامل Web/Mobile وFirebase وفحص القبول متبقٍ**
 النطاق: تسجيل الدخول والخروج والصلاحيات، وتجهيز Web وMobile وBackend وFirebase/FCM.  
 عرض التسليم: تسجيل دخول حقيقي وواجهة محمية حسب البورتال والدور والصلاحيات.
 
@@ -80,7 +80,7 @@ flowchart LR
 
 ### فجوات يجب إغلاقها في S00
 
-1. **كل routes الحالية تحصل افتراضيًا على `api.key`:** هذا يجعل الويب والموبايل يحتاجان مفتاحًا ثابتًا داخل التطبيق. المفتاح يمكن استخراجه من العميل، ولذلك لا يصلح كحماية لواجهات المستخدم. سنعطل API key عن user-facing routes ونحتفظ به فقط لمسارات التكامل server-to-server التي تختاره صراحة.
+1. **`api.key` مطلوب على الـroutes الحالية:** اعتمد المشروع إرسال المفتاح النشط في `X-Authorization` مع كل طلب، بالإضافة إلى Bearer token في المسارات المحمية.
 2. **Logout الحالي يحذف الـtoken المستخدم فقط:** عند الخروج بالـaccess token يظل refresh token صالحًا. سنربط الزوج بـ`token_family_id` داخل `personal_access_tokens` بدل إنشاء جدول جلسات في S00.
 3. **لا يوجد endpoint ثابت لاستعادة هوية الجلسة بعد reload:** يوجد `/api/user` الافتراضي ويرجع User خامًا خارج عقد V1. سنستبدله بعقد `GET /api/v1/auth/me` يرجع resource آمنًا وموحدًا.
 4. **استجابة المستخدم ترجع `unassigned_permissions`:** الواجهة المحمية تحتاج الصلاحيات الممنوحة فعلًا. سنرجع `permissions` الممنوحة للأدوار مع `roles`.
@@ -332,7 +332,7 @@ erDiagram
 - `social_accounts`: يبقى كما هو، وتفعيله الفعلي مؤجل للـcredentials.
 - `password_reset_tokens`: لا نعتمد عليه في OTP flow الحالي ولا نعدله ضمن السبرنت.
 - `sessions`: جدول Laravel cookie sessions، ولا يستخدمه Bearer-token flow للويب والموبايل.
-- `api_keys` وسجلاتها: تظل لتكاملات server-to-server، ولا تُرسل إلى Web أوMobile.
+- `api_keys` وسجلاتها: تستخدم للتحقق من `X-Authorization` المطلوب على الـAPI الحالية.
 
 ### مواءمة جداول الإشعارات المقترحة لاحقًا
 
@@ -364,7 +364,7 @@ erDiagram
 4. إضافة `GET /api/v1/auth/me` وحذف route `/api/user` الافتراضي.
 5. إرجاع `permissions` الممنوحة بدل `unassigned_permissions`.
 6. التحقق من تطابق `user.type`, route portal, token portal ability.
-7. إلغاء `api.key` من user-facing routes وجعله opt-in لمسارات التكامل فقط.
+7. تفعيل `api.key` على user-facing routes وتوثيق `X-Authorization` في ملفات OpenAPI وPostman.
 8. منع حذف role مرتبط بمستخدمين.
 9. تثبيت وتشغيل dependency/migration الخاصة بالـOTP دون اختراع جدول بديل.
 10. إضافة `fcm_token` و`platform` لقواعد Login وعمل upsert في `user_devices` بعد نجاح الدخول فقط.
@@ -381,7 +381,7 @@ erDiagram
 4. استخدام `permissions` لإخفاء الأفعال غير المسموحة، مع بقاء الـBackend هو صاحب القرار النهائي.
 5. عند 401: محاولة refresh واحدة فقط، ثم إعادة المستخدم إلى Sign in عند الفشل.
 6. Logout يمسح حالة العميل بعد نجاح إلغاء الجلسة أو بعد تأكد أن الـtoken غير صالح.
-7. عدم تضمين `X-Authorization` API key داخل build الويب.
+7. إرسال `X-Authorization` في كل طلب بالقيمة المخصصة لبيئة التشغيل.
 8. إعداد Firebase Web Messaging وservice worker وVAPID public key، ثم إرسال `fcm_token` داخل Login عندما يكون متاحًا.
 
 ### المرحلة E — Mobile
@@ -424,3 +424,39 @@ erDiagram
 ## 9. القرار المعتمد وحالة التنفيذ
 
 تم اعتماد جدول `user_devices` لحفظ `user_id`, `platform`, `fcm_token`, `fcm_token_hash` عند Login، وتأجيل `auth_sessions`. أضيف `token_family_id` و`user_device_id` إلى `personal_access_tokens` حتى يلغي Logout access وrefresh معًا. Register للـTalent والـClient ظل لإنشاء الحساب الأساسي فقط؛ بيانات الشركة وTalent profile تبدأ في flows لاحقة. تم تحديث DBML والديجرام، وإنشاء migrations، وربط Login وRefresh وLogout و`auth/me` وFCM HTTP v1 وتوثيق Scribe. تفعيل الإرسال الحقيقي ينتظر Firebase project credentials وتسجيل تطبيقات Web وAndroid وiOS.
+
+## 10. المتبقي لإغلاق S00
+
+هذه البنود لم تكتمل بعد، ولذلك لا يعتبر السبرنت مقفولًا كعرض تسليم نهائي:
+
+### Firebase وFCM
+
+- [ ] إنشاء Firebase project المعتمد لكل بيئة مطلوبة.
+- [ ] تسجيل تطبيقات Web وAndroid وiOS وتنزيل ملفات إعدادها.
+- [ ] إنشاء Service Account ووضع ملف credentials في السر الخاص ببيئة الـBackend.
+- [ ] إعداد Web Push service worker وVAPID public key.
+- [ ] ربط APNs لتوصيل إشعارات iOS.
+- [ ] إرسال FCM notification إلى جهاز حقيقي والتحقق من حذف registration عند `UNREGISTERED`.
+- [ ] التأكد عمليًا أن الجهاز الذي نفذ Logout لا يستقبل إشعارات على registration الملغاة.
+
+### Web وMobile
+
+- [ ] ربط شاشات Login وRegister وVerification وReset Password بالـAPI الفعلي.
+- [ ] استعادة المستخدم عند تشغيل التطبيق من خلال `GET /api/v1/auth/me`.
+- [ ] تطبيق route guards حسب البورتال والدور والصلاحيات.
+- [ ] تنفيذ refresh مرة واحدة عند 401 ومنع طلبات refresh المتزامنة.
+- [ ] حفظ Tokens في التخزين المناسب لكل عميل، واستخدام secure storage على Mobile.
+- [ ] إرسال `fcm_token` و`platform` مع Login ومسح auth state عند Logout أوفشل Refresh.
+
+### التشغيل وفحص القبول
+
+- [ ] إعداد Mail provider وQueue worker في بيئة التسليم والتحقق من وصول OTP فعليًا.
+- [ ] إنهاء وضع OTP الثابت `123456` وإعادة التوليد العشوائي قبل الإنتاج.
+- [ ] نشر إصلاح توافق OTP مع Carbon 3 وإعادة تجربة Email Verification على بيئة testing.
+- [ ] فحص المسار الكامل: Register ثم Verification ثم Login ثم `auth/me` ثم Refresh ثم Logout.
+- [ ] التحقق من منع Token خاص ببورتال من فتح بورتال آخر.
+- [ ] التحقق من منع الحساب غير النشط من Login وRefresh.
+- [ ] التحقق من رفض إعادة استخدام Refresh token بعد تدويره.
+- [ ] التحقق من صلاحيات Admin owner وAdmin محدود الصلاحيات من الواجهة والـAPI.
+- [ ] التحقق من أن Logout جهاز واحد لا يلغي جلسة جهاز آخر.
+- [ ] تسجيل نتيجة عرض التسليم في هذا الملف ثم تغيير حالة السبرنت إلى مكتمل.

@@ -619,12 +619,12 @@ Table professional_field_translations [headercolor: #fef3c7] {
   professional_field_id bigint [not null]
   locale varchar(255) [not null]
   name varchar(255) [not null]
-  description text [note: 'ADD']
+  description text
   indexes {
     (professional_field_id, locale) [unique]
     locale
   }
-  Note: '[CHANGE] Existing translated names. ADD description shown in professional-field selection 3735:49023.'
+  Note: '[CHANGE] Add translated card description for the professional-field selection screen.'
 }
 
 // [KEEP] job_titles
@@ -690,32 +690,25 @@ Table professional_field_tool [headercolor: #dbeafe] {
   Note: '[KEEP] Existing many-to-many field classification.'
 }
 
-// [KEEP] professional_form_fields
-Table professional_form_fields [headercolor: #dbeafe] {
+// [CHANGE] professional_form_fields
+Table professional_form_fields [headercolor: #fef3c7] {
   id bigint [pk, increment]
   key varchar(255) [not null, unique]
-  step varchar(255) [not null]
-  is_default boolean [not null, default: false]
-  is_required_by_default boolean [not null, default: false]
   created_at timestamp
   updated_at timestamp
-  indexes {
-    step
-  }
-  Note: '[KEEP] Existing onboarding field registry, not the arbitrary job-question catalog. Seeded from ProfessionalFormFieldEnum.'
+  Note: '[CHANGE] Existing onboarding input-key registry. Remove step, is_default, and is_required_by_default. Frontend owns display step/order/required marker; backend validation remains code-owned. This is not the arbitrary job-question catalog.'
 }
 
-// [KEEP] professional_field_form_field
-Table professional_field_form_field [headercolor: #dbeafe] {
+// [CHANGE] professional_field_form_field
+Table professional_field_form_field [headercolor: #fef3c7] {
   professional_field_id bigint [not null]
   professional_form_field_id bigint [not null]
-  is_required boolean [not null, default: false]
   created_at timestamp
   updated_at timestamp
   indexes {
     (professional_field_id, professional_form_field_id) [pk]
   }
-  Note: '[KEEP] Existing onboarding required-field configuration per professional field.'
+  Note: '[CHANGE] Existing onboarding field selection per professional field. Remove is_required; the API returns selected input keys only.'
 }
 
 // [CHANGE] talents

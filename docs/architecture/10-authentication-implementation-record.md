@@ -34,8 +34,8 @@ The public authentication surface is `routes/V1/public/auth.php`. It supports re
 - Every authenticated endpoint uses `auth:sanctum` and requires the correct ability (`verification`, `refresh`, or `reset_password`) where applicable.
 - CSRF cookies and Laravel session authentication are intentionally not part of the public API authentication flow.
 - Google sign-in validates the configured server client ID as the ID-token audience and fails closed when it is missing.
-- Public authentication does not accept client-distributed API keys as a security control.
-- User-facing module routes do not receive `api.key`; it is opt-in for future server-to-server integrations.
+- Public authentication requires an active API key through `X-Authorization`.
+- Current user-facing module routes receive the `api.key` middleware from their entries in `config/modules.php`.
 - Access-control routes require the existing `access` ability, not the obsolete `access_token` value.
 
 ## Legacy Code Removed

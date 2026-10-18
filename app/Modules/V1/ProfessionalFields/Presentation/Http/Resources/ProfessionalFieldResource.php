@@ -13,6 +13,7 @@ class ProfessionalFieldResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->nameFor($request),
+            'description' => $this->descriptionFor($request),
             'slug' => $this->slug,
             'is_active' => $this->when(
                 isset($this->is_active),
@@ -44,6 +45,29 @@ class ProfessionalFieldResource extends JsonResource
         }
 
         return $this->resource->translate($locale, false)?->name;
+    }
+
+    private function descriptionFor(Request $request): string|array|null
+    {
+        if (! $request->is('api/v1/admin/*')) {
+            return $this->rawValue('localized_description')
+                ?? $this->rawValue('description')
+                ?? $this->description;
+        }
+
+        return [
+            'en' => $this->translationDescription('en'),
+            'ar' => $this->translationDescription('ar'),
+        ];
+    }
+
+    private function translationDescription(string $locale): ?string
+    {
+        if (! $this->resource instanceof Model) {
+            return null;
+        }
+
+        return $this->resource->translate($locale, false)?->description;
     }
 
     private function rawValue(string $key): mixed

@@ -24,6 +24,16 @@ class DocumentationBodyParameters extends GetFromFormRequest
         $parameters = parent::__invoke($endpointData, $routeRules);
 
         foreach ($parameters ?? [] as $name => $parameter) {
+            $type = $parameter['type'] ?? null;
+
+            if (! DocumentationExamples::shouldKeepGeneratedBodyExample($name, $type)) {
+                $parameters[$name]['example'] = DocumentationExamples::for(
+                    $name,
+                    $endpointData->route->uri(),
+                    $type,
+                );
+            }
+
             if (str_ends_with($name, '_confirmation')) {
                 $original = substr($name, 0, -strlen('_confirmation'));
                 if (isset($parameters[$original]['example'])) {
@@ -31,6 +41,8 @@ class DocumentationBodyParameters extends GetFromFormRequest
                 }
             }
         }
+
+        $this->applyStableAuthExamples($endpointData, $parameters);
 
         return $parameters;
     }
@@ -72,5 +84,59 @@ class DocumentationBodyParameters extends GetFromFormRequest
         }
 
         return $rules;
+    }
+
+    private function applyStableAuthExamples(ExtractedEndpointData $endpointData, ?array &$parameters): void
+    {
+        if ($parameters === null || ! str_contains($endpointData->route->uri(), 'api/v1/auth/')) {
+            return;
+        }
+
+        $uri = $endpointData->route->uri();
+        preg_match('~api/v1/auth/(talent|client|admin)/~', $uri, $matches);
+        $portal = $matches[1] ?? null;
+
+        $examples = match (true) {
+            str_ends_with($uri, '/register') => [
+                'first_name' => 'New',
+                'last_name' => ucfirst((string) $portal),
+                'email' => 'new.'.$portal.'@qader.test',
+                'password' => config('demo_accounts.password'),
+                'password_confirmation' => config('demo_accounts.password'),
+            ],
+            str_ends_with($uri, '/login') && ! str_contains($uri, '/social/') => [
+                'email' => config('demo_accounts.accounts.'.$portal.'.email'),
+                'password' => config('demo_accounts.password'),
+                'fcm_token' => 'demo-web-fcm-token',
+                'platform' => 'web',
+            ],
+            str_contains($uri, '/social/') => [
+                'token' => '{GOOGLE_ID_TOKEN}',
+                'name' => 'Demo '.ucfirst((string) $portal),
+                'fcm_token' => 'demo-web-fcm-token',
+                'platform' => 'web',
+            ],
+            str_ends_with($uri, '/send-otp') => [
+                'email' => config('demo_accounts.accounts.'.$portal.'.email'),
+            ],
+            str_ends_with($uri, '/email-verification') => [
+                'otp' => '123456',
+            ],
+            str_ends_with($uri, '/reset-password-verification') => [
+                'email' => config('demo_accounts.accounts.'.$portal.'.email'),
+                'otp' => '123456',
+            ],
+            str_ends_with($uri, '/reset-password') => [
+                'password' => config('demo_accounts.password'),
+                'password_confirmation' => config('demo_accounts.password'),
+            ],
+            default => [],
+        };
+
+        foreach ($examples as $name => $example) {
+            if (isset($parameters[$name])) {
+                $parameters[$name]['example'] = $example;
+            }
+        }
     }
 }

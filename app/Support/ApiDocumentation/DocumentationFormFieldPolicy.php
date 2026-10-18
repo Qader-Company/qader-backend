@@ -24,8 +24,7 @@ class DocumentationFormFieldPolicy implements ApplicationFormFieldPolicyProvider
     {
         $fields = array_filter(ProfessionalFormFieldEnum::cases(), fn ($field) => $field->step() === $step->value);
 
-        // Document the full field catalogue. The live form-fields endpoint remains
-        // the authority for visibility and required fields for a chosen profession.
+        // Document the full request shape. The live endpoint returns input keys only.
         return new ApplicationFormFieldPolicy(
             visibleFields: array_values(array_map(fn ($field) => $field->value, $fields)),
             requiredFields: array_values(array_map(fn ($field) => $field->value, array_filter($fields, fn ($field) => $field->isRequiredByDefault()))),

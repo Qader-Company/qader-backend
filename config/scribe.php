@@ -3,6 +3,7 @@
 use App\Support\ApiDocumentation\ApidogFolders;
 use App\Support\ApiDocumentation\DocumentationBodyParameters;
 use App\Support\ApiDocumentation\DocumentationQueryParameters;
+use App\Support\ApiDocumentation\DocumentationUrlParameters;
 use App\Support\ApiDocumentation\PortalMetadata;
 use App\Support\ApiDocumentation\PortalRouteMatcher;
 use Knuckles\Scribe\Extracting\Strategies;
@@ -85,6 +86,7 @@ return [
                     'data' => [
                         'Content-Type' => 'application/json',
                         'Accept' => 'application/json',
+                        'X-Authorization' => '{YOUR_API_KEY}',
                     ],
                 ],
             ],
@@ -92,7 +94,7 @@ return [
             Strategies\Headers\GetFromHeaderTag::class,
         ],
         'urlParameters' => [
-            Strategies\UrlParameters\GetFromLaravelAPI::class,
+            DocumentationUrlParameters::class,
             Strategies\UrlParameters\GetFromUrlParamAttribute::class,
             Strategies\UrlParameters\GetFromUrlParamTag::class,
         ],

@@ -50,4 +50,4 @@ Password reset uses the same pattern: OTP verification returns a limited `reset_
 
 Clients send a Google **ID token**, not a Google access token. Qader verifies its signature, issuer, verified email, and audience against `GOOGLE_CLIENT_ID` before creating or linking a `social_accounts` record.
 
-Public authentication routes do not require `X-Authorization` API keys. They are protected by rate limits, validation, OTP controls, verified provider tokens, and the user token lifecycle.
+Public authentication routes require an active API key in `X-Authorization` in addition to rate limits, validation, OTP controls, verified provider tokens, and the user token lifecycle.

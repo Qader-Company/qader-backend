@@ -18,16 +18,17 @@ class UpdateProfessionalFieldRequest extends FormRequest
             'name' => ['sometimes', 'array:en,ar'],
             'name.en' => ['required_with:name', 'string', 'max:255'],
             'name.ar' => ['required_with:name', 'string', 'max:255'],
+            'description' => ['sometimes', 'array:en,ar'],
+            'description.en' => ['required_with:description', 'string', 'max:1000'],
+            'description.ar' => ['required_with:description', 'string', 'max:1000'],
             'is_active' => ['sometimes', 'boolean'],
             'form_fields' => ['sometimes', 'array'],
-            'form_fields.*' => ['required', 'array:key,is_required'],
-            'form_fields.*.key' => [
+            'form_fields.*' => [
                 'required',
                 'string',
                 'distinct',
                 Rule::exists('professional_form_fields', 'key'),
             ],
-            'form_fields.*.is_required' => ['required', 'boolean'],
         ];
     }
 }

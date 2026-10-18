@@ -18,20 +18,20 @@ use App\Modules\V1\Users\Infrastructure\Providers\UserModuleServiceProvider;
 return [
     'routes' => [
         'public' => [
-            ['prefix' => 'auth', 'file' => 'auth.php'],
+            ['prefix' => 'auth', 'file' => 'auth.php', 'api_key' => true],
         ],
 
         'admin' => [
-            ['prefix' => 'admin/access-control', 'file' => 'access-control.php'],
-            ['prefix' => 'admin/admins', 'file' => 'admins.php'],
-            ['prefix' => 'admin/countries', 'file' => 'countries.php'],
-            ['prefix' => 'admin/cities', 'file' => 'cities.php'],
-            ['prefix' => 'admin/languages', 'file' => 'languages.php'],
-            ['prefix' => 'admin/fields', 'file' => 'fields.php'],
-            ['prefix' => 'admin/job-titles', 'file' => 'job-titles.php'],
-            ['prefix' => 'admin/skills', 'file' => 'skills.php'],
-            ['prefix' => 'admin/tools', 'file' => 'tools.php'],
-            ['prefix' => 'admin/currencies', 'file' => 'currencies.php'],
+            ['prefix' => 'admin/access-control', 'file' => 'access-control.php', 'api_key' => true],
+            ['prefix' => 'admin/admins', 'file' => 'admins.php', 'api_key' => true],
+            ['prefix' => 'admin/countries', 'file' => 'countries.php', 'api_key' => true],
+            ['prefix' => 'admin/cities', 'file' => 'cities.php', 'api_key' => true],
+            ['prefix' => 'admin/languages', 'file' => 'languages.php', 'api_key' => true],
+            ['prefix' => 'admin/fields', 'file' => 'fields.php', 'api_key' => true],
+            ['prefix' => 'admin/job-titles', 'file' => 'job-titles.php', 'api_key' => true],
+            ['prefix' => 'admin/skills', 'file' => 'skills.php', 'api_key' => true],
+            ['prefix' => 'admin/tools', 'file' => 'tools.php', 'api_key' => true],
+            ['prefix' => 'admin/currencies', 'file' => 'currencies.php', 'api_key' => true],
         ],
 
         'client' => [
@@ -42,16 +42,19 @@ return [
             [
                 'prefix' => 'talent/master-data',
                 'file' => 'master-data.php',
+                'api_key' => true,
                 'middlewares' => ['auth:sanctum', 'abilities:access,talent'],
             ],
             [
                 'prefix' => 'talent/profile',
                 'file' => 'profile.php',
+                'api_key' => true,
                 'middlewares' => ['auth:sanctum', 'abilities:access,talent'],
             ],
             [
                 'prefix' => 'talent/onboarding',
                 'file' => 'onboarding.php',
+                'api_key' => true,
                 'middlewares' => ['auth:sanctum', 'abilities:access,talent'],
             ],
         ],

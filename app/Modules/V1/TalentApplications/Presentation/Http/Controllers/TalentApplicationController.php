@@ -19,6 +19,7 @@ class TalentApplicationController extends Controller
     ): JsonResponse {
         $profile = $profiles->execute($request->user()->id);
         $application = $applications->execute($profile->id);
+        $application->load('media');
         $resource = new TalentApplicationResource($application);
 
         return ApiResponse::success($resource->resolve($request));

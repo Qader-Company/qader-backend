@@ -36,7 +36,7 @@ class PortalMetadata extends Strategy
 
         if ($portal === 'talent' && in_array($module, ['profile', 'onboarding'], true)
             && in_array($endpointData->httpMethods[0], ['POST', 'PATCH'], true)) {
-            $metadata['description'] = 'Field catalogue with default validation rules. Use GET /api/v1/talent/onboarding/form-fields for the visible and required fields for the selected profession. Omit fields that are not enabled for that profession.';
+            $metadata['description'] = 'Use GET /api/v1/talent/onboarding/form-fields for the input keys enabled for the selected professional field. PATCH profile saves a partial draft; POST onboarding step validates the required backend rules before Next or Submit.';
         }
 
         return $metadata;

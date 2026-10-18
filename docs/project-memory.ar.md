@@ -1,6 +1,6 @@
 # ذاكرة مشروع Qader
 
-آخر تحديث: 15 أكتوبر 2026
+آخر تحديث: 18 أكتوبر 2026
 
 هذا الملف هو نقطة البداية المختصرة عند استكمال المشروع في جلسة جديدة. التفاصيل تظل في مستندات الـ architecture والـ flows المرتبطة أدناه.
 
@@ -94,8 +94,20 @@
 
 ## السبرنت الحالي
 
-- `S00 — تأسيس المشروع`: Login وLogout والصلاحيات وتجهيز Web وMobile وBackend وFirebase/FCM.
-- الحالة الحالية: سكيما الـBackend المعتمدة نُفذت وأضيفت migrations الخاصة بـ`user_devices` وtoken family.
-- القرار الحالي: يرسل `fcm_token` و`platform` مع Login فقط، بدون endpoint منفصلة. نستخدم جدول `user_devices` بأقل أعمدة لازمة، ونؤجل `auth_sessions`.
-- Register متاح للـTalent والـClient ببيانات الحساب الأساسية، وينشئ سجل البورتال المناسب ثم يرسل OTP. بيانات الشركة وTalent profile ضمن onboarding لاحق.
-- الخطة وشكل الجداول المقترحان: [S00 Project Foundation Plan](sprints/S00-project-foundation-plan.ar.md).
+- `S01 — تسجيل المواهب`: التسجيل والملف المهني والحقول المتغيرة حسب المجال والـMaster Data اللازمة للنموذج، حتى إرسال الملف للمراجعة بنجاح.
+- `S00 — تأسيس المشروع` مؤجل مؤقتًا وسنرجع لإغلاق عناصر Web/Mobile وFirebase المتبقية لاحقًا.
+- تمت مراجعة شاشات الويب الأساسية في Figma والكود والمigrations والسكيما المقترحة ووثائق البيزنس.
+- نُفذ Backend الخاص بـS01 ومحاذاته مع Figma: شاشة اختيار المجال، موضع CV وProfessional Summary، Draft مقابل Next، seed data للمجالات، snapshot للتقديم، وحماية الملفات.
+- معنى الحقول الديناميكية في S01 هو اختيار input keys لكل Professional Field من كتالوج ثابت. الـBackend يرجع keys فقط، والفرونت يحدد الخطوة والترتيب والlabel ونوع العرض وعلامة Required. قواعد validation والحفظ الأساسية تظل في كود الـBackend.
+- لا نحتاج `professional_fields.display_order`. أُعيد اعتماد `professional_field_translations.description` لاحقًا.
+- نُفذ تبسيط `professional_form_fields`: حُذفت `step`, `is_default`, `is_required_by_default`، وحُذف `is_required` من `professional_field_form_field` في migration الخاصة بـS01.
+- أُعيد اعتماد `professional_field_translations.description` بقرار لاحق، وتُرجع Talent API الوصف المحلي بينما تُرجع Admin API الوصف بالإنجليزية والعربية.
+- نُفذ S01: اختيار المجال منفصل، CV في Basic Info، Professional Summary في Skills & Experience، البريد للعرض فقط، حفظ Draft منفصل عن Submit، snapshot ونسخة CV ثابتة عند التقديم، وملفات الموهبة على private disk بتنزيل محمي.
+- جميع مسارات الـAPI الحالية، بما فيها Auth وTalent وAdmin، تتطلب `X-Authorization` وتتحقق منه عبر middleware `api.key`. ملفات Scribe/OpenAPI/Postman توثّق الهيدر تلقائيًا.
+- `DemoAccountSeeder` ينشئ حسابات ثابتة للـTalent وClient وAdmin (`talent@qader.test`, `client@qader.test`, `admin@qader.test`) بكلمة المرور `Password123!`، وحساب Admin يحمل دور `owner`. أمثلة Auth في Scribe ثابتة وتستخدم هذه الحسابات.
+- أمثلة Scribe لكل الـendpoints ثابتة في `DocumentationExamples` وتشمل body وquery وpath parameters وطلبات multipart؛ لا نعتمد على قيم Faker في الملفات التي يستوردها Apidog.
+- ملفات Apidog/OpenAPI المحلية تُولد بـ`php artisan scribe:generate`، ومصادر الاستيراد هي `/docs/talent.openapi` و`/docs/client.openapi` و`/docs/admin.openapi`.
+- Master Data داخل S01 تشمل Countries وCities وLanguages وCurrencies وProfessional Fields وJob Titles وSkills وTools، بالإضافة إلى Talent enums. الموديولات وواجهات Admin والـseed data المطلوبة منفذة.
+- تمت مراجعة واعتماد سكيما S01، وأُنشئت migration التنفيذية الخاصة بها.
+- المراجعة والخطة وشكل الجداول المقترح: [S01 Talent Registration Plan](sprints/S01-talent-registration-plan.ar.md).
+- عناصر S00 المؤجلة تظل مسجلة في [S00 Project Foundation Plan](sprints/S00-project-foundation-plan.ar.md).
