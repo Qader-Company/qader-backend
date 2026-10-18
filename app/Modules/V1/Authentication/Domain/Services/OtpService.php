@@ -5,6 +5,7 @@ namespace App\Modules\V1\Authentication\Domain\Services;
 use App\Modules\V1\Authentication\Application\Mail\OtpMail;
 use App\Modules\V1\Authentication\Domain\ValueObjects\OtpPurposeEnum;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
+use Carbon\Carbon;
 use Ichtrojan\Otp\Otp;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -70,6 +71,12 @@ class OtpService
         PortalTypeEnum $portal
     ): bool {
         $identifier = $this->identifier($email, $purpose, $portal);
+
+        /*
+         * Disabled because ichtrojan/laravel-otp passes the database value of
+         * `validity` to Carbon 3 as a string, causing a TypeError on validation.
+         * Keep this block until the package handles the value as an integer.
+         *
         $otpCheck = (new Otp)->validate($identifier, $token);
         if (! $otpCheck->status) {
             return false;
@@ -77,6 +84,27 @@ class OtpService
         DB::table('otps')->where('identifier', $identifier)->delete();
 
         return true;
+        */
+
+        return DB::transaction(function () use ($identifier, $token): bool {
+            $otp = DB::table('otps')
+                ->where('identifier', $identifier)
+                ->where('token', $token)
+                ->where('valid', true)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $otp) {
+                return false;
+            }
+
+            DB::table('otps')->where('id', $otp->id)->delete();
+
+            $expiresAt = Carbon::parse($otp->created_at)
+                ->addMinutes((int) $otp->validity);
+
+            return now()->lessThanOrEqualTo($expiresAt);
+        });
     }
 
     private function identifier(
