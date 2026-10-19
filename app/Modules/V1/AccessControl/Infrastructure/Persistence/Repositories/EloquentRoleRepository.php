@@ -17,8 +17,8 @@ class EloquentRoleRepository implements RoleRepositoryInterface
             ->where('portal', $portal->value)
             ->when(
                 $filters['search'] ?? null,
-                fn ($query, string $search) => $query->where(
-                    fn ($query) => $query
+                fn($query, string $search) => $query->where(
+                    fn($query) => $query
                         ->where('name', 'like', "%{$search}%")
                         ->orWhere('name_en', 'like', "%{$search}%")
                         ->orWhere('name_ar', 'like', "%{$search}%")
@@ -26,7 +26,7 @@ class EloquentRoleRepository implements RoleRepositoryInterface
             )
             ->when(
                 array_key_exists('is_active', $filters),
-                fn ($query) => $query->where(
+                fn($query) => $query->where(
                     'is_active',
                     $filters['is_active']
                 )
@@ -54,10 +54,8 @@ class EloquentRoleRepository implements RoleRepositoryInterface
         return $this->find($roleId, $portal);
     }
 
-    public function create(
-        array $attributes,
-        array $permissions
-    ): object {
+    public function create(array $attributes, ?array $permissions): object
+    {
         $role = Role::query()->create($attributes);
         $role->syncPermissions($permissions);
 
