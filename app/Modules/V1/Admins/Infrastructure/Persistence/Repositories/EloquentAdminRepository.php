@@ -3,6 +3,7 @@
 namespace App\Modules\V1\Admins\Infrastructure\Persistence\Repositories;
 
 use App\Modules\V1\AccessControl\Domain\Models\Role;
+use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminRoleEnum;
 use App\Modules\V1\Admins\Domain\Models\Admin;
 use App\Modules\V1\Admins\Domain\Repositories\AdminRepositoryInterface;
 use App\Modules\V1\Admins\Infrastructure\Filters\AdminFilter;
@@ -12,6 +13,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -24,27 +26,6 @@ class EloquentAdminRepository implements AdminRepositoryInterface
 
         $admins = $this->query()
             ->whereIn('admins.id', $filteredAdmins)
-            ->whereNotExists(function (Builder $query): void {
-                $query
-                    ->selectRaw('1')
-                    ->from('model_has_roles as owner_roles')
-                    ->join(
-                        'roles as owner_role_definitions',
-                        'owner_role_definitions.id',
-                        '=',
-                        'owner_roles.role_id'
-                    )
-                    ->whereColumn('owner_roles.model_id', 'users.id')
-                    ->where(
-                        'owner_roles.model_type',
-                        $this->userMorphClass()
-                    )
-                    ->where(
-                        'owner_role_definitions.portal',
-                        PortalTypeEnum::ADMIN->value
-                    )
-                    ->where('owner_role_definitions.name', 'owner');
-            })
             ->orderBy('users.first_name')
             ->orderBy('users.last_name')
             ->paginate($filters['per_page'] ?? 20);
@@ -75,13 +56,14 @@ class EloquentAdminRepository implements AdminRepositoryInterface
     public function create(array $attributes, array $roleIds): object
     {
         $user = User::query()->create([
-            ...$attributes,
+            ...Arr::only($attributes, $this->userAttributes()),
             'type' => PortalTypeEnum::ADMIN,
             'email_verified_at' => now(),
         ]);
 
         $admin = Admin::query()->create([
             'user_id' => $user->getKey(),
+            ...Arr::only($attributes, $this->adminAttributes()),
         ]);
 
         $this->syncRoles($user, $roleIds);
@@ -97,7 +79,8 @@ class EloquentAdminRepository implements AdminRepositoryInterface
         $admin = Admin::query()->findOrFail($adminId);
         $user = User::query()->findOrFail($admin->user_id);
 
-        $user->update($attributes);
+        $user->update(Arr::only($attributes, $this->userAttributes()));
+        $admin->update(Arr::only($attributes, $this->adminAttributes()));
 
         if ($roleIds !== null) {
             $this->syncRoles($user, $roleIds);
@@ -119,7 +102,7 @@ class EloquentAdminRepository implements AdminRepositoryInterface
         return $this->findOrFail($adminId);
     }
 
-    public function hasOwnerRole(int $adminId): bool
+    public function hasSuperAdminRole(int $adminId): bool
     {
         return DB::table('admins')
             ->join(
@@ -132,7 +115,7 @@ class EloquentAdminRepository implements AdminRepositoryInterface
             ->where('admins.id', $adminId)
             ->where('model_has_roles.model_type', $this->userMorphClass())
             ->where('roles.portal', PortalTypeEnum::ADMIN->value)
-            ->where('roles.name', 'owner')
+            ->where('roles.name', AdminRoleEnum::SUPER_ADMIN->value)
             ->exists();
     }
 
@@ -156,6 +139,9 @@ class EloquentAdminRepository implements AdminRepositoryInterface
                 'users.last_name',
                 'users.email',
                 'users.avatar',
+                'admins.display_name_ar',
+                'admins.phone_country_code',
+                'admins.phone_number',
                 'users.is_active',
                 'users.email_verified_at',
                 'users.last_login_at',
@@ -185,6 +171,9 @@ class EloquentAdminRepository implements AdminRepositoryInterface
                 'model_has_roles.model_id as user_id',
                 'roles.id',
                 'roles.name',
+                'roles.name_en',
+                'roles.name_ar',
+                'roles.is_active',
             ])
             ->groupBy('user_id');
 
@@ -194,6 +183,9 @@ class EloquentAdminRepository implements AdminRepositoryInterface
                 ->map(static fn (object $role): array => [
                     'id' => $role->id,
                     'name' => $role->name,
+                    'name_en' => $role->name_en,
+                    'name_ar' => $role->name_ar,
+                    'is_active' => (bool) $role->is_active,
                 ])
                 ->values()
                 ->all();
@@ -205,7 +197,8 @@ class EloquentAdminRepository implements AdminRepositoryInterface
         $roles = Role::query()
             ->whereIn('id', $roleIds)
             ->where('portal', PortalTypeEnum::ADMIN->value)
-            ->where('name', '!=', 'owner')
+            ->where('name', '!=', AdminRoleEnum::SUPER_ADMIN->value)
+            ->where('is_active', true)
             ->get();
 
         if (
@@ -223,5 +216,20 @@ class EloquentAdminRepository implements AdminRepositoryInterface
     private function userMorphClass(): string
     {
         return (new User)->getMorphClass();
+    }
+
+    /** @return array<int, string> */
+    private function userAttributes(): array
+    {
+        return [
+            'first_name', 'last_name', 'email', 'password', 'avatar',
+            'is_active',
+        ];
+    }
+
+    /** @return array<int, string> */
+    private function adminAttributes(): array
+    {
+        return ['display_name_ar', 'phone_country_code', 'phone_number'];
     }
 }

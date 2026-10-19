@@ -17,8 +17,8 @@ class UpdateAdminStatusUseCase
         bool $isActive,
         int $authenticatedUserId
     ): object {
-        if ($this->admins->hasOwnerRole($adminId)) {
-            throw new DomainException(__('admins.owner_cannot_be_deactivated'));
+        if ($this->admins->hasSuperAdminRole($adminId)) {
+            throw new DomainException(__('admins.super_admin_cannot_be_deactivated'));
         }
 
         if (

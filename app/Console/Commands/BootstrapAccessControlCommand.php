@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Modules\V1\AccessControl\Application\Services\PermissionRegistry;
+use App\Modules\V1\AccessControl\Application\Services\AdminRoleSynchronizer;
 use App\Modules\V1\AccessControl\Application\Services\PermissionSynchronizer;
-use App\Modules\V1\AccessControl\Domain\Models\Role;
+use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminRoleEnum;
 use App\Modules\V1\Admins\Domain\Models\Admin;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
@@ -21,9 +21,12 @@ class BootstrapAccessControlCommand extends Command
         {--password= : Password; omit it to be prompted}
         {--api-key-name=local-client : API key name}';
 
-    protected $description = 'Creates or updates the platform owner, permissions, and API key.';
+    protected $description = 'Creates or updates the platform super admin, permissions, and API key.';
 
-    public function handle(PermissionSynchronizer $permissionSynchronizer): int
+    public function handle(
+        PermissionSynchronizer $permissionSynchronizer,
+        AdminRoleSynchronizer $roleSynchronizer
+    ): int
     {
         $password = $this->option('password') ?: $this->secret('Admin password (min. 8 characters)');
 
@@ -34,17 +37,10 @@ class BootstrapAccessControlCommand extends Command
         }
 
         $permissionSynchronizer->sync();
+        $roles = $roleSynchronizer->sync();
 
-        [$user, $apiKey] = DB::transaction(function () use ($password): array {
-            $role = Role::firstOrCreate([
-                'name' => 'owner',
-                'guard_name' => PermissionRegistry::GUARD,
-                'portal' => PortalTypeEnum::ADMIN->value,
-            ]);
-
-            $role->syncPermissions(
-                PermissionRegistry::names(PortalTypeEnum::ADMIN)
-            );
+        [$user, $apiKey] = DB::transaction(function () use ($password, $roles): array {
+            $role = $roles[AdminRoleEnum::SUPER_ADMIN->value];
 
             $user = User::updateOrCreate(
                 [
@@ -70,7 +66,7 @@ class BootstrapAccessControlCommand extends Command
             return [$user, $apiKey];
         });
 
-        $this->info("Platform owner ready: {$user->email}");
+        $this->info("Platform super admin ready: {$user->email}");
         $this->line("X-Authorization: {$apiKey->key}");
 
         return self::SUCCESS;

@@ -28,6 +28,7 @@ class UserAccessResolver
             ->where('model_has_roles.model_type', $modelType)
             ->where('model_has_roles.model_id', $user->getKey())
             ->where('roles.portal', $portal->value)
+            ->where('roles.is_active', true)
             ->orderBy('roles.name')
             ->pluck('roles.name')
             ->unique()
@@ -51,6 +52,7 @@ class UserAccessResolver
             ->where('model_has_roles.model_type', $modelType)
             ->where('model_has_roles.model_id', $user->getKey())
             ->where('roles.portal', $portal->value)
+            ->where('roles.is_active', true)
             ->where('permissions.portal', $portal->value)
             ->orderBy('permissions.name')
             ->pluck('permissions.name')
@@ -81,6 +83,21 @@ class UserAccessResolver
             'roles' => $roles,
             'permissions' => $permissions,
         ];
+    }
+
+    /** @param array<int, string> $permissions */
+    public static function hasAnyPermission(User $user, array $permissions): bool
+    {
+        return array_intersect(
+            self::resolve($user)['permissions'],
+            $permissions
+        ) !== [];
+    }
+
+    /** @param array<int, string> $roles */
+    public static function hasAnyRole(User $user, array $roles): bool
+    {
+        return array_intersect(self::resolve($user)['roles'], $roles) !== [];
     }
 
     private static function resolvePortal(User $user): ?PortalTypeEnum

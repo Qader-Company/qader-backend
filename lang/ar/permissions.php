@@ -18,6 +18,7 @@ return [
         'skills' => 'المهارات',
         'tools' => 'الأدوات',
         'currencies' => 'العملات',
+        'talent-applications' => 'طلبات المواهب',
         'platform' => 'المنصة',
     ],
 
@@ -61,6 +62,12 @@ return [
         'currencies' => [
             'view' => 'عرض العملات',
             'manage' => 'إدارة العملات',
+        ],
+        'talent-applications' => [
+            'view' => 'عرض طلبات المواهب',
+            'assign-reviewer' => 'تعيين مراجعي طلبات المواهب',
+            'review' => 'مراجعة طلبات المواهب',
+            'decide' => 'اتخاذ قرار تأهيل المواهب',
         ],
     ],
 

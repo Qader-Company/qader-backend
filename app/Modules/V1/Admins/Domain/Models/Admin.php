@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id'])]
+#[Fillable([
+    'user_id', 'phone_country_code', 'phone_number', 'display_name_ar',
+])]
 class Admin extends Model
 {
     use Filterable;

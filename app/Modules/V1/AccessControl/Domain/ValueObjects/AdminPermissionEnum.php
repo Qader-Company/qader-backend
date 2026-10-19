@@ -40,6 +40,11 @@ enum AdminPermissionEnum: string implements PermissionDefinition
     case CURRENCIES_VIEW = 'admin.currencies.view';
     case CURRENCIES_MANAGE = 'admin.currencies.manage';
 
+    case TALENT_APPLICATIONS_VIEW = 'admin.talent-applications.view';
+    case TALENT_APPLICATIONS_ASSIGN_REVIEWER = 'admin.talent-applications.assign-reviewer';
+    case TALENT_APPLICATIONS_REVIEW = 'admin.talent-applications.review';
+    case TALENT_APPLICATIONS_DECIDE = 'admin.talent-applications.decide';
+
     public function portal(): PortalTypeEnum
     {
         return PortalTypeEnum::ADMIN;

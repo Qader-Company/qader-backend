@@ -7,11 +7,22 @@ use Illuminate\Support\Collection;
 
 interface RoleRepositoryInterface
 {
-    public function list(PortalTypeEnum $portal): Collection;
+    public function list(PortalTypeEnum $portal, array $filters = []): Collection;
+
+    public function findOrFail(
+        int $roleId,
+        PortalTypeEnum $portal
+    ): object;
 
     public function create(
         array $attributes,
-        array $permissions
+        ?array $permissions
+    ): object;
+
+    public function updateStatus(
+        int $roleId,
+        PortalTypeEnum $portal,
+        bool $isActive
     ): object;
 
     public function update(
@@ -25,12 +36,6 @@ interface RoleRepositoryInterface
         int $roleId,
         PortalTypeEnum $portal
     ): void;
-
-    public function hasName(
-        int $roleId,
-        PortalTypeEnum $portal,
-        string $name
-    ): bool;
 
     public function isAssigned(
         int $roleId,

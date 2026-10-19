@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         // where the mbstring extension is unavailable.
         $this->callSilent([
             PermissionSeeder::class,
+            AdminRoleSeeder::class,
             DemoAccountSeeder::class,
             CountrySeeder::class,
             CitySeeder::class,

@@ -3,6 +3,7 @@
 namespace App\Modules\V1\AccessControl\Application\UseCases;
 
 use App\Modules\V1\AccessControl\Domain\Repositories\RoleRepositoryInterface;
+use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminRoleEnum;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -17,9 +18,11 @@ class DeleteRoleUseCase
         int $roleId,
         PortalTypeEnum $portal
     ): void {
-        if ($this->roles->hasName($roleId, $portal, 'owner')) {
+        $role = $this->roles->findOrFail($roleId, $portal);
+
+        if ($role->name === AdminRoleEnum::SUPER_ADMIN->value) {
             throw new DomainException(
-                __('admins.owner_role_cannot_be_deleted')
+                __('admins.super_admin_role_cannot_be_deleted')
             );
         }
 

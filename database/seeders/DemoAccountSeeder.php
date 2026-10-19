@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Modules\V1\AccessControl\Application\Services\PermissionRegistry;
+use App\Modules\V1\AccessControl\Application\Services\AdminRoleSynchronizer;
 use App\Modules\V1\AccessControl\Domain\Models\Role;
+use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminRoleEnum;
 use App\Modules\V1\Admins\Domain\Models\Admin;
 use App\Modules\V1\Clients\Domain\Models\Client;
 use App\Modules\V1\Talents\Domain\Models\Talent;
@@ -13,8 +14,10 @@ use Illuminate\Database\Seeder;
 
 class DemoAccountSeeder extends Seeder
 {
-    public function run(): void
+    public function run(AdminRoleSynchronizer $roles): void
     {
+        $superAdminRole = $roles->sync()[AdminRoleEnum::SUPER_ADMIN->value];
+
         foreach (PortalTypeEnum::cases() as $portal) {
             $account = config('demo_accounts.accounts.'.$portal->value);
 
@@ -35,28 +38,16 @@ class DemoAccountSeeder extends Seeder
             match ($portal) {
                 PortalTypeEnum::TALENT => Talent::query()->firstOrCreate(['user_id' => $user->getKey()]),
                 PortalTypeEnum::CLIENT => Client::query()->firstOrCreate(['user_id' => $user->getKey()]),
-                PortalTypeEnum::ADMIN => $this->createAdminProfile($user),
+                PortalTypeEnum::ADMIN => $this->createAdminProfile(
+                    $user,
+                    $superAdminRole
+                ),
             };
         }
     }
 
-    private function createAdminProfile(User $user): void
+    private function createAdminProfile(User $user, Role $role): void
     {
-        $role = Role::query()->firstOrCreate([
-            'name' => 'owner',
-            'guard_name' => PermissionRegistry::GUARD,
-            'portal' => PortalTypeEnum::ADMIN->value,
-        ]);
-
-        $role->syncPermissions(PermissionRegistry::names(PortalTypeEnum::ADMIN));
-
-        $managerRole = Role::query()->firstOrCreate([
-            'name' => 'manager',
-            'guard_name' => PermissionRegistry::GUARD,
-            'portal' => PortalTypeEnum::ADMIN->value,
-        ]);
-        $managerRole->syncPermissions(PermissionRegistry::names(PortalTypeEnum::ADMIN));
-
         Admin::query()->firstOrCreate(['user_id' => $user->getKey()]);
         $user->syncRoles([$role]);
     }

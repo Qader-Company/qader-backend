@@ -3,9 +3,11 @@
 namespace App\Modules\V1\AccessControl\Application\UseCases;
 
 use App\Modules\V1\AccessControl\Domain\Repositories\RoleRepositoryInterface;
+use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminRoleEnum;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use DomainException;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
 class UpdateRoleUseCase
@@ -19,19 +21,31 @@ class UpdateRoleUseCase
         array $attributes,
         PortalTypeEnum $portal
     ): object {
-        if ($this->roles->hasName($roleId, $portal, 'owner')) {
+        $role = $this->roles->findOrFail($roleId, $portal);
+
+        if ($role->name === AdminRoleEnum::SUPER_ADMIN->value) {
             throw new DomainException(
-                __('admins.owner_role_cannot_be_modified')
+                __('admins.super_admin_role_cannot_be_modified')
             );
         }
 
-        if (strcasecmp(trim($attributes['name']), 'owner') === 0) {
+        if (isset($attributes['name_en'])) {
+            $attributes['name'] = Str::slug($attributes['name_en'], '_');
+        }
+
+        if (
+            isset($attributes['name'])
+            && $attributes['name'] === AdminRoleEnum::SUPER_ADMIN->value
+            && $attributes['name'] !== $role->name
+        ) {
             throw new DomainException(
-                __('admins.owner_role_is_reserved')
+                __('admins.super_admin_role_name_is_reserved')
             );
         }
 
-        $permissions = Arr::pull($attributes, 'permissions');
+        $permissions = array_key_exists('permissions', $attributes)
+            ? Arr::pull($attributes, 'permissions')
+            : null;
 
         return DB::transaction(
             fn (): object => $this->roles->update(

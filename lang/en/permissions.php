@@ -18,6 +18,7 @@ return [
         'skills' => 'Skills',
         'tools' => 'Tools',
         'currencies' => 'Currencies',
+        'talent-applications' => 'Talent applications',
         'platform' => 'Platform',
     ],
 
@@ -61,6 +62,12 @@ return [
         'currencies' => [
             'view' => 'View currencies',
             'manage' => 'Manage currencies',
+        ],
+        'talent-applications' => [
+            'view' => 'View talent applications',
+            'assign-reviewer' => 'Assign talent application reviewers',
+            'review' => 'Review talent applications',
+            'decide' => 'Make talent qualification decisions',
         ],
     ],
 

@@ -9,13 +9,16 @@ class AdminFilter extends ModelFilter
 {
     public function search(string $search): void
     {
-        $this->whereHas('user', function (Builder $query) use ($search): void {
-            $query->where(function (Builder $query) use ($search): void {
-                $query
-                    ->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            });
+        $this->where(function (Builder $query) use ($search): void {
+            $query
+                ->where('display_name_ar', 'like', "%{$search}%")
+                ->orWhere('phone_number', 'like', "%{$search}%")
+                ->orWhereHas('user', function (Builder $query) use ($search): void {
+                    $query
+                        ->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
         });
     }
 
@@ -27,7 +30,7 @@ class AdminFilter extends ModelFilter
         );
     }
 
-    public function role(int $roleId): void
+    public function roleId(int $roleId): void
     {
         $this->whereHas(
             'user.roles',

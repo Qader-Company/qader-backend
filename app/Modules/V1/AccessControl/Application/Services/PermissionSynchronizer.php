@@ -17,6 +17,7 @@ class PermissionSynchronizer
 
         DB::transaction(function (): void {
             $this->migrateLegacyAdminPermissions();
+            $this->normalizeRegisteredPermissionGuards();
             $this->upsertPermissions();
             $this->deletePermissionsOutsideRegistry();
         });
@@ -31,7 +32,6 @@ class PermissionSynchronizer
 
             $legacyPermission = Permission::query()
                 ->where('name', $legacyName)
-                ->where('guard_name', PermissionRegistry::GUARD)
                 ->where('portal', PortalTypeEnum::ADMIN->value)
                 ->first();
 
@@ -41,8 +41,11 @@ class PermissionSynchronizer
 
             $currentPermission = Permission::query()
                 ->where('name', $permission->value)
-                ->where('guard_name', PermissionRegistry::GUARD)
                 ->where('portal', PortalTypeEnum::ADMIN->value)
+                ->orderByRaw(
+                    'guard_name = ? desc',
+                    [PermissionRegistry::GUARD]
+                )
                 ->first();
 
             if ($currentPermission === null) {
@@ -59,6 +62,40 @@ class PermissionSynchronizer
             );
 
             $legacyPermission->delete();
+        }
+    }
+
+    private function normalizeRegisteredPermissionGuards(): void
+    {
+        foreach (PermissionRegistry::permissions() as $definition) {
+            $matches = Permission::query()
+                ->where('name', $definition->value)
+                ->where('portal', $definition->portal()->value)
+                ->orderByRaw(
+                    'guard_name = ? desc',
+                    [PermissionRegistry::GUARD]
+                )
+                ->get();
+
+            $permission = $matches->shift();
+
+            if ($permission === null) {
+                continue;
+            }
+
+            foreach ($matches as $duplicate) {
+                $this->movePermissionAssignments(
+                    $duplicate->getKey(),
+                    $permission->getKey()
+                );
+                $duplicate->delete();
+            }
+
+            if ($permission->guard_name !== PermissionRegistry::GUARD) {
+                $permission->forceFill([
+                    'guard_name' => PermissionRegistry::GUARD,
+                ])->save();
+            }
         }
     }
 

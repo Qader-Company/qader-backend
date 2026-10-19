@@ -20,7 +20,7 @@ interface AdminRepositoryInterface
 
     public function updateStatus(int $adminId, bool $isActive): object;
 
-    public function hasOwnerRole(int $adminId): bool;
+    public function hasSuperAdminRole(int $adminId): bool;
 
     public function belongsToUser(int $adminId, int $userId): bool;
 }
