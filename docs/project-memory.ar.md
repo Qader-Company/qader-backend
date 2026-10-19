@@ -91,6 +91,8 @@
 
 قبل كتابة الكود نحدد: الدور، بداية الـ flow ونهايته، الحالات والانتقالات، شاشات Figma المرتبطة، endpoints المطلوبة، الجداول الحالية المتأثرة، وأقل تعديل مطلوب في السكيما. ثم نحدّث مستند الـ flow عند اتخاذ قرار جديد.
 
+مرجع قيم الـenums المستخدمة في عقود الـAPI موجود في [API Enums Reference](api-enums-reference.ar.md)، ويجب تحديثه في نفس التغيير عند إضافة enum أو قيمة جديدة أو تعديل قيمة حالية.
+
 خطة التنفيذ المرحلية موجودة في [Qader Delivery Roadmap](architecture/07-delivery-roadmap.md)، وقواعد التنفيذ في [Feature Delivery Workflow](architecture/05-feature-delivery-workflow.md).
 
 ## السبرنت الحالي
@@ -104,6 +106,7 @@
 - نُفذ تبسيط `professional_form_fields` داخل migration الإنشاء الأصلية: لا توجد `step`, `is_default`, `is_required_by_default`، ولا `is_required` في `professional_field_form_field`.
 - أُعيد اعتماد `professional_field_translations.description` بقرار لاحق، وتُرجع Talent API الوصف المحلي بينما تُرجع Admin API الوصف بالإنجليزية والعربية.
 - نُفذ S01: اختيار المجال منفصل، CV في Basic Info، Professional Summary في Skills & Experience، البريد للعرض فقط، حفظ Draft منفصل عن Submit، snapshot ونسخة CV ثابتة عند التقديم، وملفات الموهبة على private disk بتنزيل محمي.
+- `GET /api/v1/talent/onboarding/application` يرجع `404` برسالة مترجمة واضحة عند عدم وجود تقديم، و`200` مع تفاصيل الطلب عند وجوده.
 - جميع مسارات الـAPI الحالية، بما فيها Auth وTalent وAdmin، تتطلب `X-Authorization` وتتحقق منه عبر middleware `api.key`. ملفات Scribe/OpenAPI/Postman توثّق الهيدر تلقائيًا.
 - `DemoAccountSeeder` ينشئ حسابات ثابتة للـTalent وClient وAdmin (`talent@qader.test`, `client@qader.test`, `admin@qader.test`) بكلمة المرور `Password123!`، وحساب Admin يحمل دور `owner`. أمثلة Auth في Scribe ثابتة وتستخدم هذه الحسابات.
 - أمثلة Scribe لكل الـendpoints ثابتة في `DocumentationExamples` وتشمل body وquery وpath parameters وطلبات multipart؛ لا نعتمد على قيم Faker في الملفات التي يستوردها Apidog.
