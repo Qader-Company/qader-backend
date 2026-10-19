@@ -5,7 +5,7 @@
 
 ## ما تم تنفيذه
 
-- إضافة migration نهائية لـS01 تبسّط كتالوج الحقول المهنية وتضيف snapshot للتقديم.
+- تحديث migrations الإنشاء الموجودة لجداول S01 مباشرة: تبسيط كتالوج الحقول المهنية، وإضافة وصف المجال وsnapshot التقديم، بدون migration تجميعية جديدة.
 - `professional_form_fields` يخزن `id`, `key`, timestamps فقط.
 - `professional_field_form_field` يربط المجال بالـinput keys فقط.
 - قواعد الخطوات والحقول المطلوبة بقيت داخل كود الـBackend لضمان صحة الحفظ والـSubmit.
@@ -303,6 +303,8 @@ Content-Type: multipart/form-data
 Authorization: Bearer {{access_token}}
 ```
 
+شكل البيانات كـJSON للتوضيح:
+
 ```json
 {
   "professional_field_id": 1,
@@ -329,6 +331,26 @@ Authorization: Bearer {{access_token}}
 
 قيمة `cv` في المثال تمثل الملف المختار؛ عند التنفيذ تُرسل كحقل File داخل `multipart/form-data`.
 
+الـForm Data المرسل فعليًا:
+
+```text
+professional_field_id = 1
+full_name = Ahmed Hassan
+phone_country_code = +20
+phone_number = 1012345678
+whatsapp_country_code = +20
+whatsapp_number = 1098765432
+date_of_birth = 1995-05-20
+gender = male
+religion = islam
+nationality_country_id = 1
+residence_country_id = 1
+residence_city_id = 1
+languages[0][language_id] = 1
+languages[0][proficiency_level] = native
+cv = @/path/to/cv.pdf
+```
+
 ### حفظ المهارات والخبرات
 
 ```http
@@ -336,6 +358,8 @@ POST /api/v1/talent/onboarding/skills-and-experiences
 Content-Type: multipart/form-data
 Authorization: Bearer {{access_token}}
 ```
+
+شكل البيانات كـJSON للتوضيح:
 
 ```json
 {
@@ -373,6 +397,33 @@ Authorization: Bearer {{access_token}}
 ```
 
 قيم `projects[].images[]` في المثال تمثل الملفات المختارة؛ عند التنفيذ تُرسل كحقول File داخل `multipart/form-data`.
+
+الـForm Data المرسل فعليًا:
+
+```text
+professional_summary = Backend engineer experienced in building scalable APIs.
+job_title_id = 1
+seniority_level = mid_level
+years_of_experience = 5
+skill_ids[0] = 1
+tool_ids[0] = 1
+linkedin_url = https://www.linkedin.com/in/ahmed-hassan
+github_url = https://github.com/ahmed-hassan
+portfolio_url = https://ahmed-hassan.example.com
+experiences[0][job_title] = Backend Engineer
+experiences[0][company_name] = Qader
+experiences[0][company_url] = https://qader.example.com
+experiences[0][started_at] = 2022-01-01
+experiences[0][ended_at] = 2024-01-01
+experiences[0][currently_working] = false
+experiences[0][responsibilities] = Designed APIs and maintained backend services.
+experiences[0][display_order] = 1
+projects[0][name] = Qader Platform
+projects[0][description] = Talent registration platform.
+projects[0][url] = https://project.example.com
+projects[0][display_order] = 1
+projects[0][images][0] = @/path/to/project.png
+```
 
 `experiences[0][id]`, `projects[0][id]` و`projects[0][removed_image_ids][]` تستخدم عند تحديث سجلات موجودة، ولا تُرسل عند الإنشاء الأول.
 
@@ -556,6 +607,6 @@ storage/app/private/scribe/collection.json
 
 - نجح فحص syntax لكل ملفات PHP.
 - ظهرت كل Talent routes الجديدة في `route:list`.
-- نجح `migrate:fresh --seed` على SQLite مؤقت داخل حاوية المشروع، بما يشمل migration S01 وكل seeders.
+- نجح `migrate:fresh --seed` على SQLite مؤقت داخل حاوية المشروع بعد تحديث migrations الإنشاء الأصلية، بما يشمل كل seeders.
 - نجح `scribe:generate` داخل حاوية PHP الخاصة بالمشروع.
 - تم فحص Talent OpenAPI والتأكد من وجود request bodies، الملفات، query/path parameters، security scheme، وتقسيم Apidog إلى `talent/*`.

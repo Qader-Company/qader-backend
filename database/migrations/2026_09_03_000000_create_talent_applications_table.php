@@ -13,6 +13,10 @@ return new class extends Migration
             $table->foreignId('talent_id')->unique()->constrained('talents')->cascadeOnDelete();
             $table->string('status')->default('submitted')->index();
             $table->timestamp('submitted_at');
+            $table->json('submission_snapshot')->nullable();
+            $table->unsignedTinyInteger('profile_completion_at_submission')->default(0);
+            $table->unsignedSmallInteger('snapshot_version')->default(1);
+            $table->timestamp('snapshot_captured_at')->nullable();
             $table->timestamps();
         });
     }

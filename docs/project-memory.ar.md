@@ -12,6 +12,7 @@
 - العمل يتم كسبرنتات صغيرة. في كل سبرنت نختار flow أو module جاهز، نراجع تصميمه وقواعده، ثم نعدّل الجداول والـ API الخاصة به فقط.
 - لا ننفّذ كل السكيما المقترحة دفعة واحدة. ملف السكيما مرجع للمراجعة والتخطيط، وأي تغيير فعلي في migrations ينتظر مراجعة المستخدم واعتماد جداول السبرنت.
 - لا ننشئ migrations جديدة لمجرد وجود جدول في السكيما المقترحة.
+- عند وجود migration أصلية للجدول المطلوب نعدّلها مباشرة. ننشئ migration جديدة فقط عندما لا توجد migration مناسبة للتغيير أو الجدول المطلوب.
 - لا نشغّل أو نكتب اختبارات إلا عند طلب المستخدم. نعتمد فحوصات تشغيل مركزة عند الحاجة.
 
 ## مصادر الحقيقة وترتيبها
@@ -100,7 +101,7 @@
 - نُفذ Backend الخاص بـS01 ومحاذاته مع Figma: شاشة اختيار المجال، موضع CV وProfessional Summary، Draft مقابل Next، seed data للمجالات، snapshot للتقديم، وحماية الملفات.
 - معنى الحقول الديناميكية في S01 هو اختيار input keys لكل Professional Field من كتالوج ثابت. الـBackend يرجع keys فقط، والفرونت يحدد الخطوة والترتيب والlabel ونوع العرض وعلامة Required. قواعد validation والحفظ الأساسية تظل في كود الـBackend.
 - لا نحتاج `professional_fields.display_order`. أُعيد اعتماد `professional_field_translations.description` لاحقًا.
-- نُفذ تبسيط `professional_form_fields`: حُذفت `step`, `is_default`, `is_required_by_default`، وحُذف `is_required` من `professional_field_form_field` في migration الخاصة بـS01.
+- نُفذ تبسيط `professional_form_fields` داخل migration الإنشاء الأصلية: لا توجد `step`, `is_default`, `is_required_by_default`، ولا `is_required` في `professional_field_form_field`.
 - أُعيد اعتماد `professional_field_translations.description` بقرار لاحق، وتُرجع Talent API الوصف المحلي بينما تُرجع Admin API الوصف بالإنجليزية والعربية.
 - نُفذ S01: اختيار المجال منفصل، CV في Basic Info، Professional Summary في Skills & Experience، البريد للعرض فقط، حفظ Draft منفصل عن Submit، snapshot ونسخة CV ثابتة عند التقديم، وملفات الموهبة على private disk بتنزيل محمي.
 - جميع مسارات الـAPI الحالية، بما فيها Auth وTalent وAdmin، تتطلب `X-Authorization` وتتحقق منه عبر middleware `api.key`. ملفات Scribe/OpenAPI/Postman توثّق الهيدر تلقائيًا.
@@ -108,6 +109,6 @@
 - أمثلة Scribe لكل الـendpoints ثابتة في `DocumentationExamples` وتشمل body وquery وpath parameters وطلبات multipart؛ لا نعتمد على قيم Faker في الملفات التي يستوردها Apidog.
 - ملفات Apidog/OpenAPI المحلية تُولد بـ`php artisan scribe:generate`، ومصادر الاستيراد هي `/docs/talent.openapi` و`/docs/client.openapi` و`/docs/admin.openapi`.
 - Master Data داخل S01 تشمل Countries وCities وLanguages وCurrencies وProfessional Fields وJob Titles وSkills وTools، بالإضافة إلى Talent enums. الموديولات وواجهات Admin والـseed data المطلوبة منفذة.
-- تمت مراجعة واعتماد سكيما S01، وأُنشئت migration التنفيذية الخاصة بها.
+- تمت مراجعة واعتماد سكيما S01، ودُمجت التغييرات في migrations الإنشاء الموجودة بدون migration تجميعية إضافية.
 - المراجعة والخطة وشكل الجداول المقترح: [S01 Talent Registration Plan](sprints/S01-talent-registration-plan.ar.md).
 - عناصر S00 المؤجلة تظل مسجلة في [S00 Project Foundation Plan](sprints/S00-project-foundation-plan.ar.md).
