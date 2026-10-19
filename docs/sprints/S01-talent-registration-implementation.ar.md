@@ -213,6 +213,40 @@ PATCH /api/v1/talent/profile
 GET   /api/v1/talent/onboarding/application
 ```
 
+قراءة حالة التقديم ترجع `404` برسالة واضحة إذا لم يُقدم الملف، وتحافظ على استجابة النجاح الأصلية عند وجود الطلب.
+
+قبل تقديم الملف:
+
+```json
+{
+  "success": false,
+  "message": "لم يتم تقديم ملفك للمراجعة حتى الآن."
+}
+```
+
+بعد تقديم الملف:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "status": "submitted",
+    "submitted_at": "2026-10-19T08:45:00.000000Z",
+    "profile_completion_at_submission": 100,
+    "snapshot_version": 1,
+    "snapshot_captured_at": "2026-10-19T08:45:00.000000Z",
+    "submitted_cv": {
+      "id": 10,
+      "file_name": "cv.pdf",
+      "download_url": "http://localhost:8000/api/v1/talent/profile/media/10/download"
+    }
+  }
+}
+```
+
+رسالة `404` تتغير بين العربية والإنجليزية حسب `X-Locale` أو `Accept-Language`.
+
 `PATCH /profile` يقبل الأقسام التالية ويحفظ الحقول المرسلة فقط بدون فرض اكتمال الخطوة:
 
 ```text

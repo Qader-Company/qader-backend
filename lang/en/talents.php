@@ -1,6 +1,9 @@
 <?php
 
 return [
+    'application' => [
+        'not_submitted' => 'No application has been submitted yet.',
+    ],
     'onboarding' => [
         'previous_step_required' => 'Complete the :step step before continuing.',
         'steps' => [
