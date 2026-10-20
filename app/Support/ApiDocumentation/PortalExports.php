@@ -15,6 +15,7 @@ class PortalExports
                 $export = $spec;
                 $export['info']['title'] = 'Qader '.$portal.' API';
                 $export['tags'] = array_values(array_filter($spec['tags'] ?? [], fn ($tag) => $tag['name'] === $portal));
+                unset($export['components']['securitySchemes'], $export['security']);
                 $export['paths'] = [];
 
                 foreach ($spec['paths'] as $uri => $pathItem) {
@@ -37,6 +38,7 @@ class PortalExports
                             $operation['x-apidog-folder'] = $portal.'/auth';
                         }
 
+                        $operation = self::withAuthenticationVariables($uri, $operation);
                         $operation = self::withStableRequestExamples($uri, $method, $operation);
 
                         if (empty($operation['responses'])) {
@@ -96,9 +98,65 @@ class PortalExports
             }
 
             self::normalizePostmanExamples($collection);
+            self::normalizePostmanAuthentication($collection);
 
             file_put_contents($paths['postman'], json_encode($collection, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
         }
+    }
+
+    private static function withAuthenticationVariables(string $uri, array $operation): array
+    {
+        foreach ($operation['parameters'] ?? [] as &$parameter) {
+            if (($parameter['in'] ?? null) !== 'header' || strcasecmp($parameter['name'] ?? '', 'X-Authorization') !== 0) {
+                continue;
+            }
+
+            $parameter['example'] = '{{api_key}}';
+            $parameter['schema']['example'] = '{{api_key}}';
+        }
+        unset($parameter);
+
+        $tokenVariable = self::tokenVariableFor($uri, $operation);
+
+        if ($tokenVariable === null) {
+            $operation['security'] = [];
+
+            return $operation;
+        }
+
+        // OpenAPI security schemes intentionally do not carry credential values.
+        // Apidog therefore replaces every imported Bearer value with its own
+        // {{bearerToken}} variable. Keep auth explicit per operation so the
+        // imported request uses the correct Qader token variable.
+        $operation['security'] = [];
+        $authorization = 'Bearer {{'.$tokenVariable.'}}';
+        $operation['parameters'][] = [
+            'in' => 'header',
+            'name' => 'Authorization',
+            'description' => 'Bearer token populated from the Apidog '.$tokenVariable.' variable.',
+            'required' => true,
+            'example' => $authorization,
+            'schema' => [
+                'type' => 'string',
+                'example' => $authorization,
+            ],
+        ];
+
+        return $operation;
+    }
+
+    private static function tokenVariableFor(string $uri, array $operation): ?string
+    {
+        if (($operation['security'] ?? null) === []) {
+            return null;
+        }
+
+        return match (true) {
+            str_ends_with($uri, '/email-verification') => 'verification_token',
+            str_ends_with($uri, '/refresh') => 'refresh_token',
+            str_ends_with($uri, '/reset-password') => 'reset_password_token',
+            default => 'access_token',
+        };
     }
 
     private static function isSharedAuthOperation(string $uri, string $method): bool
@@ -190,5 +248,72 @@ class PortalExports
             unset($module);
         }
         unset($group);
+    }
+
+    private static function normalizePostmanAuthentication(array &$collection): void
+    {
+        $variables = ['api_key', 'access_token', 'verification_token', 'refresh_token', 'reset_password_token'];
+        $existingVariables = array_column($collection['variable'] ?? [], 'key');
+
+        foreach ($variables as $variable) {
+            if (! in_array($variable, $existingVariables, true)) {
+                $collection['variable'][] = [
+                    'key' => $variable,
+                    'value' => '',
+                    'type' => 'string',
+                ];
+            }
+        }
+
+        self::walkPostmanItems($collection['item']);
+    }
+
+    private static function walkPostmanItems(array &$items): void
+    {
+        foreach ($items as &$item) {
+            if (isset($item['item'])) {
+                self::walkPostmanItems($item['item']);
+
+                continue;
+            }
+
+            $request = &$item['request'];
+            $path = $request['url']['path'] ?? [];
+            $uri = is_array($path) ? '/'.implode('/', $path) : '/'.ltrim($path, '/');
+
+            foreach ($request['header'] ?? [] as &$header) {
+                if (strcasecmp($header['key'] ?? '', 'X-Authorization') === 0) {
+                    $header['value'] = '{{api_key}}';
+                }
+            }
+            unset($header);
+
+            $tokenVariable = self::postmanTokenVariableFor($uri, $request);
+            $request['auth'] = $tokenVariable === null
+                ? ['type' => 'noauth']
+                : [
+                    'type' => 'bearer',
+                    'bearer' => [[
+                        'key' => 'token',
+                        'value' => '{{'.$tokenVariable.'}}',
+                        'type' => 'string',
+                    ]],
+                ];
+        }
+        unset($item);
+    }
+
+    private static function postmanTokenVariableFor(string $uri, array $request): ?string
+    {
+        if (($request['auth']['type'] ?? null) === 'noauth') {
+            return null;
+        }
+
+        return match (true) {
+            str_ends_with($uri, '/email-verification') => 'verification_token',
+            str_ends_with($uri, '/refresh') => 'refresh_token',
+            str_ends_with($uri, '/reset-password') => 'reset_password_token',
+            default => 'access_token',
+        };
     }
 }

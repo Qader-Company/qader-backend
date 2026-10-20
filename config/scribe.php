@@ -51,7 +51,7 @@ return [
         'in' => 'bearer',
         'name' => 'Authorization',
         'use_value' => null,
-        'placeholder' => '{YOUR_ACCESS_TOKEN}',
+        'placeholder' => '{{access_token}}',
         'extra_info' => 'Use the appropriate Sanctum token for authenticated endpoints.',
     ],
 
@@ -86,7 +86,7 @@ return [
                     'data' => [
                         'Content-Type' => 'application/json',
                         'Accept' => 'application/json',
-                        'X-Authorization' => '{YOUR_API_KEY}',
+                        'X-Authorization' => '{{api_key}}',
                     ],
                 ],
             ],
