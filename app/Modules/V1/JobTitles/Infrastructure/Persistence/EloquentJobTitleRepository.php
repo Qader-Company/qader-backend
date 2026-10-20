@@ -185,8 +185,15 @@ class EloquentJobTitleRepository implements JobTitleRepositoryInterface
                         ? 'COALESCE(professional_field_translation_ar.name, professional_field_translation_en.name) as name'
                         : 'professional_field_translation_en.name as name',
                 ),
+                DB::raw(
+                    app()->getLocale() === 'ar'
+                        ? 'COALESCE(professional_field_translation_ar.description, professional_field_translation_en.description) as description'
+                        : 'professional_field_translation_en.description as description',
+                ),
                 'professional_field_translation_en.name as name_en',
                 'professional_field_translation_ar.name as name_ar',
+                'professional_field_translation_en.description as description_en',
+                'professional_field_translation_ar.description as description_ar',
                 'professional_fields.slug',
                 'professional_fields.is_active',
             ])

@@ -27,7 +27,9 @@ class ProfessionalFieldResource extends JsonResource
         if (! $request->is('api/v1/admin/*')) {
             return $this->rawValue('localized_name')
                 ?? $this->rawValue('name')
-                ?? $this->name;
+                ?? ($this->resource instanceof Model
+                    ? $this->resource->name
+                    : null);
         }
 
         return [
@@ -52,12 +54,16 @@ class ProfessionalFieldResource extends JsonResource
         if (! $request->is('api/v1/admin/*')) {
             return $this->rawValue('localized_description')
                 ?? $this->rawValue('description')
-                ?? $this->description;
+                ?? ($this->resource instanceof Model
+                    ? $this->resource->description
+                    : null);
         }
 
         return [
-            'en' => $this->translationDescription('en'),
-            'ar' => $this->translationDescription('ar'),
+            'en' => $this->rawValue('description_en')
+                ?? $this->translationDescription('en'),
+            'ar' => $this->rawValue('description_ar')
+                ?? $this->translationDescription('ar'),
         ];
     }
 
