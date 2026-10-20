@@ -125,7 +125,7 @@
 // D06 - اختيار الموعد: application يختار فيه talent موعدًا من slots. في hiring
 // يوجد client+talent واختيار أوقات للطرفين؛ ترتيب أولوية/تقاطع الاختيارات غير مكتمل.
 // المقترح slot_responses ثم تأكيد مشترك transaction؛ لا يتم تأكيد موعد بمجرد
-// توليد slots أو اعتماد reschedule request. بيانات الاقتراح الزمني optional لأن
+// إنشاء slots يدويًا أو اعتماد reschedule request. بيانات الاقتراح الزمني optional لأن
 // admin screen تعرضها بينما نموذج talent الحالي لا يطلبها.
 //
 // D07 - الرسوم: contract types fixed/percentage/both + override لكل professional
@@ -248,7 +248,8 @@
 // check overlap against scheduled interviews, choose exactly one same-interview slot,
 // set selected_slot_id and scheduling round selected, cancel other available slots.
 // Reschedule/cancel frees booking but retains historical slot/participant rows.
-// Multiple interviewers must all be free; lock them in stable order to avoid races.
+// Multiple interviewers must all be free in every offered slot; lock admin rows in
+// stable ID order before conflict checks and inserts to avoid double-booking races.
 // All-slots rejection recorded on scheduling round with actor/reason (audit event).
 // Pair decision belongs to hiring-context interview for the SAME request item.
 // Timer/UI labels Ready/Join are computed from scheduled time; no extra tables.
@@ -1351,6 +1352,8 @@ Table interviews [headercolor: #dcfce7] {
   selected_slot_id bigint [unique]
   scheduled_start_at timestamp
   scheduled_end_at timestamp
+  google_calendar_event_id varchar(255) [note: 'Set only after the talent selects a slot and Google Calendar event creation succeeds']
+  meeting_url text [note: 'Google Meet URL set with the selected slot; never created for every offered slot']
   actual_start_at timestamp
   actual_end_at timestamp
   decision_due_at timestamp [note: 'Hiring decisions: snapshot configured 1-day period, not a hard-coded UI sample']
@@ -1391,8 +1394,6 @@ Table interview_scheduling_rounds [headercolor: #dcfce7] {
   id bigint [pk, increment]
   interview_id bigint [not null]
   sequence_number int [not null]
-  scheduling_mode varchar(16) [not null, note: 'manual | automatic']
-  generation_config json [note: 'DOC: date range, weekdays, available hours, timezone, duration, buffer, max slots']
   policy_snapshot json [not null, note: 'Attempt/cancellation limits and response deadline policy used for this round']
   status varchar(32) [not null, note: 'draft | offered | selected | rejected_all | expired | cancelled']
   created_by_admin_id bigint [not null]
@@ -1408,7 +1409,7 @@ Table interview_scheduling_rounds [headercolor: #dcfce7] {
     (interview_id, sequence_number) [unique]
     (status, selection_due_at)
   }
-  Note: '[NEW] Every published set of available slots. Talent reschedule quota counts party-caused events only; admin cancellation does not consume it.'
+  Note: '[NEW] Every manually published set of available slots. Automatic slot generation is not supported. Talent reschedule quota counts party-caused events only; admin cancellation does not consume it.'
 }
 
 // [NEW] interview_slots
@@ -1416,22 +1417,19 @@ Table interview_slots [headercolor: #dcfce7] {
   id bigint [pk, increment]
   scheduling_round_id bigint [not null]
   starts_at timestamp [not null]
-  ends_at timestamp [not null]
-  timezone varchar(64) [not null]
+  ends_at timestamp [not null, note: 'Backend default is starts_at + 60 minutes; no duration/end input is added to the UI']
   mode varchar(16) [not null, note: 'online | offline']
-  meeting_provider varchar(64)
-  meeting_url text
-  meeting_access_encrypted text [note: 'Optional meeting ID/passcode; never expose before authorized joining']
   location_address text
-  location_map_url varchar(2048)
+  latitude decimal(10,7)
+  longitude decimal(10,7)
   status varchar(32) [not null, default: 'available', note: 'available | selected | expired | cancelled | rejected_by_talent']
   created_at timestamp
   updated_at timestamp
   indexes {
-    (scheduling_round_id, starts_at, ends_at) [unique]
-    (starts_at, ends_at)
+    (scheduling_round_id, starts_at) [unique]
+    (starts_at, ends_at, status)
   }
-  Note: '[NEW] Online/offline properties belong to each slot; Figma allows different days/locations per choice. selected_slot must belong to same interview.'
+  Note: '[NEW] The current date/time UI is preserved; backend stores a start/end interval and defaults end to 60 minutes after start. Offline map position uses latitude/longitude. Google event ID and Meet URL are created once on the interview only after talent selects a slot. Every selected interviewer must be free for the entire interval.'
 }
 
 // [NEW] interview_slot_responses

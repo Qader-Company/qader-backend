@@ -49,6 +49,23 @@ class EndpointNames
             };
         }
 
+        if ($module === 'talent-applications') {
+            return match ($route->getActionMethod()) {
+                'index' => 'List Talent Applications',
+                'reviewers' => 'List Available Reviewers',
+                'show' => 'Get Talent Application',
+                'downloadCv' => 'Download Submitted CV',
+                'reviewerHistory' => 'Get Reviewer Assignment History',
+                'activity' => 'Get Talent Application Activity',
+                'assignReviewer' => 'Assign Talent Application Reviewer',
+                'startReview' => 'Start Talent Application Review',
+                'saveEvaluation' => 'Save Talent Evaluation',
+                'reject' => 'Reject Talent Application',
+                'scheduleInterview' => 'Schedule Talent Interview',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
         if ($module === 'fields' && ($parts[1] ?? '') === 'form-fields') {
             return 'Get Professional Field Form Configuration';
         }

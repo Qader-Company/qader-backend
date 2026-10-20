@@ -1,6 +1,6 @@
 # مرجع قيم الـAPI Enums
 
-آخر مراجعة: 19 أكتوبر 2026.
+آخر مراجعة: 20 أكتوبر 2026.
 
 هذا الملف هو المرجع المجمع للقيم الثابتة المعرفة كـPHP enums والمستخدمة في عقود الـAPI. لا يشمل الـMaster Data المحفوظة في جداول، مثل الدول والمدن والعملات والمجالات المهنية والمسميات والمهارات والأدوات.
 
@@ -331,6 +331,10 @@ admin.tools.view
 admin.tools.manage
 admin.currencies.view
 admin.currencies.manage
+admin.talent-applications.view
+admin.talent-applications.assign-reviewer
+admin.talent-applications.review
+admin.talent-applications.decide
 ```
 
 تُستخدم قيم Admin permissions عند إنشاء وتعديل الأدوار، وتظهر أيضًا في endpoint عرض الصلاحيات:
@@ -341,6 +345,81 @@ POST /api/v1/admin/access-control/roles
 PATCH /api/v1/admin/access-control/roles/{role}
 ```
 
+## تقييم طلبات المواهب
+
+### حالات الطلب
+
+المصدر: `TalentApplicationStatusEnum`.
+
+```text
+submitted
+under_review
+interview_required
+rejected
+accepted
+```
+
+`accepted` محجوز للقرار النهائي في سبرنت لاحق.
+
+### سياسة إعادة التقديم
+
+المصدر: `ReapplyPolicyEnum`.
+
+```text
+allowed_after_period
+blacklisted
+```
+
+### أولوية نصيحة التقييم
+
+المصدر: `EvaluationTipPriorityEnum`.
+
+```text
+low
+medium
+high
+```
+
+### نوع المقابلة
+
+المصدر: `InterviewTypeEnum`.
+
+```text
+hr
+technical
+general
+final
+```
+
+### طريقة المقابلة
+
+المصدر: `InterviewModeEnum`.
+
+```text
+online
+offline
+```
+
+### حالة المقابلة في S02
+
+المصدر: `InterviewStatusEnum`.
+
+```text
+awaiting_slot_selection
+```
+
+### حالة الموعد المقترح
+
+المصدر: `InterviewSlotStatusEnum`.
+
+```text
+available
+selected
+expired
+cancelled
+rejected_by_talent
+```
+
 ## ملفات المصدر
 
 - Auth enums: `app/Modules/V1/Authentication/Domain/ValueObjects/`
@@ -348,3 +427,4 @@ PATCH /api/v1/admin/access-control/roles/{role}
 - Talent enums: `app/Modules/V1/Talents/Domain/ValueObjects/`
 - Form field keys: `app/Modules/V1/ProfessionalFields/Domain/ValueObjects/ProfessionalFormFieldEnum.php`
 - Permission enums: `app/Modules/V1/AccessControl/Domain/ValueObjects/`
+- Talent application enums: `app/Modules/V1/TalentApplications/Domain/ValueObjects/`

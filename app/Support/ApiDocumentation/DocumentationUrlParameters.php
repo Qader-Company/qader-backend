@@ -12,11 +12,16 @@ class DocumentationUrlParameters extends GetFromLaravelAPI
         $parameters = parent::__invoke($endpointData, $routeRules);
 
         foreach ($parameters ?? [] as $name => $parameter) {
-            $parameters[$name]['example'] = DocumentationExamples::for(
+            $example = DocumentationExamples::for(
                 $name,
                 $endpointData->route->uri(),
                 $parameter['type'] ?? null,
             );
+            $parameters[$name]['example'] = $example;
+
+            if (is_int($example)) {
+                $parameters[$name]['type'] = 'integer';
+            }
         }
 
         return $parameters;

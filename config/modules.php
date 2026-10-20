@@ -32,6 +32,7 @@ return [
             ['prefix' => 'admin/skills', 'file' => 'skills.php', 'api_key' => true],
             ['prefix' => 'admin/tools', 'file' => 'tools.php', 'api_key' => true],
             ['prefix' => 'admin/currencies', 'file' => 'currencies.php', 'api_key' => true],
+            ['prefix' => 'admin/talent-applications', 'file' => 'talent-applications.php', 'api_key' => true],
         ],
 
         'client' => [

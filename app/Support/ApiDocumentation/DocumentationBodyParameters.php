@@ -43,6 +43,7 @@ class DocumentationBodyParameters extends GetFromFormRequest
         }
 
         $this->applyStableAuthExamples($endpointData, $parameters);
+        $this->applyTalentApplicationExamples($endpointData, $parameters);
 
         return $parameters;
     }
@@ -137,6 +138,39 @@ class DocumentationBodyParameters extends GetFromFormRequest
             if (isset($parameters[$name])) {
                 $parameters[$name]['example'] = $example;
             }
+        }
+    }
+
+    private function applyTalentApplicationExamples(ExtractedEndpointData $endpointData, ?array &$parameters): void
+    {
+        if ($parameters === null || ! str_contains($endpointData->route->uri(), '/admin/talent-applications')) {
+            return;
+        }
+
+        $uri = $endpointData->route->uri();
+
+        if (str_ends_with($uri, '/evaluation') && isset($parameters['tips'])) {
+            $parameters['tips']['example'] = [[
+                'title' => 'Improve system design',
+                'priority' => 'high',
+                'description' => 'Practice explaining architecture trade-offs.',
+            ]];
+        }
+
+        if (str_ends_with($uri, '/schedule-interview') && isset($parameters['slots'])) {
+            $parameters['slots']['example'] = [
+                [
+                    'mode' => 'online',
+                    'start' => '2026-11-01T12:00:00+02:00',
+                ],
+                [
+                    'mode' => 'offline',
+                    'start' => '2026-11-02T15:00:00+02:00',
+                    'location' => 'Qader Office, Giza',
+                    'latitude' => 30.0444200,
+                    'longitude' => 31.2357120,
+                ],
+            ];
         }
     }
 }

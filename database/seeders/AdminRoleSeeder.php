@@ -32,6 +32,7 @@ class AdminRoleSeeder extends Seeder
             [
                 AdminPermissionEnum::TALENT_APPLICATIONS_VIEW->value,
                 AdminPermissionEnum::TALENT_APPLICATIONS_REVIEW->value,
+                AdminPermissionEnum::TALENT_APPLICATIONS_DECIDE->value,
             ]
         );
     }

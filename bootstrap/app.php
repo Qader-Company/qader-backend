@@ -5,6 +5,7 @@ use App\Http\Middleware\CheckApiKey;
 use App\Http\Middleware\CheckScopedPermission;
 use App\Http\Middleware\CheckScopedRole;
 use App\Http\Middleware\SetLocale;
+use App\Modules\V1\TalentApplications\Domain\Exceptions\InterviewScheduleConflictException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -48,6 +49,13 @@ return Application::configure(basePath: dirname(__DIR__))
                 $e->errors(),
                 $e->getMessage(),
             );
+        });
+
+        $exceptions->render(function (InterviewScheduleConflictException $e, $request) {
+            return ApiResponse::validationError([
+                'slots' => [$e->getMessage()],
+                'conflicts' => $e->conflicts,
+            ]);
         });
 
         $exceptions->render(function (UnauthorizedException $e, $request) {

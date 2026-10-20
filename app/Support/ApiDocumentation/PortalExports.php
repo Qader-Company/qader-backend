@@ -37,6 +37,8 @@ class PortalExports
                             $operation['x-apidog-folder'] = $portal.'/auth';
                         }
 
+                        $operation = self::withStableRequestExamples($uri, $method, $operation);
+
                         if (empty($operation['responses'])) {
                             $operation['responses'] = [
                                 'default' => [
@@ -93,6 +95,8 @@ class PortalExports
                 unset($group);
             }
 
+            self::normalizePostmanExamples($collection);
+
             file_put_contents($paths['postman'], json_encode($collection, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
         }
     }
@@ -119,5 +123,72 @@ class PortalExports
 
         return ($first['request']['method'] ?? null) === ($second['request']['method'] ?? null)
             && $firstPath === $secondPath;
+    }
+
+    private static function withStableRequestExamples(string $uri, string $method, array $operation): array
+    {
+        if ($uri !== '/api/v1/admin/talent-applications/{application}/reject' || $method !== 'post') {
+            return $operation;
+        }
+
+        $content = &$operation['requestBody']['content']['application/json'];
+        $allowedAfterPeriod = [
+            'reapply_policy' => 'allowed_after_period',
+            'reapply_after_months' => 6,
+        ];
+        $blacklisted = [
+            'reapply_policy' => 'blacklisted',
+            'blacklist_reason' => 'Repeated submission of invalid information.',
+        ];
+        unset($content['example']);
+        $content['schema']['example'] = $allowedAfterPeriod;
+        $content['examples'] = [
+            'allowed_after_period' => [
+                'summary' => 'Allow another application after a waiting period',
+                'value' => $allowedAfterPeriod,
+            ],
+            'blacklisted' => [
+                'summary' => 'Prevent the talent from applying again',
+                'value' => $blacklisted,
+            ],
+        ];
+
+        return $operation;
+    }
+
+    private static function normalizePostmanExamples(array &$collection): void
+    {
+        foreach ($collection['item'] as &$group) {
+            if (! isset($group['item'])) {
+                continue;
+            }
+
+            foreach ($group['item'] as &$module) {
+                if (! isset($module['item'])) {
+                    continue;
+                }
+
+                foreach ($module['item'] as &$item) {
+                    $path = $item['request']['url']['path'] ?? [];
+                    $path = is_array($path) ? '/'.implode('/', $path) : '/'.ltrim($path, '/');
+
+                    if (
+                        in_array($path, [
+                            '/api/v1/admin/talent-applications/{application}/reject',
+                            '/api/v1/admin/talent-applications/:application/reject',
+                        ], true)
+                        && ($item['request']['method'] ?? '') === 'POST'
+                    ) {
+                        $item['request']['body']['raw'] = json_encode([
+                            'reapply_policy' => 'allowed_after_period',
+                            'reapply_after_months' => 6,
+                        ], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+                    }
+                }
+                unset($item);
+            }
+            unset($module);
+        }
+        unset($group);
     }
 }

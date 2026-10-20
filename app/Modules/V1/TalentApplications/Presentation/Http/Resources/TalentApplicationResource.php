@@ -2,6 +2,7 @@
 
 namespace App\Modules\V1\TalentApplications\Presentation\Http\Resources;
 
+use BackedEnum;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -11,7 +12,7 @@ class TalentApplicationResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'status' => $this->status,
+            'status' => $this->status instanceof BackedEnum ? $this->status->value : $this->status,
             'submitted_at' => $this->submitted_at,
             'profile_completion_at_submission' => $this->profile_completion_at_submission,
             'snapshot_version' => $this->snapshot_version,

@@ -58,7 +58,7 @@
 2. **محاولة نشطة واحدة:** تكون `active_guard=1` في المحاولة النشطة و`NULL` في النهائية، مع قيد تفرد وقاعدة تحقق. إعادة التقديم لا تتجاوز الحظر أو الموعد المعتمد.
 3. **النشر للشركات:** قبول الطلب وحده لا يكفي؛ يلزم ملف معتمد ظاهر، وتوفر مناسب، وحساب نشط موثّق، وعدم وجود حظر نشط.
 4. **حفظ التاريخ:** لا يستبدل المرشح الأصلي بالبديل داخل السجل نفسه، ولا تعدل شروط عرض مرسل أو إصدار تقييم أو عقد موقع بأثر رجعي.
-5. **حجز الموعد:** وقت النهاية بعد البداية، والتخزين UTC مع منطقة زمنية للعرض، ومنع تعارض المحاورين. اختيار الموعد وإلغاء البدائل يتمان في معاملة واحدة.
+5. **حجز الموعد:** يحفظ `starts_at` و`ends_at`، ويحسب السيرفر مدة افتراضية 60 دقيقة من غير تغيير الواجهة. تمنع جدولة أي interviewer في فترة متداخلة. اختيار الموعد وإلغاء البدائل يتمان في معاملة واحدة، وبعد اختيار الموهبة فقط ينشأ Google Calendar Event وGoogle Meet.
 6. **المال:** مبالغ عشرية وعملة صريحة، والحد الأدنى لا يتجاوز الأعلى. الرسوم غير المعروفة تظل `NULL` وليست صفرًا؛ تأكيد الراتب ليس سدادًا ورفع الإيصال ليس تحققًا.
 7. **الملفات:** استخدام `media` مع صلاحيات تنزيل لكل مالك ومجموعة ملفات. تحفظ نسخة مستقلة لسيرة التقديم حتى لا تمحوها استبدالات السيرة الحالية.
 8. **الخصوصية:** الملاحظات الداخلية ورسالة المرشح والتقرير المنشور منفصلة. شراء التقرير لا يمنح الهاتف أو البريد أو السيرة الذاتية تلقائيًا.
@@ -1982,6 +1982,8 @@ flowchart LR
 | `selected_slot_id` | `bigint` | لا | فريد | `interview_slots.id`؛ `RESTRICT` |
 | `scheduled_start_at` | `timestamp` | لا | — | — |
 | `scheduled_end_at` | `timestamp` | لا | — | — |
+| `google_calendar_event_id` | `varchar(255)` | لا | يُحفظ بعد اختيار الموهبة للموعد ونجاح إنشاء الحدث | — |
+| `meeting_url` | `text` | لا | رابط Google Meet للموعد المختار فقط | — |
 | `actual_start_at` | `timestamp` | لا | — | — |
 | `actual_end_at` | `timestamp` | لا | — | — |
 | `decision_due_at` | `timestamp` | لا | — | — |
@@ -2030,8 +2032,6 @@ flowchart LR
 | `id` | `bigint` | نعم | مفتاح أساسي؛ ترقيم تلقائي | — |
 | `interview_id` | `bigint` | نعم | — | `interviews.id`؛ `RESTRICT` |
 | `sequence_number` | `int` | نعم | — | — |
-| `scheduling_mode` | `varchar(16)` | نعم | القيم: `manual, automatic` | — |
-| `generation_config` | `json` | لا | — | — |
 | `policy_snapshot` | `json` | نعم | — | — |
 | `status` | `varchar(32)` | نعم | القيم: `draft, offered, selected, rejected_all, expired, cancelled` | — |
 | `created_by_admin_id` | `bigint` | نعم | — | `admins.id`؛ `RESTRICT` |
@@ -2058,23 +2058,24 @@ flowchart LR
 | --- | --- | --- | --- | --- |
 | `id` | `bigint` | نعم | مفتاح أساسي؛ ترقيم تلقائي | — |
 | `scheduling_round_id` | `bigint` | نعم | — | `interview_scheduling_rounds.id`؛ `RESTRICT` |
-| `starts_at` | `timestamp` | نعم | — | — |
-| `ends_at` | `timestamp` | نعم | — | — |
-| `timezone` | `varchar(64)` | نعم | — | — |
+| `starts_at` | `timestamp` | نعم | وقت بداية الموعد؛ يُكوّنه السيرفر من مدخلات التاريخ والوقت الحالية | — |
+| `ends_at` | `timestamp` | نعم | يحسبه السيرفر افتراضيًا بعد 60 دقيقة من البداية | — |
 | `mode` | `varchar(16)` | نعم | القيم: `online, offline` | — |
-| `meeting_provider` | `varchar(64)` | لا | — | — |
-| `meeting_url` | `text` | لا | — | — |
-| `meeting_access_encrypted` | `text` | لا | — | — |
 | `location_address` | `text` | لا | — | — |
-| `location_map_url` | `varchar(2048)` | لا | — | — |
+| `latitude` | `decimal(10,7)` | لا | بين -90 و90؛ يُرسل مع longitude | — |
+| `longitude` | `decimal(10,7)` | لا | بين -180 و180؛ يُرسل مع latitude | — |
 | `status` | `varchar(32)` | نعم | الافتراضي: `'available'`؛ القيم: `available, selected, expired, cancelled, rejected_by_talent` | — |
 | `created_at` | `timestamp` | لا | — | — |
 | `updated_at` | `timestamp` | لا | — | — |
 
 **الفهارس والقيود المركبة:**
 
-- قيد تفرد: `(scheduling_round_id, starts_at, ends_at)`.
-- فهرس بحث: `(starts_at, ends_at)`.
+- قيد تفرد: `(scheduling_round_id, starts_at)`.
+- فهرس بحث: `(starts_at, ends_at, status)`.
+- المواعيد تضاف يدويًا فقط؛ لا يوجد Automatic Slots.
+- الواجهة لا تضيف حقول مدة أو نهاية؛ السيرفر يحسب `ends_at = starts_at + 60 minutes`.
+- يجب أن يكون كل interviewer غير مرتبط بأي slot حالته `available` أو`selected` وتتداخل فترته مع الفترة الجديدة. يتم قفل سجلات المقابلين بترتيب ثابت داخل transaction قبل فحص التعارض والحفظ لمنع الحجز المزدوج المتزامن.
+- لا ينشأ Google Meet لكل slot معروض. بعد اختيار الموهبة للموعد ينشأ حدث واحد، وتُحفظ `google_calendar_event_id` و`meeting_url` على `interviews`.
 ### `interview_slot_responses`
 
 **التصنيف:** جدول جديد مقترح لتدفق ظاهر في التصميم.
