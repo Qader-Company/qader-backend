@@ -106,6 +106,9 @@ class PortalExports
 
     private static function withAuthenticationVariables(string $uri, array $operation): array
     {
+        $operation['parameters'] ??= [];
+        self::upsertOpenApiHeader($operation['parameters'], 'Accept', 'application/json');
+
         foreach ($operation['parameters'] ?? [] as &$parameter) {
             if (($parameter['in'] ?? null) !== 'header' || strcasecmp($parameter['name'] ?? '', 'X-Authorization') !== 0) {
                 continue;
@@ -143,6 +146,36 @@ class PortalExports
         ];
 
         return $operation;
+    }
+
+    private static function upsertOpenApiHeader(array &$parameters, string $name, string $value): void
+    {
+        foreach ($parameters as &$parameter) {
+            if (($parameter['in'] ?? null) !== 'header' || strcasecmp($parameter['name'] ?? '', $name) !== 0) {
+                continue;
+            }
+
+            $parameter['required'] = true;
+            $parameter['example'] = $value;
+            $parameter['schema'] = [
+                'type' => 'string',
+                'example' => $value,
+            ];
+
+            return;
+        }
+        unset($parameter);
+
+        $parameters[] = [
+            'in' => 'header',
+            'name' => $name,
+            'required' => true,
+            'example' => $value,
+            'schema' => [
+                'type' => 'string',
+                'example' => $value,
+            ],
+        ];
     }
 
     private static function tokenVariableFor(string $uri, array $operation): ?string
@@ -288,6 +321,8 @@ class PortalExports
             }
             unset($header);
 
+            self::upsertPostmanHeader($request, 'Accept', 'application/json');
+
             $tokenVariable = self::postmanTokenVariableFor($uri, $request);
             $request['auth'] = $tokenVariable === null
                 ? ['type' => 'noauth']
@@ -301,6 +336,30 @@ class PortalExports
                 ];
         }
         unset($item);
+    }
+
+    private static function upsertPostmanHeader(array &$request, string $key, string $value): void
+    {
+        $request['header'] ??= [];
+
+        foreach ($request['header'] as &$header) {
+            if (strcasecmp($header['key'] ?? '', $key) !== 0) {
+                continue;
+            }
+
+            $header['value'] = $value;
+            $header['type'] = 'text';
+            unset($header['disabled']);
+
+            return;
+        }
+        unset($header);
+
+        $request['header'][] = [
+            'key' => $key,
+            'value' => $value,
+            'type' => 'text',
+        ];
     }
 
     private static function postmanTokenVariableFor(string $uri, array $request): ?string
