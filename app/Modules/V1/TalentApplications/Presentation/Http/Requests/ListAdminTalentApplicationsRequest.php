@@ -2,6 +2,8 @@
 
 namespace App\Modules\V1\TalentApplications\Presentation\Http\Requests;
 
+use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationListScopeEnum;
+use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationSortEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationStatusEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -16,14 +18,14 @@ class ListAdminTalentApplicationsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'scope' => ['nullable', Rule::in(['all', 'my'])],
+            'scope' => ['nullable', Rule::enum(TalentApplicationListScopeEnum::class)],
             'search' => ['nullable', 'string', 'max:100'],
             'status' => ['nullable', 'array'],
             'status.*' => [Rule::enum(TalentApplicationStatusEnum::class)],
             'reviewer_admin_id' => ['nullable', 'integer', 'exists:admins,id'],
             'submitted_from' => ['nullable', 'date'],
             'submitted_to' => ['nullable', 'date', 'after_or_equal:submitted_from'],
-            'sort' => ['nullable', Rule::in(['newest', 'oldest'])],
+            'sort' => ['nullable', Rule::enum(TalentApplicationSortEnum::class)],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ];
     }

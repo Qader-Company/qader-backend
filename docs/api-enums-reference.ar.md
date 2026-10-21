@@ -349,6 +349,23 @@ PATCH /api/v1/admin/access-control/roles/{role}
 
 ## تقييم طلبات المواهب
 
+قيم الاختيارات الخاصة بكل جزء متاحة من endpoints منفصلة حسب مكان استخدامها:
+
+```text
+GET /api/v1/admin/talent-applications/statuses
+GET /api/v1/admin/talent-applications/scopes
+GET /api/v1/admin/talent-applications/sort-options
+GET /api/v1/admin/talent-applications/evaluation-tip-priorities
+GET /api/v1/admin/talent-applications/reapply-policies
+GET /api/v1/admin/talent-applications/interview-types
+GET /api/v1/admin/talent-applications/interview-modes
+GET /api/v1/admin/talent-applications/interview-statuses
+GET /api/v1/admin/talent-applications/interview-slot-statuses
+GET /api/v1/admin/talent-review-faqs/screen-states
+```
+
+كل endpoint يرجع `value` و`label` مترجمًا حسب `Accept-Language`. عند إضافة enum جديدة تستخدم كاختيار في واجهة الإدارة، تضاف تحت endpoint الموديول الذي يستخدمها بدل endpoint عامة موحدة.
+
 ### حالات الطلب
 
 المصدر: `TalentApplicationStatusEnum`.
@@ -362,6 +379,24 @@ accepted
 ```
 
 `accepted` محجوز للقرار النهائي في سبرنت لاحق.
+
+### نطاق قائمة الطلبات
+
+المصدر: `TalentApplicationListScopeEnum`.
+
+```text
+all
+my
+```
+
+### ترتيب قائمة الطلبات
+
+المصدر: `TalentApplicationSortEnum`.
+
+```text
+newest
+oldest
+```
 
 ### سياسة إعادة التقديم
 

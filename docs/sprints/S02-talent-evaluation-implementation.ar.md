@@ -67,6 +67,7 @@ POST /api/v1/admin/talent-applications/{application}/interview/slots
 FAQs الظاهرة في شاشات Figma أضيفت كبيانات مترجمة يديرها الأدمن. كل سؤال يحدد `screen_states` التي يظهر فيها و`display_order` و`is_active`.
 
 ```text
+GET    /api/v1/admin/talent-review-faqs/screen-states
 GET    /api/v1/admin/talent-review-faqs
 GET    /api/v1/admin/talent-review-faqs/{faq}
 POST   /api/v1/admin/talent-review-faqs
@@ -93,6 +94,24 @@ DELETE /api/v1/admin/talent-review-faqs/{faq}
 ```
 
 `TalentReviewFaqSeeder` يضيف المحتوى الأساسي الموجود في التصميم بطريقة قابلة لإعادة التشغيل دون تكرار البيانات.
+
+## Endpoints قيم تقييم الطلب والمقابلة
+
+كل enum لها endpoint مستقلة داخل موديول `talent-applications` حتى يستخدمها الفرونت في الفلاتر والنماذج دون تثبيت القيم داخله:
+
+```text
+GET /api/v1/admin/talent-applications/statuses
+GET /api/v1/admin/talent-applications/scopes
+GET /api/v1/admin/talent-applications/sort-options
+GET /api/v1/admin/talent-applications/evaluation-tip-priorities
+GET /api/v1/admin/talent-applications/reapply-policies
+GET /api/v1/admin/talent-applications/interview-types
+GET /api/v1/admin/talent-applications/interview-modes
+GET /api/v1/admin/talent-applications/interview-statuses
+GET /api/v1/admin/talent-applications/interview-slot-statuses
+```
+
+كل استجابة ترجع مصفوفة من `{value, label}`، ويحدد `Accept-Language` لغة `label`.
 
 ## إعداد Google Calendar وMeet
 
@@ -350,5 +369,5 @@ admin / talent-applications
 - نجاح اختبارات تدفق الموهبة والمقابلة: 4 tests و19 assertions، وتشمل منع الرفض الثالث واستخدام endpoint المواعيد البديلة.
 - نجاح فحص PHP syntax.
 - نجاح Laravel Pint.
-- ظهور 11 route مع الـmiddleware والصلاحيات الصحيحة.
+- ظهور 27 route للإدارة خاصة بـS02 مع الـmiddleware والصلاحيات الصحيحة، تشمل العمليات وFAQs وendpoints قيم enums.
 - نجاح `scribe:generate` ومراجعة Admin OpenAPI والأمثلة المولدة.

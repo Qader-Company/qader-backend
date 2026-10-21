@@ -6,13 +6,26 @@ use App\Facades\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Modules\V1\TalentApplications\Application\Services\TalentReviewFaqService;
 use App\Modules\V1\TalentApplications\Domain\Models\TalentReviewFaq;
+use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationScreenStateEnum;
 use App\Modules\V1\TalentApplications\Presentation\Http\Requests\StoreTalentReviewFaqRequest;
 use App\Modules\V1\TalentApplications\Presentation\Http\Requests\UpdateTalentReviewFaqRequest;
 use App\Modules\V1\TalentApplications\Presentation\Http\Resources\TalentReviewFaqResource;
+use App\Support\ApiMetadata\EnumOptions;
 use Illuminate\Http\JsonResponse;
 
 class AdminTalentReviewFaqController extends Controller
 {
+    /**
+     * @response {"success":true,"data":[{"value":"under_review","label":"Under Review"},{"value":"rejected","label":"Rejected"},{"value":"interview_slot_required","label":"Interview Slot Required"}]}
+     */
+    public function screenStates(): JsonResponse
+    {
+        return ApiResponse::success(EnumOptions::make(
+            TalentApplicationScreenStateEnum::class,
+            'screen_states',
+        ));
+    }
+
     /**
      * @response {"success":true,"data":[{"id":1,"screen_states":["under_review","rejected"],"question":{"en":"What does Under Review mean?","ar":"ماذا تعني حالة قيد المراجعة؟"},"answer":{"en":"Your application is currently being reviewed.","ar":"طلبك قيد المراجعة حاليًا."},"display_order":0,"is_active":true}]}
      */

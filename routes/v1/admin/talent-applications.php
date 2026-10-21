@@ -2,7 +2,26 @@
 
 use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminPermissionEnum;
 use App\Modules\V1\TalentApplications\Presentation\Http\Controllers\AdminTalentApplicationController;
+use App\Modules\V1\TalentApplications\Presentation\Http\Controllers\AdminTalentApplicationEnumController;
 use Illuminate\Support\Facades\Route;
+
+Route::middleware([
+    'auth:sanctum',
+    'abilities:access,admin',
+    AdminPermissionEnum::TALENT_APPLICATIONS_VIEW->middleware(),
+])
+    ->controller(AdminTalentApplicationEnumController::class)
+    ->group(function (): void {
+        Route::get('scopes', 'scopes');
+        Route::get('sort-options', 'sortOptions');
+        Route::get('statuses', 'statuses');
+        Route::get('evaluation-tip-priorities', 'evaluationTipPriorities');
+        Route::get('reapply-policies', 'reapplyPolicies');
+        Route::get('interview-types', 'interviewTypes');
+        Route::get('interview-modes', 'interviewModes');
+        Route::get('interview-statuses', 'interviewStatuses');
+        Route::get('interview-slot-statuses', 'interviewSlotStatuses');
+    });
 
 Route::middleware(['auth:sanctum', 'abilities:access,admin'])
     ->controller(AdminTalentApplicationController::class)

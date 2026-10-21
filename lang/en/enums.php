@@ -37,4 +37,62 @@ return [
         'onsite' => 'On Site',
         'hybrid' => 'Hybrid',
     ],
+    'screen_states' => [
+        'under_review' => 'Under Review',
+        'rejected' => 'Rejected',
+        'interview_slot_required' => 'Interview Slot Required',
+        'awaiting_new_interview_slots' => 'Awaiting New Interview Slots',
+        'interview_confirmed' => 'Interview Confirmed',
+        'interview_completed' => 'Interview Completed',
+        'interview_cancelled' => 'Interview Cancelled',
+        'accepted' => 'Accepted',
+    ],
+    'application_statuses' => [
+        'submitted' => 'Submitted',
+        'under_review' => 'Under Review',
+        'interview_required' => 'Interview Required',
+        'rejected' => 'Rejected',
+        'accepted' => 'Accepted',
+    ],
+    'application_scopes' => [
+        'all' => 'All Applications',
+        'my' => 'My Applications',
+    ],
+    'application_sort_options' => [
+        'newest' => 'Newest',
+        'oldest' => 'Oldest',
+    ],
+    'evaluation_tip_priorities' => [
+        'low' => 'Low',
+        'medium' => 'Medium',
+        'high' => 'High',
+    ],
+    'reapply_policies' => [
+        'allowed_after_period' => 'Allowed After Period',
+        'blacklisted' => 'Blacklisted',
+    ],
+    'interview_types' => [
+        'hr' => 'HR',
+        'technical' => 'Technical',
+        'general' => 'General',
+        'final' => 'Final',
+    ],
+    'interview_modes' => [
+        'online' => 'Online',
+        'offline' => 'Offline',
+    ],
+    'interview_statuses' => [
+        'awaiting_slot_selection' => 'Awaiting Slot Selection',
+        'awaiting_new_slots' => 'Awaiting New Slots',
+        'confirmed' => 'Confirmed',
+        'completed' => 'Completed',
+        'cancelled' => 'Cancelled',
+    ],
+    'interview_slot_statuses' => [
+        'available' => 'Available',
+        'selected' => 'Selected',
+        'expired' => 'Expired',
+        'cancelled' => 'Cancelled',
+        'rejected_by_talent' => 'Rejected by Talent',
+    ],
 ];

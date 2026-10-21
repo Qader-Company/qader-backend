@@ -37,4 +37,62 @@ return [
         'onsite' => 'من مقر العمل',
         'hybrid' => 'هجين',
     ],
+    'screen_states' => [
+        'under_review' => 'قيد المراجعة',
+        'rejected' => 'مرفوض',
+        'interview_slot_required' => 'مطلوب اختيار موعد مقابلة',
+        'awaiting_new_interview_slots' => 'في انتظار مواعيد مقابلة جديدة',
+        'interview_confirmed' => 'تم تأكيد المقابلة',
+        'interview_completed' => 'اكتملت المقابلة',
+        'interview_cancelled' => 'أُلغيت المقابلة',
+        'accepted' => 'مقبول',
+    ],
+    'application_statuses' => [
+        'submitted' => 'تم التقديم',
+        'under_review' => 'قيد المراجعة',
+        'interview_required' => 'مطلوب مقابلة',
+        'rejected' => 'مرفوض',
+        'accepted' => 'مقبول',
+    ],
+    'application_scopes' => [
+        'all' => 'كل الطلبات',
+        'my' => 'طلباتي',
+    ],
+    'application_sort_options' => [
+        'newest' => 'الأحدث',
+        'oldest' => 'الأقدم',
+    ],
+    'evaluation_tip_priorities' => [
+        'low' => 'منخفضة',
+        'medium' => 'متوسطة',
+        'high' => 'عالية',
+    ],
+    'reapply_policies' => [
+        'allowed_after_period' => 'مسموح بعد مدة',
+        'blacklisted' => 'محظور',
+    ],
+    'interview_types' => [
+        'hr' => 'موارد بشرية',
+        'technical' => 'تقنية',
+        'general' => 'عامة',
+        'final' => 'نهائية',
+    ],
+    'interview_modes' => [
+        'online' => 'عن بُعد',
+        'offline' => 'حضوري',
+    ],
+    'interview_statuses' => [
+        'awaiting_slot_selection' => 'في انتظار اختيار الموعد',
+        'awaiting_new_slots' => 'في انتظار مواعيد جديدة',
+        'confirmed' => 'مؤكدة',
+        'completed' => 'مكتملة',
+        'cancelled' => 'ملغاة',
+    ],
+    'interview_slot_statuses' => [
+        'available' => 'متاح',
+        'selected' => 'تم اختياره',
+        'expired' => 'منتهي',
+        'cancelled' => 'ملغى',
+        'rejected_by_talent' => 'رفضته الموهبة',
+    ],
 ];

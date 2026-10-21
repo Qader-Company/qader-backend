@@ -61,6 +61,15 @@ class EndpointNames
 
         if ($module === 'talent-applications') {
             return match ($route->getActionMethod()) {
+                'scopes' => 'List Talent Application Scopes',
+                'sortOptions' => 'List Talent Application Sort Options',
+                'statuses' => 'List Talent Application Statuses',
+                'evaluationTipPriorities' => 'List Evaluation Tip Priorities',
+                'reapplyPolicies' => 'List Reapply Policies',
+                'interviewTypes' => 'List Interview Types',
+                'interviewModes' => 'List Interview Modes',
+                'interviewStatuses' => 'List Interview Statuses',
+                'interviewSlotStatuses' => 'List Interview Slot Statuses',
                 'index' => 'List Talent Applications',
                 'reviewers' => 'List Available Reviewers',
                 'show' => 'Get Talent Application',
@@ -79,6 +88,7 @@ class EndpointNames
 
         if ($module === 'talent-review-faqs') {
             return match ($route->getActionMethod()) {
+                'screenStates' => 'List Talent Review FAQ Screen States',
                 'index' => 'List Talent Review FAQs',
                 'show' => 'Get Talent Review FAQ',
                 'store' => 'Create Talent Review FAQ',
