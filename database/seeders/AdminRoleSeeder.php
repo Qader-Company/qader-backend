@@ -3,13 +3,18 @@
 namespace Database\Seeders;
 
 use App\Modules\V1\AccessControl\Application\Services\AdminRoleSynchronizer;
+use App\Modules\V1\AccessControl\Application\Services\PermissionSynchronizer;
 use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminPermissionEnum;
 use Illuminate\Database\Seeder;
 
 class AdminRoleSeeder extends Seeder
 {
-    public function run(AdminRoleSynchronizer $roles): void
-    {
+    public function run(
+        PermissionSynchronizer $permissions,
+        AdminRoleSynchronizer $roles,
+    ): void {
+        // Keep this seeder safe to run on its own after adding new permissions.
+        $permissions->sync();
         $roles->sync();
 
         $roles->syncSeededRole(
