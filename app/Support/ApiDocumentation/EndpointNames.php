@@ -49,6 +49,16 @@ class EndpointNames
             };
         }
 
+        if ($module === 'application') {
+            return match ($route->getActionMethod()) {
+                'show' => 'Get Talent Application Status',
+                'selectInterviewSlot' => 'Confirm Interview Slot',
+                'rejectInterviewSlots' => 'Reject All Interview Slots',
+                'cancelInterview' => 'Cancel Interview and Request New Slots',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
         if ($module === 'talent-applications') {
             return match ($route->getActionMethod()) {
                 'index' => 'List Talent Applications',
@@ -62,6 +72,18 @@ class EndpointNames
                 'saveEvaluation' => 'Save Talent Evaluation',
                 'reject' => 'Reject Talent Application',
                 'scheduleInterview' => 'Schedule Talent Interview',
+                'replaceInterviewSlots' => 'Offer Replacement Interview Slots',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'talent-review-faqs') {
+            return match ($route->getActionMethod()) {
+                'index' => 'List Talent Review FAQs',
+                'show' => 'Get Talent Review FAQ',
+                'store' => 'Create Talent Review FAQ',
+                'update' => 'Update Talent Review FAQ',
+                'destroy' => 'Delete Talent Review FAQ',
                 default => Str::headline($route->getActionMethod()),
             };
         }

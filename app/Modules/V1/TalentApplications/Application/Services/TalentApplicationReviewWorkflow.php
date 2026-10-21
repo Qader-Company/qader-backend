@@ -258,6 +258,93 @@ class TalentApplicationReviewWorkflow
         });
     }
 
+    public function replaceInterviewSlots(int $applicationId, array $data, Admin $actor): Interview
+    {
+        return DB::transaction(function () use ($applicationId, $data, $actor): Interview {
+            $application = TalentApplication::query()->lockForUpdate()->findOrFail($applicationId);
+            $this->ensureCurrentReviewer($application, $actor);
+
+            if ($this->status($application) !== TalentApplicationStatusEnum::INTERVIEW_REQUIRED) {
+                throw new ConflictHttpException(__('talents.review.replacement_slots_not_allowed'));
+            }
+
+            $interview = Interview::query()
+                ->where('application_id', $application->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($interview->status !== InterviewStatusEnum::AWAITING_NEW_SLOTS) {
+                throw new ConflictHttpException(__('talents.review.replacement_slots_not_allowed'));
+            }
+
+            $interviewerIds = $interview->admins()->pluck('admins.id')->sort()->values();
+            Admin::query()->whereIn('id', $interviewerIds)->orderBy('id')->lockForUpdate()->get();
+
+            $slots = collect($data['slots'])->map(function (array $slot): array {
+                $start = CarbonImmutable::parse($slot['start'])->utc();
+
+                return [
+                    'mode' => $slot['mode'],
+                    'starts_at' => $start,
+                    'ends_at' => $start->addMinutes(60),
+                    'location' => $slot['mode'] === 'offline' ? ($slot['location'] ?? null) : null,
+                    'latitude' => $slot['mode'] === 'offline' ? ($slot['latitude'] ?? null) : null,
+                    'longitude' => $slot['mode'] === 'offline' ? ($slot['longitude'] ?? null) : null,
+                    'status' => InterviewSlotStatusEnum::AVAILABLE->value,
+                ];
+            });
+
+            if ($slots->pluck('starts_at')->map->getTimestamp()->duplicates()->isNotEmpty()) {
+                throw ValidationException::withMessages([
+                    'slots' => [__('talents.review.duplicate_slots')],
+                ]);
+            }
+
+            $conflicts = collect();
+            foreach ($slots as $slot) {
+                $matches = InterviewSlot::query()
+                    ->whereIn('status', InterviewSlotStatusEnum::blockingValues())
+                    ->where('starts_at', '<', $slot['ends_at'])
+                    ->where('ends_at', '>', $slot['starts_at'])
+                    ->whereHas('interview.admins', fn ($query) => $query->whereIn('admins.id', $interviewerIds))
+                    ->with('interview.admins:id')
+                    ->get();
+
+                foreach ($matches as $match) {
+                    $conflicts->push([
+                        'slot_id' => $match->id,
+                        'start' => $match->starts_at->toISOString(),
+                        'end' => $match->ends_at->toISOString(),
+                        'interviewer_admin_ids' => $match->interview->admins
+                            ->pluck('id')
+                            ->intersect($interviewerIds)
+                            ->values()
+                            ->all(),
+                    ]);
+                }
+            }
+
+            if ($conflicts->isNotEmpty()) {
+                throw new InterviewScheduleConflictException(
+                    $conflicts->unique('slot_id')->values()->all(),
+                    __('talents.review.interviewer_time_conflict'),
+                );
+            }
+
+            $interview->slots()->createMany($slots->all());
+            $interview->update([
+                'status' => InterviewStatusEnum::AWAITING_SLOT_SELECTION,
+                'rejected_slots_reason' => null,
+            ]);
+            $this->recordEvent($application, $actor, 'replacement_interview_slots_offered', [
+                'interview_id' => $interview->id,
+                'slots_count' => $slots->count(),
+            ]);
+
+            return $interview->refresh()->load(['admins.user', 'slots']);
+        });
+    }
+
     private function lockAndValidateReviewer(int $reviewerAdminId): Admin
     {
         $reviewer = Admin::query()->with('user')->lockForUpdate()->find($reviewerAdminId);

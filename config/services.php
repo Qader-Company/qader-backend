@@ -37,6 +37,11 @@ return [
 
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
+        'calendar' => [
+            'credentials' => env('GOOGLE_CALENDAR_CREDENTIALS', env('FIREBASE_CREDENTIALS')),
+            'id' => env('GOOGLE_CALENDAR_ID'),
+            'subject' => env('GOOGLE_CALENDAR_SUBJECT'),
+        ],
     ],
 
 ];

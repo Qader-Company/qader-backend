@@ -33,6 +33,7 @@ return [
             ['prefix' => 'admin/tools', 'file' => 'tools.php', 'api_key' => true],
             ['prefix' => 'admin/currencies', 'file' => 'currencies.php', 'api_key' => true],
             ['prefix' => 'admin/talent-applications', 'file' => 'talent-applications.php', 'api_key' => true],
+            ['prefix' => 'admin/talent-review-faqs', 'file' => 'talent-review-faqs.php', 'api_key' => true],
         ],
 
         'client' => [
@@ -55,6 +56,12 @@ return [
             [
                 'prefix' => 'talent/onboarding',
                 'file' => 'onboarding.php',
+                'api_key' => true,
+                'middlewares' => ['auth:sanctum', 'abilities:access,talent'],
+            ],
+            [
+                'prefix' => 'talent/application',
+                'file' => 'application.php',
                 'api_key' => true,
                 'middlewares' => ['auth:sanctum', 'abilities:access,talent'],
             ],

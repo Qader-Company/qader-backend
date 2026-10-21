@@ -1,6 +1,6 @@
 # مرجع قيم الـAPI Enums
 
-آخر مراجعة: 20 أكتوبر 2026.
+آخر مراجعة: 21 أكتوبر 2026.
 
 هذا الملف هو المرجع المجمع للقيم الثابتة المعرفة كـPHP enums والمستخدمة في عقود الـAPI. لا يشمل الـMaster Data المحفوظة في جداول، مثل الدول والمدن والعملات والمجالات المهنية والمسميات والمهارات والأدوات.
 
@@ -335,6 +335,8 @@ admin.talent-applications.view
 admin.talent-applications.assign-reviewer
 admin.talent-applications.review
 admin.talent-applications.decide
+admin.talent-review-faqs.view
+admin.talent-review-faqs.manage
 ```
 
 تُستخدم قيم Admin permissions عند إنشاء وتعديل الأدوار، وتظهر أيضًا في endpoint عرض الصلاحيات:
@@ -400,13 +402,34 @@ online
 offline
 ```
 
-### حالة المقابلة في S02
+### حالة المقابلة
 
 المصدر: `InterviewStatusEnum`.
 
 ```text
 awaiting_slot_selection
+awaiting_new_slots
+confirmed
+completed
+cancelled
 ```
+
+### حالة شاشة طلب الموهبة
+
+المصدر: `TalentApplicationScreenStateEnum`.
+
+```text
+under_review
+rejected
+interview_slot_required
+awaiting_new_interview_slots
+interview_confirmed
+interview_completed
+interview_cancelled
+accepted
+```
+
+تُرجع في `screen_state` ويستخدمها الفرونت لاختيار شاشة الحالة، كما يستخدمها الأدمن لتحديد شاشات ظهور كل FAQ.
 
 ### حالة الموعد المقترح
 

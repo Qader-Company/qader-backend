@@ -70,6 +70,9 @@ return new class extends Migration
             $table->foreignId('created_by_admin_id')->constrained('admins')->restrictOnDelete();
             $table->string('google_calendar_event_id')->nullable()->unique();
             $table->text('meeting_url')->nullable();
+            $table->text('rejected_slots_reason')->nullable();
+            $table->unsignedTinyInteger('slot_rejection_count')->default(0);
+            $table->timestamp('talent_reschedule_used_at')->nullable();
             $table->timestamps();
         });
 

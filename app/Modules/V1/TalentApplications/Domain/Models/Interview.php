@@ -12,14 +12,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Interview extends Model
 {
+    public const MAX_SLOT_REJECTIONS = 2;
+
     protected $fillable = [
         'application_id', 'type', 'status', 'created_by_admin_id',
-        'google_calendar_event_id', 'meeting_url',
+        'google_calendar_event_id', 'meeting_url', 'rejected_slots_reason',
+        'slot_rejection_count', 'talent_reschedule_used_at',
     ];
 
     protected function casts(): array
     {
-        return ['type' => InterviewTypeEnum::class, 'status' => InterviewStatusEnum::class];
+        return [
+            'type' => InterviewTypeEnum::class,
+            'status' => InterviewStatusEnum::class,
+            'slot_rejection_count' => 'integer',
+            'talent_reschedule_used_at' => 'datetime',
+        ];
     }
 
     public function application(): BelongsTo

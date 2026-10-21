@@ -10,6 +10,7 @@ use App\Modules\V1\TalentApplications\Application\Services\TalentApplicationRevi
 use App\Modules\V1\TalentApplications\Presentation\Http\Requests\AssignTalentApplicationReviewerRequest;
 use App\Modules\V1\TalentApplications\Presentation\Http\Requests\ListAdminTalentApplicationsRequest;
 use App\Modules\V1\TalentApplications\Presentation\Http\Requests\RejectTalentApplicationRequest;
+use App\Modules\V1\TalentApplications\Presentation\Http\Requests\ReplaceTalentInterviewSlotsRequest;
 use App\Modules\V1\TalentApplications\Presentation\Http\Requests\SaveTalentEvaluationRequest;
 use App\Modules\V1\TalentApplications\Presentation\Http\Requests\ScheduleTalentInterviewRequest;
 use App\Modules\V1\TalentApplications\Presentation\Http\Resources\AdminSummaryResource;
@@ -171,6 +172,27 @@ class AdminTalentApplicationController extends Controller
         );
 
         return ApiResponse::created(new InterviewResource($interview), __('talents.review.interview_scheduled'));
+    }
+
+    /**
+     * @response {"success":true,"message":"Replacement interview times saved successfully.","data":{"id":1,"type":"technical","status":"awaiting_slot_selection","interviewers":[],"slots":[{"id":4,"mode":"online","start":"2026-11-05T10:00:00.000000Z","end":"2026-11-05T11:00:00.000000Z","location":null,"latitude":null,"longitude":null,"status":"available"}],"google_calendar_event_id":null,"meeting_url":null,"created_at":"2026-10-21T09:00:00.000000Z"}}
+     */
+    public function replaceInterviewSlots(
+        ReplaceTalentInterviewSlotsRequest $request,
+        int $application,
+        AdminApplicationActor $actors,
+        TalentApplicationReviewWorkflow $workflow,
+    ): JsonResponse {
+        $interview = $workflow->replaceInterviewSlots(
+            $application,
+            $request->validated(),
+            $actors->resolve($request->user()),
+        );
+
+        return ApiResponse::updated(
+            new InterviewResource($interview),
+            __('talents.review.replacement_slots_saved'),
+        );
     }
 
     public function downloadCv(int $application, TalentApplicationQueryService $queries): StreamedResponse

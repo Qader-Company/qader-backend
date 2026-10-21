@@ -157,7 +157,8 @@ class DocumentationBodyParameters extends GetFromFormRequest
             ]];
         }
 
-        if (str_ends_with($uri, '/schedule-interview') && isset($parameters['slots'])) {
+        if ((str_ends_with($uri, '/schedule-interview') || str_ends_with($uri, '/interview/slots'))
+            && isset($parameters['slots'])) {
             $parameters['slots']['example'] = [
                 [
                     'mode' => 'online',

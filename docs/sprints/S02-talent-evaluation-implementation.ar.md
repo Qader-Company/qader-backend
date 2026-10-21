@@ -1,7 +1,7 @@
 # S02 — توثيق تنفيذ تقييم المواهب
 
-الحالة: **تم تنفيذ Backend السبرنت**  
-تاريخ التنفيذ: 20 أكتوبر 2026
+الحالة: **تم تنفيذ Backend السبرنت وتدفق الموهبة المقابل**
+تاريخ آخر تحديث: 21 أكتوبر 2026
 
 ## ما تم تنفيذه
 
@@ -20,7 +20,91 @@
 - `available_actions` في استجابة التفاصيل حتى يعرض الفرونت الأزرار المسموحة.
 - Admin OpenAPI وPostman محدثان بأسماء واضحة وأمثلة ثابتة.
 
-اختيار الموهبة للموعد وإنشاء Google Calendar Event وGoogle Meet خارج S02. السكيما تحتوي `google_calendar_event_id` و`meeting_url` على `interviews` ليتم ملؤهما بعد الاختيار فقط.
+## تدفق الموهبة المقابل للتقييم والمقابلة
+
+تمت مراجعة حالات الويب والموبايل في Figma وتنفيذ العقد الذي تحتاجه الشاشات:
+
+- `under_review`: الطلب قيد المراجعة والملف المرسل ثابت.
+- `rejected`: الرفض مع `reapply_at` وحالة blacklist دون كشف السبب الداخلي.
+- `interview_slot_required`: عرض المواعيد المتاحة واختيار موعد واحد.
+- `awaiting_new_interview_slots`: انتظار مواعيد بديلة بعد رفض المواعيد أو إلغاء الموعد المؤكد.
+- `interview_confirmed`: الموعد المختار ورابط Google Meet للمقابلة الأونلاين.
+- `interview_completed`: حالة جاهزة لعرض اكتمال المقابلة عندما يحدّثها الأدمن لاحقًا.
+- `accepted`: حالة القبول النهائي الجاهزة للعرض عندما ينفذ قرارها.
+
+الـendpoint الأساسي للشاشة:
+
+```http
+GET /api/v1/talent/application
+```
+
+يرجع `screen_state` وبيانات الطلب و`interview` و`available_slots` و`selected_slot` و`actions` وFAQs المناسبة للحالة الحالية.
+
+عمليات الموهبة:
+
+```text
+POST /api/v1/talent/application/interview/slots/{slot}/select
+POST /api/v1/talent/application/interview/slots/reject
+POST /api/v1/talent/application/interview/cancel
+```
+
+- رفض كل المواعيد يحتاج `reason` من 10 إلى 1000 حرف.
+- الموهبة تستطيع رفض مجموعات المواعيد مرتين فقط. الاستجابة ترجع `slot_rejections.used`, `maximum`, `remaining`.
+- إلغاء الموعد المؤكد وإعادة الجدولة متاح مرة واحدة فقط حسب التصميم.
+- عند اختيار slot أونلاين ينشئ السيرفر Google Calendar Event وGoogle Meet، ثم يحفظ `google_calendar_event_id` و`meeting_url`.
+- عند فشل Google Calendar لا يثبت السيرفر اختيار الموعد، وتبقى البيانات في حالتها السابقة.
+
+بعد الرفض أو الإلغاء يرسل الأدمن مواعيد بديلة من:
+
+```http
+POST /api/v1/admin/talent-applications/{application}/interview/slots
+```
+
+ويستخدم نفس شكل `slots` في جدولة المقابلة الأصلية مع الإبقاء على عداد مرات الرفض.
+
+## FAQs الخاصة بمراجعة الموهبة
+
+FAQs الظاهرة في شاشات Figma أضيفت كبيانات مترجمة يديرها الأدمن. كل سؤال يحدد `screen_states` التي يظهر فيها و`display_order` و`is_active`.
+
+```text
+GET    /api/v1/admin/talent-review-faqs
+GET    /api/v1/admin/talent-review-faqs/{faq}
+POST   /api/v1/admin/talent-review-faqs
+PATCH  /api/v1/admin/talent-review-faqs/{faq}
+DELETE /api/v1/admin/talent-review-faqs/{faq}
+```
+
+مثال الإنشاء والتعديل:
+
+```json
+{
+  "screen_states": ["under_review", "rejected"],
+  "question": {
+    "en": "How long does the review process take?",
+    "ar": "كم تستغرق عملية المراجعة؟"
+  },
+  "answer": {
+    "en": "You will be notified as soon as your application moves to the next stage.",
+    "ar": "سيتم إشعارك بمجرد انتقال طلبك إلى المرحلة التالية."
+  },
+  "display_order": 1,
+  "is_active": true
+}
+```
+
+`TalentReviewFaqSeeder` يضيف المحتوى الأساسي الموجود في التصميم بطريقة قابلة لإعادة التشغيل دون تكرار البيانات.
+
+## إعداد Google Calendar وMeet
+
+```dotenv
+GOOGLE_CALENDAR_CREDENTIALS=/var/www/html/storage/app/private/google-service-account.json
+GOOGLE_CALENDAR_ID=
+GOOGLE_CALENDAR_SUBJECT=
+```
+
+- يمكن وضع نفس مسار `FIREBASE_CREDENTIALS` في `GOOGLE_CALENDAR_CREDENTIALS` إذا كان نفس Service Account مخولًا للوصول إلى Calendar API.
+- يجب تفعيل Google Calendar API ومشاركة التقويم مع بريد الـService Account.
+- `GOOGLE_CALENDAR_SUBJECT` يستخدم فقط عند إعداد Domain-Wide Delegation لانتحال مستخدم Google Workspace مخول بإنشاء Meet.
 
 ## تطبيق قاعدة البيانات على السيرفر
 
@@ -31,6 +115,7 @@
 ```bash
 php artisan migrate --force
 php artisan db:seed --class=AdminRoleSeeder --force
+php artisan db:seed --class=TalentReviewFaqSeeder --force
 php artisan optimize:clear
 ```
 
@@ -42,11 +127,11 @@ POST /api/maintenance/seed
 Content-Type: application/json
 
 {
-  "seeder": "AdminRoleSeeder"
+  "seeder": "TalentReviewFaqSeeder"
 }
 ```
 
-الـmigration الجديدة تنشئ الجداول غير الموجودة وتضيف أعمدة المراجعة إلى `talent_applications` من غير حذف الطلبات الحالية.
+نفّذ Maintenance seed مرة لـ`AdminRoleSeeder` ومرة لـ`TalentReviewFaqSeeder`. الـmigrations تنشئ الجداول غير الموجودة وتضيف أعمدة المراجعة من غير حذف الطلبات الحالية.
 
 ## الجداول
 
@@ -59,6 +144,8 @@ Content-Type: application/json
 - `interview_admin`: المقابلون.
 - `interview_slots`: `starts_at`, `ends_at`, النوع والموقع والحالة.
 - `talent_application_events`: سجل العمليات الأساسية.
+- `talent_review_faqs`: الشاشات المرتبطة بالسؤال وترتيبه وحالة تفعيله.
+- `talent_review_faq_translations`: السؤال والإجابة بالعربية والإنجليزية.
 
 ## الهيدرز
 
@@ -260,7 +347,7 @@ admin / talent-applications
 
 - تشغيل كل migrations بنجاح على SQLite منفصلة، مع نسخة اختبار محلية متجاهلة من Git في `database/testing.sqlite`.
 - نجاح دورة `migrate:fresh` ثم rollback لـS02 ثم migrate مرة أخرى.
-- نجاح PHPUnit: 5 tests و9 assertions.
+- نجاح اختبارات تدفق الموهبة والمقابلة: 4 tests و19 assertions، وتشمل منع الرفض الثالث واستخدام endpoint المواعيد البديلة.
 - نجاح فحص PHP syntax.
 - نجاح Laravel Pint.
 - ظهور 11 route مع الـmiddleware والصلاحيات الصحيحة.

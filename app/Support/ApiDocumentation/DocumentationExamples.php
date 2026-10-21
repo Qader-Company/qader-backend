@@ -74,6 +74,7 @@ class DocumentationExamples
             $name === 'reapply_policy' => 'allowed_after_period',
             $name === 'reapply_after_months' => 6,
             $name === 'blacklist_reason' => 'Repeated submission of invalid information.',
+            $name === 'reason' && str_contains($uri, '/interview/slots/reject') => 'I am unavailable on all offered dates. Please provide times next week.',
             $name === 'priority' => 'high',
             $name === 'type' && str_contains($uri, '/schedule-interview') => 'technical',
             $name === 'mode' => 'online',
@@ -90,6 +91,7 @@ class DocumentationExamples
             $name === 'expected_salary_max' => 30000,
             $name === 'permissions' => ['admin.countries.view'],
             $name === 'form_fields' => ['github_url', 'portfolio_url'],
+            $name === 'screen_states' => ['under_review', 'rejected'],
             $name === 'professional_field_ids', $name === 'skill_ids', $name === 'tool_ids',
             $name === 'removed_image_ids' => [1],
             $name === 'role_ids' => [2],
@@ -142,6 +144,18 @@ class DocumentationExamples
             return str_ends_with($name, '.ar')
                 ? 'وصف تجريبي للمجال المهني.'
                 : 'Example description for the professional field.';
+        }
+
+        if (in_array($name, ['question.en', 'question.ar'], true)) {
+            return str_ends_with($name, '.ar')
+                ? 'كم تستغرق عملية المراجعة؟'
+                : 'How long does the review process take?';
+        }
+
+        if (in_array($name, ['answer.en', 'answer.ar'], true)) {
+            return str_ends_with($name, '.ar')
+                ? 'سيتم إشعارك بمجرد انتقال طلبك إلى المرحلة التالية.'
+                : 'You will be notified as soon as your application moves to the next stage.';
         }
 
         if ($name === 'name') {
