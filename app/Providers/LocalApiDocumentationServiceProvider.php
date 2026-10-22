@@ -45,7 +45,15 @@ class LocalApiDocumentationServiceProvider extends ServiceProvider
             $file = Storage::disk('local')->path('scribe/'.$portal.'.openapi.yaml');
             abort_unless(is_file($file), 404, 'Generate the API documentation first.');
 
-            return response()->file($file);
+            $response = response()->file($file, [
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+            ]);
+
+            $response->setPrivate();
+
+            return $response;
         })->whereIn('portal', ['talent', 'client', 'admin'])->name('scribe.portal.openapi');
     }
 }

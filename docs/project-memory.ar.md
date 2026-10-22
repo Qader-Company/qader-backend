@@ -14,7 +14,7 @@
 - لا ننشئ migrations جديدة لمجرد وجود جدول في السكيما المقترحة.
 - عند وجود migration أصلية للجدول المطلوب نعدّلها مباشرة. ننشئ migration جديدة فقط عندما لا توجد migration مناسبة للتغيير أو الجدول المطلوب.
 - لا نشغّل أو نكتب اختبارات إلا عند طلب المستخدم. نعتمد فحوصات تشغيل مركزة عند الحاجة.
-- كل أوامر PHP وArtisan وComposer والفحوصات الخاصة بهذا المشروع تُشغّل داخل Docker فقط، ولا نعتمد على PHP المحلي.
+- كل أوامر PHP وArtisan وComposer والفحوصات الخاصة بهذا المشروع تُشغّل داخل حاوية `app` في Compose project باسم `qader-backend-local`، ولا نعتمد على PHP المحلي أو Containers مؤقتة. الصيغة الأساسية: `docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml exec app php artisan ...`.
 
 ## مصادر الحقيقة وترتيبها
 

@@ -7,11 +7,24 @@ services:
         INSTALL_DEV_DEPENDENCIES: "true"
     image: qader-backend-local-app
     volumes:
+      - .:/var/www/html
+      - runtime_storage:/var/www/html/storage
+      - bootstrap_cache:/var/www/html/bootstrap/cache
+      - scribe_markdown:/var/www/html/.scribe
+      - scribe_views:/var/www/html/resources/views/scribe
       - scribe_assets:/var/www/html/public/vendor
   queue:
     image: qader-backend-local-app
+    volumes:
+      - .:/var/www/html
+      - runtime_storage:/var/www/html/storage
+      - bootstrap_cache:/var/www/html/bootstrap/cache
   scheduler:
     image: qader-backend-local-app
+    volumes:
+      - .:/var/www/html
+      - runtime_storage:/var/www/html/storage
+      - bootstrap_cache:/var/www/html/bootstrap/cache
   nginx:
     build:
       context: .
@@ -31,4 +44,8 @@ services:
       - "127.0.0.1:6380:6379"
 
 volumes:
+  runtime_storage: {}
+  bootstrap_cache: {}
+  scribe_markdown: {}
+  scribe_views: {}
   scribe_assets: {}
