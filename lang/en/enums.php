@@ -95,4 +95,9 @@ return [
         'cancelled' => 'Cancelled',
         'rejected_by_talent' => 'Rejected by Talent',
     ],
+    'job_publishing_statuses' => ['draft' => 'Draft', 'published' => 'Published'],
+    'job_submission_statuses' => ['received' => 'Received', 'hiring_started' => 'Hiring Started'],
+    'job_work_types' => ['full_time' => 'Full Time', 'part_time' => 'Part Time', 'contract' => 'Contract', 'freelance' => 'Freelance', 'internship' => 'Internship'],
+    'job_work_modes' => ['onsite' => 'On Site', 'remote' => 'Remote', 'hybrid' => 'Hybrid'],
+    'job_experience_ranges' => ['less_than_1' => 'Less than 1 year', '1_to_3' => '1–3 years', '3_to_5' => '3–5 years', '5_to_10' => '5–10 years', 'more_than_10' => 'More than 10 years'],
 ];

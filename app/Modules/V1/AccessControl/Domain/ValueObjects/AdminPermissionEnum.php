@@ -48,6 +48,12 @@ enum AdminPermissionEnum: string implements PermissionDefinition
     case TALENT_REVIEW_FAQS_VIEW = 'admin.talent-review-faqs.view';
     case TALENT_REVIEW_FAQS_MANAGE = 'admin.talent-review-faqs.manage';
 
+    case JOB_FORMS_VIEW = 'admin.job-forms.view';
+    case JOB_FORMS_MANAGE = 'admin.job-forms.manage';
+    case JOB_FORM_SUBMISSIONS_VIEW = 'admin.job-form-submissions.view';
+    case JOB_FORM_SUBMISSIONS_DELETE = 'admin.job-form-submissions.delete';
+    case JOB_FORM_SUBMISSIONS_START_HIRING = 'admin.job-form-submissions.start-hiring';
+
     public function portal(): PortalTypeEnum
     {
         return PortalTypeEnum::ADMIN;

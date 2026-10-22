@@ -108,16 +108,7 @@ class PortalExports
     {
         $operation['parameters'] ??= [];
         self::upsertOpenApiHeader($operation['parameters'], 'Accept', 'application/json');
-
-        foreach ($operation['parameters'] ?? [] as &$parameter) {
-            if (($parameter['in'] ?? null) !== 'header' || strcasecmp($parameter['name'] ?? '', 'X-Authorization') !== 0) {
-                continue;
-            }
-
-            $parameter['example'] = '{{api_key}}';
-            $parameter['schema']['example'] = '{{api_key}}';
-        }
-        unset($parameter);
+        self::upsertOpenApiHeader($operation['parameters'], 'X-Authorization', '{{api_key}}');
 
         $tokenVariable = self::tokenVariableFor($uri, $operation);
 

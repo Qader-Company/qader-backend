@@ -19,6 +19,8 @@ return [
         'tools' => 'الأدوات',
         'currencies' => 'العملات',
         'talent-applications' => 'طلبات المواهب',
+        'job-forms' => 'نماذج الوظائف',
+        'job-form-submissions' => 'تقديمات نماذج الوظائف',
         'platform' => 'المنصة',
     ],
 
@@ -69,6 +71,8 @@ return [
             'review' => 'مراجعة طلبات المواهب',
             'decide' => 'اتخاذ قرار تأهيل المواهب',
         ],
+        'job-forms' => ['view' => 'عرض نماذج الوظائف', 'manage' => 'إدارة نماذج الوظائف'],
+        'job-form-submissions' => ['view' => 'عرض تقديمات نماذج الوظائف', 'delete' => 'حذف تقديمات نماذج الوظائف', 'start-hiring' => 'بدء التوظيف من التقديمات'],
     ],
 
     'talent' => [

@@ -11,6 +11,7 @@ class EndpointNames
     {
         $parts = array_slice(explode('/', $route->uri()), 2);
         $method = $route->methods()[0];
+        $isPublicJobs = ($parts[0] ?? null) === 'public' && ($parts[1] ?? null) === 'jobs';
 
         if ($parts[0] === 'auth') {
             return match ($route->getActionMethod()) {
@@ -94,6 +95,30 @@ class EndpointNames
                 'store' => 'Create Talent Review FAQ',
                 'update' => 'Update Talent Review FAQ',
                 'destroy' => 'Delete Talent Review FAQ',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'job-forms' || $isPublicJobs) {
+            $isSubmissionRoute = str_contains($route->uri(), '/submissions');
+
+            return match ($route->getActionMethod()) {
+                'publishingStatuses' => 'List Job Form Publishing Statuses',
+                'submissionStatuses' => 'List Job Form Submission Statuses',
+                'workTypes' => 'List Job Work Types',
+                'workModes' => 'List Job Work Modes',
+                'experienceRanges' => 'List Job Experience Ranges',
+                'index' => $isPublicJobs
+                    ? 'Explore Open Positions'
+                    : ($isSubmissionRoute ? 'List Job Form Submissions' : 'List Job Forms'),
+                'store' => 'Create Job Form',
+                'show' => $isPublicJobs
+                    ? 'Get Public Job Details'
+                    : ($isSubmissionRoute ? 'Get Job Form Submission' : 'Get Job Form'),
+                'update' => 'Update Job Form', 'publish' => 'Publish Job Form', 'activation' => 'Update Job Form Activation',
+                'applicationForm' => 'Get Public Job Application Form', 'submit' => 'Submit Public Job Application',
+                'export' => 'Export Job Form Submissions', 'downloadCv' => 'Download Applicant CV', 'startHiring' => 'Start Hiring Process',
+                'destroy' => str_contains($route->uri(), 'submissions') ? 'Delete Job Form Submission' : 'Delete Job Form',
                 default => Str::headline($route->getActionMethod()),
             };
         }

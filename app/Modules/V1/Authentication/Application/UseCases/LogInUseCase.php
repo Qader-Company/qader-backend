@@ -18,7 +18,7 @@ class LogInUseCase
         private readonly UserRepositoryInterface $userRepository
     ) {}
 
-    /** @return array{user: User, requires_email_verification: bool} */
+    /** @return array{user: User, requires_email_verification: bool, requires_password_change: bool} */
     public function execute(
         array $credentials,
         PortalTypeEnum $portal
@@ -47,7 +47,11 @@ class LogInUseCase
         User $user,
         PortalTypeEnum $portal
     ): array {
-        $needsVerification = $user->email_verified_at === null;
+        $requiresPasswordChange = (bool) $user->must_change_password;
+        if ($requiresPasswordChange && $user->email_verified_at === null) {
+            $user = $this->userRepository->update($user, ['email_verified_at' => now()]);
+        }
+        $needsVerification = ! $requiresPasswordChange && $user->email_verified_at === null;
 
         if ($needsVerification) {
             $this->otpService->generateAndSend(
@@ -65,6 +69,7 @@ class LogInUseCase
         return [
             'user' => $user,
             'requires_email_verification' => $needsVerification,
+            'requires_password_change' => $requiresPasswordChange,
         ];
     }
 }

@@ -44,6 +44,7 @@ class DocumentationBodyParameters extends GetFromFormRequest
 
         $this->applyStableAuthExamples($endpointData, $parameters);
         $this->applyTalentApplicationExamples($endpointData, $parameters);
+        $this->applyJobFormExamples($endpointData, $parameters);
 
         return $parameters;
     }
@@ -172,6 +173,50 @@ class DocumentationBodyParameters extends GetFromFormRequest
                     'longitude' => 31.2357120,
                 ],
             ];
+        }
+    }
+
+    private function applyJobFormExamples(ExtractedEndpointData $endpointData, ?array &$parameters): void
+    {
+        if ($parameters === null || ! str_contains($endpointData->route->uri(), '/job')) {
+            return;
+        }
+
+        $uri = $endpointData->route->uri();
+        $examples = str_contains($uri, '/admin/job-forms') ? [
+            'professional_field_id' => 1,
+            'job_title_id' => 1,
+            'summary' => 'Build reliable backend services for Qader products.',
+            'about_role' => 'You will own APIs and collaborate with product and frontend teams.',
+            'work_type' => 'full_time',
+            'work_mode' => 'hybrid',
+            'publishing_status' => 'published',
+            'sections' => [
+                ['section' => 'responsibility', 'items' => ['Design and maintain APIs.', 'Review backend changes.']],
+                ['section' => 'requirement', 'items' => ['Strong PHP and Laravel experience.']],
+                ['section' => 'qualification', 'items' => ['Good written and verbal communication.']],
+            ],
+            'professional_form_field_ids' => [12, 23, 38],
+            'is_active' => true,
+        ] : [
+            'applicant_name' => 'Ahmed Hassan',
+            'email' => 'ahmed.hassan@example.com',
+            'phone_country_code' => '+20',
+            'phone_number' => '1012345678',
+            'consent' => true,
+            'idempotency_key' => '550e8400-e29b-41d4-a716-446655440000',
+            'answers' => [
+                'years_of_experience' => '3_to_5',
+                'notice_period_days' => '30 days',
+                'skill_ids' => [1, 2],
+                'expected_salary' => ['amount' => 25000, 'currency_id' => 1],
+            ],
+        ];
+
+        foreach ($examples as $name => $example) {
+            if (isset($parameters[$name])) {
+                $parameters[$name]['example'] = $example;
+            }
         }
     }
 }

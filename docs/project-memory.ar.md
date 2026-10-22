@@ -1,6 +1,6 @@
 # ذاكرة مشروع Qader
 
-آخر تحديث: 18 أكتوبر 2026
+آخر تحديث: 22 أكتوبر 2026
 
 هذا الملف هو نقطة البداية المختصرة عند استكمال المشروع في جلسة جديدة. التفاصيل تظل في مستندات الـ architecture والـ flows المرتبطة أدناه.
 
@@ -14,6 +14,7 @@
 - لا ننشئ migrations جديدة لمجرد وجود جدول في السكيما المقترحة.
 - عند وجود migration أصلية للجدول المطلوب نعدّلها مباشرة. ننشئ migration جديدة فقط عندما لا توجد migration مناسبة للتغيير أو الجدول المطلوب.
 - لا نشغّل أو نكتب اختبارات إلا عند طلب المستخدم. نعتمد فحوصات تشغيل مركزة عند الحاجة.
+- كل أوامر PHP وArtisan وComposer والفحوصات الخاصة بهذا المشروع تُشغّل داخل Docker فقط، ولا نعتمد على PHP المحلي.
 
 ## مصادر الحقيقة وترتيبها
 
@@ -78,7 +79,7 @@
 - Client OpenAPI: `http://localhost:8000/docs/client.openapi`
 - Admin OpenAPI: `http://localhost:8000/docs/admin.openapi`
 
-بعد تعديل routes أو Form Requests نشغّل `php artisan scribe:generate`. في Apidog يتم تحديث المصادر الثلاثة مع السماح بتحديث الاسم والـ Body والـ Parameters حتى لا يحتفظ بالبيانات القديمة. التفاصيل في [دليل Scribe وApidog](scribe-local.ar.md).
+بعد تعديل routes أو Form Requests نشغّل `php artisan scribe:generate` داخل Docker. في Apidog يتم تحديث المصادر الثلاثة مع السماح بتحديث الاسم والـ Body والـ Parameters حتى لا يحتفظ بالبيانات القديمة. التفاصيل في [دليل Scribe وApidog](scribe-local.ar.md).
 
 ## حالة السكيما
 
@@ -97,6 +98,17 @@
 
 ## السبرنت الحالي
 
+- `S03 — النماذج الخارجية للوظائف`: تم تنفيذ Backend كاملًا طبقًا لشاشات Job Forms في Admin Portal وصفحات الوظائف والنموذج العام ونجاح التقديم. الخطة المعتمدة في [S03 External Job Forms Plan](sprints/S03-external-job-forms-plan.ar.md)، وما تم تنفيذه وخطوات التطبيق وأمثلة الـAPI في [S03 External Job Forms Implementation](sprints/S03-external-job-forms-implementation.ar.md).
+- تنفيذ S03 يشمل `job_postings` كـaggregate واحد، الإصدارات المنشورة الثابتة، حقول `professional_form_fields`، التقديم العام والـCV الخاص، إدارة التقديمات وCSV، و`Start Hiring Process` مع الحساب المؤقت وإجبار تغيير كلمة المرور. Public Jobs موثقة داخل Admin OpenAPI تحت `admin/public-job-forms`.
+- مصدر حقول S03 هو `professional_form_fields` المرتبط بالمجال من خلال `professional_field_form_field`؛ لن ننشئ `job_question_catalog`. اختيار الحقول يعمل بنفس طريقة الفورمز الداخلية: الـFrontend يستقبل keys ويملك العرض والترتيب، والBackend يطبق Validation خارجيًا حسب الـkey. يحفظ كل version مراجع الحقول المختارة فقط في pivot مركب من غير تكرار label أوtype أوrequired أوvalidation في قاعدة البيانات.
+- S03 يشمل Draft وPublished، إصدارات ثابتة، Activation مستقل، الرابط العام، تقديم الزائر والـCV، قائمة وتفاصيل التقديمات وCSV export.
+- عنوان Job Form يتولد من المسمى الوظيفي ولا يرسل كحقل مستقل. Copy Link يفتح تفاصيل الوظيفة داخل Explore Open Positions ثم ينتقل الزائر من Apply Now إلى النموذج. إلزامية الأسئلة ثابتة حسب Figma؛ يعرضها ويتحقق منها Frontend ويطبق Backend Validation مطابقًا كمرجع نهائي. يسمح بتكرار البريد في تقديمات النموذج.
+- يسمح بنشر Job Form بالحقول الأربعة الثابتة فقط، والأسئلة الإضافية اختيارية.
+- الحقول الثابتة النهائية في نموذج التقديم الخارجي هي Applicant Name وEmail وMobile Number وCV؛ المتقدم لا يدخل Job Title لأن الوظيفة معروفة من الرابط. اختيار Published ينشر ويفعّل الرابط مباشرة.
+- نطاقات الخبرة ومدد الإشعار تكون enums ثابتة، ومدد الإشعار بالقيم `0`, `7`, `14`, `30`, `60`, `90` يومًا. اختيار حقل الراتب المتوقع يعرض المبلغ والعملة معًا، وتأتي العملة من `currencies` الفعالة.
+- مهارات الوظائف العامة وخيارات سؤال `skill_ids` تأتي من Skills الفعالة المرتبطة بـ`professional_field_id` عبر `professional_field_skill`؛ لا ننشئ `job_posting_skills` في S03، ولذلك كل وظائف المجال تعرض مهارات المجال الحالية. لا نضيف `seniority_level`, `country_id` أو`city_id` لأنها غير موجودة في Form Setup. يدعم البحث العام العنوان والوصف ومهارات المجال، وفلتر `skill_id` يعمل من خلال علاقة المجال.
+- قائمتا التقديمات في Figma تمثلان حالتين مكملتين، وكل الأكشنز الظاهرة داخلة في S03: Search وFilter وExport وStatus وView وDownload CV وحذف فردي وStart Hiring Process. حذف submission يكون Soft Delete للحالة `received` فقط، ويرفض بعد بدء Hiring Process. تحديد الصفوف وClear selection سلوك Frontend، ولا يوجد Bulk Delete لعدم وجود زر تنفيذ جماعي في التصميم.
+- `Start Hiring Process` في S03 يحول التقديم المناسب إلى حساب Talent: ينشئ الحساب إن لم يوجد أو يربط الموجود دون تغيير كلمة مروره، ويرسل للحساب الجديد كلمة مرور عشوائية مؤقتة على البريد. أول Login يطلب تغييرها قبل إصدار Access Token كامل، ثم تكمل الموهبة Onboarding الحالي. لا ينشأ Talent Application تلقائيًا من التقديم الخارجي.
 - `S02 — تقييم المواهب`: قائمة المراجعة، تعيين المراجع وإعادة تعيينه، تقييم الملف، رفض الطلب أو إنشاء تفاصيل المقابلة والـslots. تمت مراجعة Figma وقاعدة البيانات والكود، والخطة المحدثة موجودة في [S02 Talent Evaluation Plan](sprints/S02-talent-evaluation-plan.ar.md).
 - تم تنفيذ Backend الخاص بـS02 وتوثيقه في [S02 Talent Evaluation Implementation](sprints/S02-talent-evaluation-implementation.ar.md): workflow التعيين والتقييم والقرار، منع تداخل المقابلين، تدفق الموهبة، إدارة FAQs وendpoints منفصلة لقيم enums، مع توثيق Admin OpenAPI كامل.
 - حدود S02 تنتهي عند إنشاء المقابلة والـslots وتحويل الطلب إلى `interview_required`، أو عند `rejected`. اختيار الموعد وتنفيذ المقابلة والقبول النهائي خارج السبرنت.

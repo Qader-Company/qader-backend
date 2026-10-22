@@ -374,6 +374,7 @@ Table users [headercolor: #fef3c7] {
   email varchar(255) [not null]
   email_verified_at timestamp
   password varchar(255) [not null]
+  must_change_password boolean [not null, default: false, note: 'S03 temporary credentials created by Start Hiring Process']
   type varchar(255) [not null, note: 'talent | client | admin']
   avatar varchar(255)
   is_active boolean [not null, default: true]
@@ -1628,20 +1629,16 @@ Table help_requests [headercolor: #dcfce7] {
 Table job_postings [headercolor: #dcfce7] {
   id bigint [pk, increment]
   professional_field_id bigint [not null]
-  job_title_id bigint
-  title varchar(255) [not null, note: 'Public role title can be free text']
+  job_title_id bigint [not null]
+  title varchar(255) [not null, note: 'Server snapshot generated from job title']
   slug varchar(255) [not null, unique]
   summary text [not null]
   about_role text [not null]
   work_type varchar(32) [not null]
   work_mode varchar(32) [not null]
-  seniority_level varchar(32)
-  country_id bigint
-  city_id bigint
-  department varchar(255)
-  status varchar(16) [not null, default: 'draft', note: 'draft | published | closed | archived']
+  status varchar(16) [not null, default: 'draft', note: 'draft | published']
+  is_active boolean [not null, default: false]
   published_at timestamp
-  closed_at timestamp
   created_by_admin_id bigint [not null]
   deleted_at timestamp [note: 'Archive form with submissions; D09']
   created_at timestamp
@@ -1649,14 +1646,14 @@ Table job_postings [headercolor: #dcfce7] {
   indexes {
     (status, professional_field_id, published_at)
   }
-  Note: '[NEW] 4541:62666 / 4528:95530. Qader public openings; workspace ownership not evidenced. Do not use jobs (Laravel queue).'
+  Note: '[NEW/S03] 4541:62666 / 4528:95530. The posting is also the Job Form aggregate. Department maps to professional field; no seniority/country/city columns in the current setup screen.'
 }
 
 // [NEW] job_posting_sections
 Table job_posting_sections [headercolor: #dcfce7] {
   id bigint [pk, increment]
   job_posting_id bigint [not null]
-  section varchar(32) [not null, note: 'responsibility | requirement | qualification | benefit']
+  section varchar(32) [not null, note: 'responsibility | requirement | qualification']
   content text [not null]
   display_order smallint [not null]
   created_at timestamp
@@ -1664,105 +1661,54 @@ Table job_posting_sections [headercolor: #dcfce7] {
   indexes {
     (job_posting_id, section, display_order) [unique]
   }
-  Note: '[NEW] Ordered public responsibilities, requirements, what-we-look-for and optional benefits.'
-}
-
-// [NEW] job_posting_skills
-Table job_posting_skills [headercolor: #dcfce7] {
-  job_posting_id bigint [not null]
-  skill_id bigint [not null]
-  indexes {
-    (job_posting_id, skill_id) [pk]
-  }
-  Note: '[NEW] Searchable skills on public job cards.'
-}
-
-// [NEW] job_question_catalog
-Table job_question_catalog [headercolor: #dcfce7] {
-  id bigint [pk, increment]
-  key varchar(100) [not null, unique]
-  professional_field_id bigint
-  label varchar(255) [not null]
-  prompt text
-  input_type varchar(32) [not null, note: 'text | textarea | number | select | multiselect | url | file | date']
-  validation_rules json [note: 'Whitelisted rules only; never executable rule strings from users']
-  options json [note: 'Versioned key/label pairs copied into form fields']
-  is_active boolean [not null, default: true]
-  created_at timestamp
-  updated_at timestamp
-  Note: '[NEW] 4549:65134 Choose existing fields. Separate from onboarding registry. No freeform question creation required by current UI.'
-}
-
-// [NEW] job_forms
-Table job_forms [headercolor: #dcfce7] {
-  id bigint [pk, increment]
-  job_posting_id bigint [not null, unique]
-  title varchar(255) [not null]
-  description text
-  public_token varchar(100) [not null, unique]
-  is_active boolean [not null, default: false]
-  created_by_admin_id bigint [not null]
-  deleted_at timestamp
-  created_at timestamp
-  updated_at timestamp
-  Note: '[NEW] One versioned form per job; copy action creates new form/posting identities, not duplicated submissions.'
+  Note: '[NEW/S03] Ordered public responsibilities, requirements and qualifications. Benefits are absent from the current setup design.'
 }
 
 // [NEW] job_form_versions
 Table job_form_versions [headercolor: #dcfce7] {
   id bigint [pk, increment]
-  job_form_id bigint [not null]
+  job_posting_id bigint [not null]
   version_number int [not null]
   status varchar(16) [not null, note: 'draft | published | retired']
-  identity_fields_snapshot json [not null, note: 'Exactly four fixed required fields: name,email,mobile,job_title; title server-filled']
+  job_details_snapshot json [note: 'Immutable public details and sections at publish time']
+  identity_fields_snapshot json [note: 'Fixed required fields: applicant name,email,mobile,CV']
   published_at timestamp
   created_at timestamp
   updated_at timestamp
   indexes {
-    (job_form_id, version_number) [unique]
+    (job_posting_id, version_number) [unique]
   }
   Note: '[NEW] Immutable when published; old submissions render exact historical fields and job identity.'
 }
 
 // [NEW] job_form_fields
 Table job_form_fields [headercolor: #dcfce7] {
-  id bigint [pk, increment]
   form_version_id bigint [not null]
-  catalog_question_id bigint [not null]
-  field_key varchar(100) [not null]
-  label varchar(255) [not null]
-  prompt text
-  input_type varchar(32) [not null]
-  is_required boolean [not null, default: false]
-  validation_rules json
-  options json
-  display_order smallint [not null]
+  professional_form_field_id bigint [not null]
   created_at timestamp
   updated_at timestamp
   indexes {
-    (form_version_id, field_key) [unique]
-    (form_version_id, display_order) [unique]
+    (form_version_id, professional_form_field_id) [pk]
   }
-  Note: '[NEW] Selected additional questions; snapshots retain labels/types/options despite catalog changes.'
+  Note: '[NEW/S03] Same key-selection approach as internal professional forms. Frontend owns presentation/order; backend owns validation by key.'
 }
 
 // [NEW] job_form_submissions
 Table job_form_submissions [headercolor: #dcfce7] {
   id bigint [pk, increment]
   form_version_id bigint [not null]
-  applicant_user_id bigint
   applicant_name varchar(255) [not null]
   email varchar(255) [not null]
-  mobile_number varchar(32) [not null]
-  job_title_snapshot varchar(255) [not null]
-  status varchar(32) [not null, default: 'received', note: 'received | reviewed | converted | archived']
-  submission_key uuid [not null, unique, note: 'Idempotency key; email alone is not unique']
+  phone_country_code varchar(8) [not null]
+  phone_number varchar(24) [not null]
+  status varchar(32) [not null, default: 'received', note: 'received | hiring_started']
+  idempotency_key uuid [not null, unique, note: 'Email alone is intentionally not unique']
   consent_at timestamp [not null]
   submitted_at timestamp [not null]
   converted_talent_id bigint
-  converted_application_id bigint
   converted_by_admin_id bigint
   converted_at timestamp
+  deleted_at timestamp
   created_at timestamp
   updated_at timestamp
   indexes {
@@ -1776,15 +1722,14 @@ Table job_form_submissions [headercolor: #dcfce7] {
 Table job_form_answers [headercolor: #dcfce7] {
   id bigint [pk, increment]
   submission_id bigint [not null]
-  form_field_id bigint [not null]
+  professional_form_field_id bigint [not null]
   value json
-  media_id bigint
   created_at timestamp
   updated_at timestamp
   indexes {
-    (submission_id, form_field_id) [unique]
+    (submission_id, professional_form_field_id) [unique]
   }
-  Note: '[NEW] Submission and field must share a form version. Typed JSON value; selected values must exist in frozen options. File answers use attached media.'
+  Note: '[NEW/S03] Submission and selected professional field key must share a version. Fixed CV uses private Spatie media collection cv.'
 }
 
 // [PROPOSED] saved_job_postings
@@ -2543,26 +2488,16 @@ Ref: help_requests.closed_by_admin_id > admins.id [delete: restrict]
 Ref: help_requests.linked_hiring_request_id > hiring_requests.id [delete: restrict]
 Ref: job_postings.professional_field_id > professional_fields.id [delete: restrict]
 Ref: job_postings.job_title_id > job_titles.id [delete: restrict]
-Ref: job_postings.country_id > countries.id [delete: restrict]
-Ref: job_postings.city_id > cities.id [delete: restrict]
 Ref: job_postings.created_by_admin_id > admins.id [delete: restrict]
 Ref: job_posting_sections.job_posting_id > job_postings.id [delete: cascade]
-Ref: job_posting_skills.job_posting_id > job_postings.id [delete: cascade]
-Ref: job_posting_skills.skill_id > skills.id [delete: restrict]
-Ref: job_question_catalog.professional_field_id > professional_fields.id [delete: restrict]
-Ref: job_forms.job_posting_id > job_postings.id [delete: restrict]
-Ref: job_forms.created_by_admin_id > admins.id [delete: restrict]
-Ref: job_form_versions.job_form_id > job_forms.id [delete: restrict]
-Ref: job_form_fields.form_version_id > job_form_versions.id [delete: restrict]
-Ref: job_form_fields.catalog_question_id > job_question_catalog.id [delete: restrict]
+Ref: job_form_versions.job_posting_id > job_postings.id [delete: cascade]
+Ref: job_form_fields.form_version_id > job_form_versions.id [delete: cascade]
+Ref: job_form_fields.professional_form_field_id > professional_form_fields.id [delete: restrict]
 Ref: job_form_submissions.form_version_id > job_form_versions.id [delete: restrict]
-Ref: job_form_submissions.applicant_user_id > users.id [delete: restrict]
-Ref: job_form_submissions.converted_talent_id > talents.id [delete: restrict]
-Ref: job_form_submissions.converted_application_id > talent_applications.id [delete: restrict]
-Ref: job_form_submissions.converted_by_admin_id > admins.id [delete: restrict]
-Ref: job_form_answers.submission_id > job_form_submissions.id [delete: restrict]
-Ref: job_form_answers.form_field_id > job_form_fields.id [delete: restrict]
-Ref: job_form_answers.media_id > media.id [delete: restrict]
+Ref: job_form_submissions.converted_talent_id > talents.id [delete: set null]
+Ref: job_form_submissions.converted_by_admin_id > admins.id [delete: set null]
+Ref: job_form_answers.submission_id > job_form_submissions.id [delete: cascade]
+Ref: job_form_answers.professional_form_field_id > professional_form_fields.id [delete: restrict]
 Ref: saved_job_postings.user_id > users.id [delete: cascade]
 Ref: saved_job_postings.job_posting_id > job_postings.id [delete: cascade]
 Ref: currency_exchange_rates.base_currency_id > currencies.id [delete: restrict]
@@ -2756,9 +2691,6 @@ TableGroup Support {
 TableGroup JobsForms {
   job_postings
   job_posting_sections
-  job_posting_skills
-  job_question_catalog
-  job_forms
   job_form_versions
   job_form_fields
   job_form_submissions

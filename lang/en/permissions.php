@@ -19,6 +19,8 @@ return [
         'tools' => 'Tools',
         'currencies' => 'Currencies',
         'talent-applications' => 'Talent applications',
+        'job-forms' => 'Job forms',
+        'job-form-submissions' => 'Job form submissions',
         'platform' => 'Platform',
     ],
 
@@ -69,6 +71,8 @@ return [
             'review' => 'Review talent applications',
             'decide' => 'Make talent qualification decisions',
         ],
+        'job-forms' => ['view' => 'View job forms', 'manage' => 'Manage job forms'],
+        'job-form-submissions' => ['view' => 'View job form submissions', 'delete' => 'Delete job form submissions', 'start-hiring' => 'Start hiring from submissions'],
     ],
 
     'talent' => [

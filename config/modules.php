@@ -19,6 +19,7 @@ return [
     'routes' => [
         'public' => [
             ['prefix' => 'auth', 'file' => 'auth.php', 'api_key' => true],
+            ['prefix' => 'public/jobs', 'file' => 'jobs.php', 'api_key' => true],
         ],
 
         'admin' => [
@@ -34,6 +35,7 @@ return [
             ['prefix' => 'admin/currencies', 'file' => 'currencies.php', 'api_key' => true],
             ['prefix' => 'admin/talent-applications', 'file' => 'talent-applications.php', 'api_key' => true],
             ['prefix' => 'admin/talent-review-faqs', 'file' => 'talent-review-faqs.php', 'api_key' => true],
+            ['prefix' => 'admin/job-forms', 'file' => 'job-forms.php', 'api_key' => true],
         ],
 
         'client' => [

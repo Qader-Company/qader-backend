@@ -478,6 +478,63 @@ cancelled
 rejected_by_talent
 ```
 
+## S03 — Job Forms
+
+القيم متاحة للأدمن من endpoints منفصلة تحت `/api/v1/admin/job-forms`.
+
+### حالة نشر النموذج
+
+```text
+draft
+published
+```
+
+### حالة التقديم الخارجي
+
+```text
+received
+hiring_started
+```
+
+### نوع العمل
+
+```text
+full_time
+part_time
+contract
+freelance
+internship
+```
+
+### نمط العمل
+
+```text
+onsite
+remote
+hybrid
+```
+
+### نطاق الخبرة
+
+```text
+less_than_1
+1_to_3
+3_to_5
+5_to_10
+more_than_10
+```
+
+### مدة الإشعار بالأيام
+
+```text
+0
+7
+14
+30
+60
+90
+```
+
 ## ملفات المصدر
 
 - Auth enums: `app/Modules/V1/Authentication/Domain/ValueObjects/`
@@ -486,3 +543,4 @@ rejected_by_talent
 - Form field keys: `app/Modules/V1/ProfessionalFields/Domain/ValueObjects/ProfessionalFormFieldEnum.php`
 - Permission enums: `app/Modules/V1/AccessControl/Domain/ValueObjects/`
 - Talent application enums: `app/Modules/V1/TalentApplications/Domain/ValueObjects/`
+- Job form enums: `app/Modules/V1/JobForms/Domain/ValueObjects/`

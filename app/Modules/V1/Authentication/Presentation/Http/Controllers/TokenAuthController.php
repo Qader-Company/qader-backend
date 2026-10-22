@@ -78,6 +78,21 @@ class TokenAuthController extends Controller
             'user' => UserResourceResolver::resolve($result['user']),
         ];
 
+        if ($result['requires_password_change']) {
+            $response['requires_password_change'] = true;
+            $response['reset_password_token'] = $tokens->create(
+                $result['user'],
+                $portal,
+                TokenTypeEnum::RESET_PASSWORD_TOKEN
+            );
+
+            return ApiResponse::apiFormat(
+                ['data' => $response],
+                __('auth.password_change_required'),
+                Response::HTTP_FORBIDDEN
+            );
+        }
+
         if ($result['requires_email_verification']) {
             $response['verification_token'] = $tokens->create(
                 $result['user'],
@@ -128,6 +143,23 @@ class TokenAuthController extends Controller
             $request->validated('token'),
             $request->safe()->except('token', 'fcm_token', 'platform')
         );
+
+        if ($result['user']->must_change_password) {
+            return ApiResponse::apiFormat(
+                ['data' => [
+                    'user' => UserResourceResolver::resolve($result['user']),
+                    'requires_password_change' => true,
+                    'reset_password_token' => $tokens->create(
+                        $result['user'],
+                        $portal,
+                        TokenTypeEnum::RESET_PASSWORD_TOKEN
+                    ),
+                ]],
+                __('auth.password_change_required'),
+                Response::HTTP_FORBIDDEN
+            );
+        }
+
         $device = $devices->register(
             $result['user'],
             $request->validated('fcm_token'),
@@ -278,6 +310,7 @@ class TokenAuthController extends Controller
         DB::transaction(function () use ($request, $user, $users): void {
             $users->update($user, [
                 'password' => $request->validated('password'),
+                'must_change_password' => false,
             ]);
             $user->tokens()->delete();
             $user->userDevices()->delete();

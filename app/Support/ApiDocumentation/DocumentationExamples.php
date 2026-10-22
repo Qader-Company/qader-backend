@@ -27,6 +27,7 @@ class DocumentationExamples
 
         return match (true) {
             $name === 'search' => 'software',
+            $name === 'job_slug', $name === 'jobForm_slug' => 'backend-engineer-a1b2c3d4',
             $name === 'per_page' => 15,
             $name === 'is_active' => true,
             $name === 'provider' => 'google',
@@ -91,6 +92,7 @@ class DocumentationExamples
             $name === 'expected_salary_max' => 30000,
             $name === 'permissions' => ['admin.countries.view'],
             $name === 'form_fields' => ['github_url', 'portfolio_url'],
+            $name === 'professional_form_field_ids' => [12, 23, 38],
             $name === 'screen_states' => ['under_review', 'rejected'],
             $name === 'professional_field_ids', $name === 'skill_ids', $name === 'tool_ids',
             $name === 'removed_image_ids' => [1],

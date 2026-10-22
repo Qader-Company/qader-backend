@@ -95,4 +95,9 @@ return [
         'cancelled' => 'ملغى',
         'rejected_by_talent' => 'رفضته الموهبة',
     ],
+    'job_publishing_statuses' => ['draft' => 'مسودة', 'published' => 'منشور'],
+    'job_submission_statuses' => ['received' => 'تم الاستلام', 'hiring_started' => 'بدأ التوظيف'],
+    'job_work_types' => ['full_time' => 'دوام كامل', 'part_time' => 'دوام جزئي', 'contract' => 'عقد', 'freelance' => 'عمل حر', 'internship' => 'تدريب'],
+    'job_work_modes' => ['onsite' => 'من مقر العمل', 'remote' => 'عن بُعد', 'hybrid' => 'هجين'],
+    'job_experience_ranges' => ['less_than_1' => 'أقل من سنة', '1_to_3' => 'من سنة إلى 3 سنوات', '3_to_5' => 'من 3 إلى 5 سنوات', '5_to_10' => 'من 5 إلى 10 سنوات', 'more_than_10' => 'أكثر من 10 سنوات'],
 ];

@@ -16,8 +16,9 @@ class PortalMetadata extends Strategy
             ['api/v1/auth/logout', 'api/v1/auth/me'],
             true
         );
-        $portal = $isAuth ? ($isSharedAuth ? 'talent' : $segments[3]) : $segments[2];
-        $module = $isAuth ? 'auth' : ($segments[3] ?? 'general');
+        $isPublicJob = ($segments[2] ?? null) === 'public' && ($segments[3] ?? null) === 'jobs';
+        $portal = $isPublicJob ? 'admin' : ($isAuth ? ($isSharedAuth ? 'talent' : $segments[3]) : $segments[2]);
+        $module = $isPublicJob ? 'public-job-forms' : ($isAuth ? 'auth' : ($segments[3] ?? 'general'));
 
         if (! in_array($portal, PortalRouteMatcher::PORTALS, true)) {
             throw new \LogicException('Assign this API route to a documentation portal: '.$endpointData->route->uri());

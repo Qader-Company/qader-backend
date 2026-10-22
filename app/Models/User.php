@@ -31,6 +31,7 @@ use Spatie\Permission\Traits\HasRoles;
     'avatar',
     'is_active',
     'last_login_at',
+    'must_change_password',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -75,6 +76,7 @@ class User extends Authenticatable
             'phone_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
             'password' => 'hashed',
             'type' => PortalTypeEnum::class,
         ];

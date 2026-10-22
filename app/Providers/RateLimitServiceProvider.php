@@ -86,6 +86,13 @@ class RateLimitServiceProvider extends ServiceProvider
                 $config['max_attempts']
             )->by((string) ($request->user()?->id ?? $request->ip()));
         });
+
+        RateLimiter::for('public-job-submissions', function (Request $request) {
+            return [
+                Limit::perMinute(5)->by('job:'.$request->route('job')?->getKey().'|'.$request->ip()),
+                Limit::perHour(30)->by('jobs|'.$request->ip()),
+            ];
+        });
     }
 
     private function loginKey(Request $request): string

@@ -13,7 +13,7 @@ class User extends \App\Models\User
     protected $fillable = [
         'first_name', 'last_name', 'email', 'password', 'type',
         'avatar', 'is_active', 'last_login_at',
-        'email_verified_at',
+        'email_verified_at', 'must_change_password',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -24,6 +24,7 @@ class User extends \App\Models\User
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
             'password' => 'hashed',
             'type' => PortalTypeEnum::class,
         ];
