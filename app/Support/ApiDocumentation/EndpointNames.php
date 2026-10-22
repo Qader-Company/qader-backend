@@ -108,6 +108,7 @@ class EndpointNames
                 'workTypes' => 'List Job Work Types',
                 'workModes' => 'List Job Work Modes',
                 'experienceRanges' => 'List Job Experience Ranges',
+                'filters' => 'List Public Job Filters',
                 'index' => $isPublicJobs
                     ? 'Explore Open Positions'
                     : ($isSubmissionRoute ? 'List Job Form Submissions' : 'List Job Forms'),

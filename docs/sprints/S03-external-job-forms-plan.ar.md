@@ -75,7 +75,7 @@
    - كل وظائف المجال تعرض مجموعة مهارات المجال الحالية؛ لا توجد مهارات مخصصة لكل وظيفة في S03.
    - لن نضيف `seniority_level`, `country_id` أو`city_id` في S03 لأنها غير موجودة في شاشة الإنشاء.
    - Department في القائمة العامة يطابق `professional_field_id`، وJob Type يطابق `work_type`، وWork Location يطابق `work_mode`.
-   - البحث العام في S03 يكون بالعنوان والوصف ومهارات المجال، والفلاتر المدعومة هي المجال والمهارة ونوع العمل ونمط العمل. Experience Level وCountry/City مؤجلة حتى يظهر لها input واضح في Form Setup.
+   - البحث العام في S03 يكون بالعنوان والوصف ومهارات المجال، والفلاتر المفعلة هي المجال والمهارة ونوع العمل ونمط العمل. ترجع خيارات Experience Level من الـenum لتجهيز الواجهة، لكن تطبيقها على النتائج مؤجل حتى يظهر لها input واضح في Form Setup وتخزن على الوظيفة. Country/City مؤجلة أيضًا.
 2. الكادران الخاصان بقائمة التقديمات يمثلان حالتين مكملتين وليسا تصميمين متعارضين:
    - Node `4414:76208`: حالة Submission مستلمة، وتعرض Export وStatus وView وملخص التقديم.
    - Node `4432:59238`: قائمة متعددة الصفوف، وتحتوي في بنيتها Export وFilter وحذفًا فرديًا وView. عند تحديد rows تتبدل أداة Export في الواجهة إلى `Clear all selected`.
@@ -95,7 +95,7 @@
 - `GET /api/v1/admin/fields/form-fields` لإرجاع available وselected keys حسب المجال.
 - جدول `media` وprivate disk لحفظ الملفات.
 - Admin roles والـpermissions الديناميكية.
-- Scribe وAdmin OpenAPI وأمثلة Apidog الثابتة.
+- Scribe وAdmin/Marketing OpenAPI وأمثلة Apidog الثابتة.
 
 ### غير موجود
 
@@ -138,7 +138,7 @@
 - تحويل التقديم المناسب إلى حساب Talent من `Start Hiring Process`.
 - إرسال بريد يحتوي كلمة مرور مؤقتة للحساب الجديد وتعليمات الدخول واستكمال البيانات.
 - إجبار الحساب المنشأ من الأدمن على تغيير كلمة المرور في أول Login.
-- توثيق Admin OpenAPI كاملًا بالأمثلة والـheaders والـparameters.
+- توثيق Admin OpenAPI لإدارة النماذج، وMarketing OpenAPI للوظائف والتقديم العام، كاملين بالأمثلة والـheaders والـparameters.
 
 الأكشنز المطلوبة كاملة:
 
@@ -467,9 +467,9 @@ Accept: application/json
 | GET | `/{slug}/application-form` | تعريف النموذج المنشور |
 | POST | `/{slug}/submissions` | إرسال JSON أو multipart |
 
-تضاف Public endpoints إلى Admin OpenAPI تحت مجموعة `Public Job Forms` حتى يكون استيراد S03 كاملًا بدون مصدر OpenAPI رابع.
+توضع Public endpoints في Marketing OpenAPI مستقل تحت `marketing/jobs` لأن موقع المنصة مستهلك API مستقل عن بوابات الأدوار. يظل Admin OpenAPI مخصصًا لإدارة النماذج والتقديمات.
 
-فلاتر قائمة الوظائف العامة في S03: `search` في العنوان والوصف وأسماء مهارات المجال، `professional_field_id`, `skill_id`, `work_type`, `work_mode`, `sort`, و`per_page`. فلتر `skill_id` يطابق `professional_field_skill` ولا يحتاج علاقة Skills خاصة بالوظيفة. لا نضيف Experience Level أوCountry/City من غير مدخلات مقابلة في شاشة الإنشاء.
+فلاتر قائمة الوظائف العامة المفعلة في S03: `search` في العنوان والوصف وأسماء مهارات المجال، `professional_field_id`, `skill_id`, `work_type`, `work_mode`, `sort`, و`per_page`. فلتر `skill_id` يطابق `professional_field_skill` ولا يحتاج علاقة Skills خاصة بالوظيفة. يعيد `/filters` خيارات `experience_ranges` لتجهيز الواجهة، لكن لا نضيف query filter فعالًا أو أعمدة Experience Level/Country/City من غير مدخلات مقابلة في شاشة الإنشاء.
 
 `GET /{slug}/application-form` يرجع `selected_field_keys`، ومعها `field_options` الحالية للحقول التي تعتمد على Master Data أوenum. ترتيب وعرض الحقول يملكهما Frontend مثل الفورمز الداخلية.
 
@@ -502,7 +502,7 @@ Accept: application/json
 13. إضافة `must_change_password` وتكامل أول Login مع reset-password الحالي.
 14. إضافة الرسائل العربية والإنجليزية.
 15. إضافة أسماء وأمثلة Scribe كاملة.
-16. توليد Admin OpenAPI والتحقق من استيراد Apidog.
+16. توليد Admin وMarketing OpenAPI والتحقق من استيرادهما في Apidog.
 17. إنشاء ملف تنفيذ S03 وتحديث project memory وAPI enums reference.
 
 ## 14. سياسة الـmigrations
@@ -545,7 +545,7 @@ Accept: application/json
 - تعطيل النموذج وإرجاع 404 مع بقاء التقديمات.
 - نشر version جديد وبقاء تقديم قديم مرتبطًا بالسابق.
 - CSV export.
-- ظهور bodies والheaders والparameters في Admin OpenAPI.
+- ظهور bodies والheaders والparameters في Admin وMarketing OpenAPI بحسب المستهلك.
 
 ## 17. تعريف الاكتمال
 
@@ -561,4 +561,4 @@ Accept: application/json
 8. يغير Talent كلمة المرور في أول دخول ثم يكمل بياناته من Onboarding الحالي.
 9. تحافظ versions على التقديمات القديمة بعد التعديل.
 10. لا يؤدي التعطيل أو الحذف إلى فقد البيانات.
-11. تظهر الـendpoints كاملة في Admin OpenAPI بأمثلة قابلة للاستيراد في Apidog.
+11. تظهر endpoints الإدارة في Admin OpenAPI والـPublic Jobs في Marketing OpenAPI بأمثلة قابلة للاستيراد في Apidog.

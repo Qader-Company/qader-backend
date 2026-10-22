@@ -10,10 +10,13 @@ use App\Modules\V1\Currencies\Domain\Models\Currency;
 use App\Modules\V1\JobForms\Application\Services\JobFormWorkflow;
 use App\Modules\V1\JobForms\Domain\Models\JobPosting;
 use App\Modules\V1\JobForms\Domain\ValueObjects\JobExperienceRangeEnum;
+use App\Modules\V1\JobForms\Domain\ValueObjects\JobWorkModeEnum;
+use App\Modules\V1\JobForms\Domain\ValueObjects\JobWorkTypeEnum;
 use App\Modules\V1\JobForms\Presentation\Http\Requests\ListPublicJobsRequest;
 use App\Modules\V1\JobForms\Presentation\Http\Requests\StorePublicJobSubmissionRequest;
 use App\Modules\V1\JobForms\Presentation\Http\Resources\JobFormResource;
 use App\Modules\V1\Languages\Domain\Models\Language;
+use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
 use App\Modules\V1\Skills\Domain\Models\Skill;
 use App\Modules\V1\Talents\Domain\ValueObjects\GenderEnum;
 use App\Modules\V1\Talents\Domain\ValueObjects\LanguageProficiencyEnum;
@@ -30,17 +33,49 @@ class PublicJobController extends Controller
     public function index(ListPublicJobsRequest $request): JsonResponse
     {
         $data = $request->validated();
-        $query = $this->active()->with(['professionalField.translations', 'jobTitle', 'versions.fields'])->when($data['search'] ?? null, fn ($q, $v) => $q->where(fn ($q) => $q->where('title', 'like', "%{$v}%")->orWhere('summary', 'like', "%{$v}%")->orWhereHas('professionalField.skills', fn ($q) => $q->where('skills.name', 'like', "%{$v}%"))))->when($data['professional_field_id'] ?? null, fn ($q, $v) => $q->where('professional_field_id', $v))->when($data['skill_id'] ?? null, fn ($q, $v) => $q->whereHas('professionalField.skills', fn ($q) => $q->where('skills.id', $v)))->when($data['work_type'] ?? null, fn ($q, $v) => $q->where('work_type', $v))->when($data['work_mode'] ?? null, fn ($q, $v) => $q->where('work_mode', $v));
+        $query = $this->active()->with(['professionalField.translations', 'professionalField.skills' => fn ($query) => $query->where('skills.is_active', true), 'jobTitle', 'versions.fields'])->when($data['search'] ?? null, fn ($q, $v) => $q->where(fn ($q) => $q->where('title', 'like', "%{$v}%")->orWhere('summary', 'like', "%{$v}%")->orWhereHas('professionalField.skills', fn ($q) => $q->where('skills.name', 'like', "%{$v}%"))))->when($data['professional_field_id'] ?? null, fn ($q, $v) => $q->where('professional_field_id', $v))->when($data['skill_id'] ?? null, fn ($q, $v) => $q->whereHas('professionalField.skills', fn ($q) => $q->where('skills.id', $v)))->when($data['work_type'] ?? null, fn ($q, $v) => $q->where('work_type', $v))->when($data['work_mode'] ?? null, fn ($q, $v) => $q->where('work_mode', $v));
         $p = $query->latest('published_at')->paginate($data['per_page'] ?? 12);
 
         return ApiResponse::success(['jobs' => JobFormResource::collection($p->getCollection()), 'meta' => ['current_page' => $p->currentPage(), 'last_page' => $p->lastPage(), 'per_page' => $p->perPage(), 'total' => $p->total()]]);
+    }
+
+    public function filters(): JsonResponse
+    {
+        $professionalFieldIds = $this->active()
+            ->distinct()
+            ->pluck('professional_field_id');
+
+        $professionalFields = ProfessionalField::query()
+            ->where('is_active', true)
+            ->whereIn('id', $professionalFieldIds)
+            ->with('translations')
+            ->get()
+            ->map(fn (ProfessionalField $field): array => [
+                'id' => $field->id,
+                'name' => $field->name,
+            ])
+            ->values();
+
+        $skills = Skill::query()
+            ->where('is_active', true)
+            ->whereHas('professionalFields', fn ($query) => $query->whereIn('professional_fields.id', $professionalFieldIds))
+            ->orderBy('name')
+            ->get(['skills.id', 'skills.name']);
+
+        return ApiResponse::success([
+            'professional_fields' => $professionalFields,
+            'skills' => $skills,
+            'work_types' => EnumOptions::make(JobWorkTypeEnum::class, 'job_work_types'),
+            'work_modes' => EnumOptions::make(JobWorkModeEnum::class, 'job_work_modes'),
+            'experience_ranges' => EnumOptions::make(JobExperienceRangeEnum::class, 'job_experience_ranges'),
+        ]);
     }
 
     public function show(JobPosting $job): JsonResponse
     {
         $this->ensureActive($job);
 
-        return ApiResponse::success(new JobFormResource($job->load(['professionalField.translations', 'jobTitle', 'sections', 'versions.fields'])));
+        return ApiResponse::success(new JobFormResource($job->load(['professionalField.translations', 'professionalField.skills' => fn ($query) => $query->where('skills.is_active', true), 'jobTitle', 'sections', 'versions.fields'])));
     }
 
     public function applicationForm(JobPosting $job): JsonResponse

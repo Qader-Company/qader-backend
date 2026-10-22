@@ -154,6 +154,7 @@ Base URL: `/api/v1/public/jobs`
 | Method | Endpoint | الوظيفة |
 | --- | --- | --- |
 | GET | `/` | Explore Open Positions |
+| GET | `/filters` | اختيارات المجال والمهارات ونوع الوظيفة ونمط العمل ونطاق الخبرة |
 | GET | `/{job}` | تفاصيل الوظيفة المنشورة |
 | GET | `/{job}/application-form` | الحقول الثابتة والمفاتيح والخيارات |
 | POST | `/{job}/submissions` | إرسال التقديم |
@@ -166,6 +167,10 @@ Base URL: `/api/v1/public/jobs`
 - `work_type`
 - `work_mode`
 - `per_page`
+
+استجابة القائمة والتفاصيل ترجع `skills` الفعالة المرتبطة بمجال الوظيفة لعرضها في البطاقات والـsidebar كما في Figma. المجالات والمهارات في `/filters` مقصورة على البيانات المرتبطة بوظائف منشورة وفعالة، بينما `work_types` و`work_modes` و`experience_ranges` تأتي من الـenums. نطاق الخبرة متاح للواجهة حاليًا، لكن تطبيقه على نتائج الوظائف مؤجل حتى تخزن الوظيفة نطاق الخبرة.
+
+قيمة `public_url` تُبنى من `APP_URL` ثم `/jobs/{slug}`.
 
 ### Form Data للتقديم
 
@@ -207,17 +212,17 @@ docker compose -f compose.yaml -f compose.local.yaml exec app php artisan optimi
 docker compose -f compose.yaml -f compose.local.yaml exec app php artisan scribe:generate
 ```
 
-ثم حدّث مصدر Apidog الخاص بالأدمن من:
+ثم حدّث مصدر Apidog الخاص بموقع المنصة من:
 
 ```text
-http://localhost:8000/docs/admin.openapi
+http://localhost:8000/docs/marketing.openapi
 ```
 
-المسارات العامة موجودة داخل Admin OpenAPI في فولدر `Public Job Forms`. يحتفظ الملف المولد بـ`X-Authorization: {{api_key}}`، ويستخدم `Bearer {{access_token}}` في مسارات الأدمن فقط.
+المسارات العامة موجودة داخل Marketing OpenAPI في فولدر `marketing/jobs`، ومنفصلة عن Admin OpenAPI. يحتفظ الملف المولد بـ`X-Authorization: {{api_key}}` و`Accept: application/json`، ولا يحتاج Bearer Token لأن الزائر لا يسجل الدخول.
 
 ## التحقق المنفذ
 
 - نجحت كل migrations من الصفر على SQLite معزولة داخل Docker، ومنها مهاجرة S03.
 - نجح `DatabaseSeeder` بعد إضافة الصلاحيات الجديدة.
 - نجح `scribe:generate` داخل Docker.
-- تم التحقق أن `admin.openapi` يحتوي Admin Job Forms وPublic Jobs، وأن bodies والquery/path parameters وmultipart والheaders موجودة بقيم Apidog المطلوبة.
+- تم التحقق أن `admin.openapi` يحتوي إدارة Job Forms، وأن `marketing.openapi` يحتوي Public Jobs الخمسة، مع bodies والquery/path parameters وmultipart والheaders بقيم Apidog المطلوبة.

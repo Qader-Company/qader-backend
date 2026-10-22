@@ -8,7 +8,9 @@ use Knuckles\Scribe\Matching\RouteMatcher;
 
 class PortalRouteMatcher extends RouteMatcher
 {
-    public const PORTALS = ['talent', 'client', 'admin'];
+    public const PORTALS = ['talent', 'client', 'admin', 'marketing'];
+
+    public const AUTH_PORTALS = ['talent', 'client', 'admin'];
 
     public function getRoutes(array $routeRules = []): array
     {
@@ -35,7 +37,7 @@ class PortalRouteMatcher extends RouteMatcher
             }
 
             // Expand documentation only; keep the application's registered routes intact.
-            foreach (self::PORTALS as $portal) {
+            foreach (self::AUTH_PORTALS as $portal) {
                 if (! preg_match('~^(?:'.($route->wheres['type'] ?? '.*').')$~D', $portal)) {
                     continue;
                 }

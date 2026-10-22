@@ -29,6 +29,10 @@ class PortalExports
                         $operation = $pathItem[$method];
                         $sharedAuth = self::isSharedAuthOperation($uri, $method);
 
+                        if ($sharedAuth && ! in_array($portal, PortalRouteMatcher::AUTH_PORTALS, true)) {
+                            continue;
+                        }
+
                         if (! $sharedAuth && ! str_starts_with($operation['x-apidog-folder'] ?? '', $portal.'/')) {
                             continue;
                         }
