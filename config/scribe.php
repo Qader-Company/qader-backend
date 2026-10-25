@@ -17,7 +17,7 @@ return [
     'routeMatcher' => PortalRouteMatcher::class,
     'groups' => [
         'default' => 'talent',
-        'order' => ['talent', 'client', 'admin', 'marketing'],
+        'order' => ['talent', 'client', 'admin', 'website'],
     ],
 
     'routes' => [

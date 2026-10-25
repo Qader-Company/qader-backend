@@ -8,7 +8,7 @@ use Knuckles\Scribe\Matching\RouteMatcher;
 
 class PortalRouteMatcher extends RouteMatcher
 {
-    public const PORTALS = ['talent', 'client', 'admin', 'marketing'];
+    public const PORTALS = ['talent', 'client', 'admin', 'website'];
 
     public const AUTH_PORTALS = ['talent', 'client', 'admin'];
 

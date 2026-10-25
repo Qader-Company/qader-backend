@@ -8,7 +8,7 @@
 
 - تصميم الويب في Figma هو المرجع الأساسي للشاشات والحقول وتجربة المستخدم.
 - ملفات البيزنس داخل `docs/` تشرح القواعد والحالات التي لا تظهر كاملة في التصميم.
-- المشروع مقسّم إلى ثلاثة أدوار رئيسية: `talent` و`client` و`admin`، ولكل دور routes وصلاحيات وواجهات API خاصة به. يوجد مستهلك رابع عام هو `marketing` لموقع الصفحات التعريفية والـMarketplace والوظائف العامة، ولا يمثل role أو مستخدمًا مسجلًا.
+- المشروع مقسّم إلى ثلاثة أدوار رئيسية: `talent` و`client` و`admin`، ولكل دور routes وصلاحيات وواجهات API خاصة به. يوجد مستهلك رابع عام هو `website` لموقع الصفحات التعريفية والـMarketplace والوظائف العامة، ولا يمثل role أو مستخدمًا مسجلًا.
 - العمل يتم كسبرنتات صغيرة. في كل سبرنت نختار flow أو module جاهز، نراجع تصميمه وقواعده، ثم نعدّل الجداول والـ API الخاصة به فقط.
 - لا ننفّذ كل السكيما المقترحة دفعة واحدة. ملف السكيما مرجع للمراجعة والتخطيط، وأي تغيير فعلي في migrations ينتظر مراجعة المستخدم واعتماد جداول السبرنت.
 - لا ننشئ migrations جديدة لمجرد وجود جدول في السكيما المقترحة.
@@ -57,6 +57,14 @@
 2. إدارة ملف العميل والـ workspace والأعضاء والصلاحيات عند بدء السبرنتات الخاصة بها.
 3. إنشاء طلبات التوظيف، استقبال المرشحين والعروض، ثم المقابلات والتعاقد كـ flows مستقلة لاحقًا.
 4. لا نعتبر الجداول الموسعة في السكيما منفذة قبل فتح flow العميل المرتبط بها واعتماده.
+5. الحساب يستطيع امتلاك أو الانضمام لأكثر من Workspace، وكل عمليات البورتال معزولة حسب المساحة.
+6. `Industry` هي Master Data مستقلة عن `professional_fields`، ويرتبط بها `workspaces.industry_id`. قيم الحجم هي `1-10`, `11-50`, `51-200`, `201-500`, `500+`.
+7. أعضاء Workspace يمكن إسناد أكثر من Role لهم. منشئ المساحة يحصل على دور `owner` محمي يعامل مثل `super_admin` داخل مساحته فقط.
+8. إضافة الموظفين تعتمد على دعوات بريدية، مع دعم الحساب الموجود أو إنشاء حساب Client جديد عند القبول.
+9. تم تنفيذ خطة [Client Workspace and Team Foundation](sprints/client-workspace-team-foundation-implementation.ar.md): Industries، Workspaces، Dashboard، أدوار وصلاحيات محلية، أعضاء ودعوات بريدية متعددة الأدوار.
+10. إضافة موظف Workspace تنشئ حساب Client وعضويته مباشرة وترسل بيانات الدخول المؤقتة بالبريد؛ لا توجد دورة دعوة أو قبول مستقلة.
+11. حالة عضو Workspace هي `active` أو `suspended`، والإزالة تتم بـSoft Delete.
+12. منصات روابط Workspace معرفة في `WorkspaceSocialPlatformEnum` وتتاح للواجهة من `GET /api/v1/client/workspaces/options`.
 
 ## ما تم تنفيذه أو توثيقه
 
@@ -68,7 +76,7 @@
 - إعداد مسودة كاملة للسكيما بصيغة DBML ونسخة عربية للمراجعة وملف HTML لعرض الديجرام، بدون تحويل المقترح كله إلى migrations.
 - تثبيت Scribe كاعتماد محلي فقط، ولا يتم تحميله في production.
 - توليد Postman collection واحدة منظمة إلى `talent` و`client` و`admin`، وكل بورتال مقسّم إلى modules.
-- توليد أربعة مصادر OpenAPI منفصلة لـ Apidog: ثلاثة للبوابات المسجلة، ومصدر `marketing` للواجهات العامة. تحتوي مصادر الأدوار الثلاثة فقط على `logout` و`me` المشتركين.
+- توليد أربعة مصادر OpenAPI منفصلة لـ Apidog: ثلاثة للبوابات المسجلة، ومصدر `website` للواجهات العامة. تحتوي مصادر الأدوار الثلاثة فقط على `logout` و`me` المشتركين.
 - تحسين استخراج request bodies وquery/path parameters، ووضع أمثلة للطلبات، وإضافة أسماء واضحة للـ endpoints ومجلدات Apidog.
 
 ## روابط توثيق الـ API المحلية
@@ -78,7 +86,7 @@
 - Talent OpenAPI: `http://localhost:8000/docs/talent.openapi`
 - Client OpenAPI: `http://localhost:8000/docs/client.openapi`
 - Admin OpenAPI: `http://localhost:8000/docs/admin.openapi`
-- Marketing OpenAPI: `http://localhost:8000/docs/marketing.openapi`
+- Website OpenAPI: `http://localhost:8000/docs/website.openapi`
 
 بعد تعديل routes أو Form Requests نشغّل `php artisan scribe:generate` داخل Docker. في Apidog يتم تحديث المصادر الأربعة مع السماح بتحديث الاسم والـ Body والـ Parameters حتى لا يحتفظ بالبيانات القديمة. التفاصيل في [دليل Scribe وApidog](scribe-local.ar.md).
 
@@ -100,7 +108,7 @@
 ## السبرنت الحالي
 
 - `S03 — النماذج الخارجية للوظائف`: تم تنفيذ Backend كاملًا طبقًا لشاشات Job Forms في Admin Portal وصفحات الوظائف والنموذج العام ونجاح التقديم. الخطة المعتمدة في [S03 External Job Forms Plan](sprints/S03-external-job-forms-plan.ar.md)، وما تم تنفيذه وخطوات التطبيق وأمثلة الـAPI في [S03 External Job Forms Implementation](sprints/S03-external-job-forms-implementation.ar.md).
-- تنفيذ S03 يشمل `job_postings` كـaggregate واحد، الإصدارات المنشورة الثابتة، حقول `professional_form_fields`، التقديم العام والـCV الخاص، إدارة التقديمات وCSV، و`Start Hiring Process` مع الحساب المؤقت وإجبار تغيير كلمة المرور. Public Jobs موثقة في Marketing OpenAPI مستقل تحت `marketing/jobs`.
+- تنفيذ S03 يشمل `job_postings` كـaggregate واحد، الإصدارات المنشورة الثابتة، حقول `professional_form_fields`، التقديم العام والـCV الخاص، إدارة التقديمات وCSV، و`Start Hiring Process` مع الحساب المؤقت وإجبار تغيير كلمة المرور. Public Jobs موثقة في Website OpenAPI مستقل تحت `website/jobs`.
 - Marketing Website يستهلك `GET /api/v1/public/jobs` للقائمة، و`GET /filters` لاختيارات الفلاتر، و`GET /{job}` للتفاصيل، و`GET /{job}/application-form` لبناء النموذج، و`POST /{job}/submissions` للتقديم. القائمة والتفاصيل ترجع Skills المجال، و`public_url` يعتمد على `APP_URL`. فلاتر المجال ونوع الوظيفة ونمط العمل مفعلة، وخيارات نطاق الخبرة ترجع من الـenum لكن فلترة النتائج بها مؤجلة حتى تخزن الوظيفة هذا النطاق.
 - مصدر حقول S03 هو `professional_form_fields` المرتبط بالمجال من خلال `professional_field_form_field`؛ لن ننشئ `job_question_catalog`. اختيار الحقول يعمل بنفس طريقة الفورمز الداخلية: الـFrontend يستقبل keys ويملك العرض والترتيب، والBackend يطبق Validation خارجيًا حسب الـkey. يحفظ كل version مراجع الحقول المختارة فقط في pivot مركب من غير تكرار label أوtype أوrequired أوvalidation في قاعدة البيانات.
 - S03 يشمل Draft وPublished، إصدارات ثابتة، Activation مستقل، الرابط العام، تقديم الزائر والـCV، قائمة وتفاصيل التقديمات وCSV export.
@@ -139,7 +147,7 @@
 - جميع مسارات الـAPI الحالية، بما فيها Auth وTalent وAdmin، تتطلب `X-Authorization` وتتحقق منه عبر middleware `api.key`. ملفات Scribe/OpenAPI/Postman توثّق الهيدر تلقائيًا.
 - `DemoAccountSeeder` ينشئ حسابات ثابتة للـTalent وClient وAdmin (`talent@qader.test`, `client@qader.test`, `admin@qader.test`) بكلمة المرور `Password123!`، وحساب Admin يحمل دور `owner`. أمثلة Auth في Scribe ثابتة وتستخدم هذه الحسابات.
 - أمثلة Scribe لكل الـendpoints ثابتة في `DocumentationExamples` وتشمل body وquery وpath parameters وطلبات multipart؛ لا نعتمد على قيم Faker في الملفات التي يستوردها Apidog.
-- ملفات Apidog/OpenAPI المحلية تُولد بـ`php artisan scribe:generate`، ومصادر الاستيراد هي `/docs/talent.openapi` و`/docs/client.openapi` و`/docs/admin.openapi` و`/docs/marketing.openapi`.
+- ملفات Apidog/OpenAPI المحلية تُولد بـ`php artisan scribe:generate`، ومصادر الاستيراد هي `/docs/talent.openapi` و`/docs/client.openapi` و`/docs/admin.openapi` و`/docs/website.openapi`.
 - Master Data داخل S01 تشمل Countries وCities وLanguages وCurrencies وProfessional Fields وJob Titles وSkills وTools، بالإضافة إلى Talent enums. الموديولات وواجهات Admin والـseed data المطلوبة منفذة.
 - تمت مراجعة واعتماد سكيما S01، ودُمجت التغييرات في migrations الإنشاء الموجودة بدون migration تجميعية إضافية.
 - المراجعة والخطة وشكل الجداول المقترح: [S01 Talent Registration Plan](sprints/S01-talent-registration-plan.ar.md).

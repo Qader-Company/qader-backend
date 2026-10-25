@@ -215,14 +215,14 @@ docker compose -f compose.yaml -f compose.local.yaml exec app php artisan scribe
 ثم حدّث مصدر Apidog الخاص بموقع المنصة من:
 
 ```text
-http://localhost:8000/docs/marketing.openapi
+http://localhost:8000/docs/website.openapi
 ```
 
-المسارات العامة موجودة داخل Marketing OpenAPI في فولدر `marketing/jobs`، ومنفصلة عن Admin OpenAPI. يحتفظ الملف المولد بـ`X-Authorization: {{api_key}}` و`Accept: application/json`، ولا يحتاج Bearer Token لأن الزائر لا يسجل الدخول.
+المسارات العامة موجودة داخل Website OpenAPI في فولدر `website/jobs`، ومنفصلة عن Admin OpenAPI. يحتفظ الملف المولد بـ`X-Authorization: {{api_key}}` و`Accept: application/json`، ولا يحتاج Bearer Token لأن الزائر لا يسجل الدخول.
 
 ## التحقق المنفذ
 
 - نجحت كل migrations من الصفر على SQLite معزولة داخل Docker، ومنها مهاجرة S03.
 - نجح `DatabaseSeeder` بعد إضافة الصلاحيات الجديدة.
 - نجح `scribe:generate` داخل Docker.
-- تم التحقق أن `admin.openapi` يحتوي إدارة Job Forms، وأن `marketing.openapi` يحتوي Public Jobs الخمسة، مع bodies والquery/path parameters وmultipart والheaders بقيم Apidog المطلوبة.
+- تم التحقق أن `admin.openapi` يحتوي إدارة Job Forms، وأن `website.openapi` يحتوي Public Jobs الخمسة، مع bodies والquery/path parameters وmultipart والheaders بقيم Apidog المطلوبة.

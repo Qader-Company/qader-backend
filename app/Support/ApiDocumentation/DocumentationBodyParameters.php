@@ -45,6 +45,7 @@ class DocumentationBodyParameters extends GetFromFormRequest
         $this->applyStableAuthExamples($endpointData, $parameters);
         $this->applyTalentApplicationExamples($endpointData, $parameters);
         $this->applyJobFormExamples($endpointData, $parameters);
+        $this->applyWorkspaceExamples($endpointData, $parameters);
 
         return $parameters;
     }
@@ -212,6 +213,54 @@ class DocumentationBodyParameters extends GetFromFormRequest
                 'expected_salary' => ['amount' => 25000, 'currency_id' => 1],
             ],
         ];
+
+        foreach ($examples as $name => $example) {
+            if (isset($parameters[$name])) {
+                $parameters[$name]['example'] = $example;
+            }
+        }
+    }
+
+    private function applyWorkspaceExamples(ExtractedEndpointData $endpointData, ?array &$parameters): void
+    {
+        if ($parameters === null || ! str_contains($endpointData->route->uri(), '/client/')) {
+            return;
+        }
+
+        $uri = $endpointData->route->uri();
+        $examples = match (true) {
+            preg_match('~/client/workspaces(?:/\{workspace\})?$~', $uri) === 1 => [
+                'name' => 'Qader Technology',
+                'industry_id' => 1,
+                'description' => 'Technology company building digital products and hiring specialized teams.',
+                'is_company' => true,
+                'country_id' => 1,
+                'city_id' => 1,
+                'size_band' => '11-50',
+                'website_url' => 'https://qader.example.com',
+                'social_links' => [
+                    ['platform' => 'linkedin', 'url' => 'https://linkedin.com/company/qader'],
+                    ['platform' => 'x', 'url' => 'https://x.com/qader'],
+                ],
+            ],
+            str_contains($uri, '/access-control/roles') => [
+                'name_en' => 'Hiring Manager',
+                'name_ar' => 'مدير التوظيف',
+                'is_active' => true,
+                'permissions' => ['client.workspace.view', 'client.dashboard.view', 'client.members.view'],
+            ],
+            str_ends_with($uri, '/members') => [
+                'first_name' => 'Team',
+                'last_name' => 'Member',
+                'email' => 'team.member@example.com',
+                'role_ids' => [2, 3],
+            ],
+            str_contains($uri, '/members/') => [
+                'status' => 'active',
+                'role_ids' => [2, 3],
+            ],
+            default => [],
+        };
 
         foreach ($examples as $name => $example) {
             if (isset($parameters[$name])) {

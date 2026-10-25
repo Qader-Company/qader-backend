@@ -49,6 +49,19 @@ class TalentApplicationReviewWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_reviewer_foreign_keys_are_cast_to_integers(): void
+    {
+        $application = $this->createTalentApplication();
+        $application->setRawAttributes([
+            ...$application->getAttributes(),
+            'assigned_admin_id' => (string) $this->reviewer->id,
+            'review_decided_by_admin_id' => (string) $this->reviewer->id,
+        ]);
+
+        $this->assertSame($this->reviewer->id, $application->assigned_admin_id);
+        $this->assertSame($this->reviewer->id, $application->review_decided_by_admin_id);
+    }
+
     public function test_complete_evaluation_can_be_rejected_with_calculated_reapply_date(): void
     {
         $application = $this->createTalentApplication();

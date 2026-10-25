@@ -101,7 +101,8 @@ class TalentApplicationQueryService
         $status = $application->status instanceof TalentApplicationStatusEnum
             ? $application->status
             : TalentApplicationStatusEnum::from($application->status);
-        $assignedToActor = $application->assigned_admin_id === $actor->id;
+        $assignedToActor = $application->assigned_admin_id !== null
+            && (string) $application->assigned_admin_id === (string) $actor->getKey();
         $actions = [];
 
         if (in_array($status, [TalentApplicationStatusEnum::SUBMITTED, TalentApplicationStatusEnum::UNDER_REVIEW], true)) {

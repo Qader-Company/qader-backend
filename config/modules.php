@@ -6,6 +6,7 @@ use App\Modules\V1\Authentication\Infrastructure\Providers\AuthenticationModuleS
 use App\Modules\V1\Cities\Infrastructure\Providers\CityModuleServiceProvider;
 use App\Modules\V1\Countries\Infrastructure\Providers\CountryModuleServiceProvider;
 use App\Modules\V1\Currencies\Infrastructure\Providers\CurrencyModuleServiceProvider;
+use App\Modules\V1\Industries\Infrastructure\Providers\IndustryModuleServiceProvider;
 use App\Modules\V1\JobTitles\Infrastructure\Providers\JobTitleModuleServiceProvider;
 use App\Modules\V1\Languages\Infrastructure\Providers\LanguageModuleServiceProvider;
 use App\Modules\V1\ProfessionalFields\Infrastructure\Providers\ProfessionalFieldModuleServiceProvider;
@@ -33,13 +34,16 @@ return [
             ['prefix' => 'admin/skills', 'file' => 'skills.php', 'api_key' => true],
             ['prefix' => 'admin/tools', 'file' => 'tools.php', 'api_key' => true],
             ['prefix' => 'admin/currencies', 'file' => 'currencies.php', 'api_key' => true],
+            ['prefix' => 'admin/industries', 'file' => 'industries.php', 'api_key' => true],
             ['prefix' => 'admin/talent-applications', 'file' => 'talent-applications.php', 'api_key' => true],
             ['prefix' => 'admin/talent-review-faqs', 'file' => 'talent-review-faqs.php', 'api_key' => true],
             ['prefix' => 'admin/job-forms', 'file' => 'job-forms.php', 'api_key' => true],
         ],
 
         'client' => [
-            //            ['prefix' => '', 'file' => '', 'middlewares' => ''],
+            ['prefix' => 'client/master-data', 'file' => 'master-data.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
+            ['prefix' => 'client/access-control', 'file' => 'access-control.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
+            ['prefix' => 'client/workspaces', 'file' => 'workspaces.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
         ],
 
         'talent' => [
@@ -78,6 +82,7 @@ return [
         CountryModuleServiceProvider::class,
         CurrencyModuleServiceProvider::class,
         JobTitleModuleServiceProvider::class,
+        IndustryModuleServiceProvider::class,
         LanguageModuleServiceProvider::class,
         ProfessionalFieldModuleServiceProvider::class,
         SkillModuleServiceProvider::class,

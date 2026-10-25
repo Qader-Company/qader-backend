@@ -1105,26 +1105,6 @@ Table workspace_member_roles [headercolor: #dcfce7] {
   Note: '[NEW] Member and role must belong to the same workspace; C01 validation required.'
 }
 
-// [PROPOSED] workspace_invitations
-Table workspace_invitations [headercolor: #f3e8ff] {
-  id bigint [pk, increment]
-  workspace_id bigint [not null]
-  email varchar(255) [not null]
-  role_id bigint
-  invited_by_member_id bigint [not null]
-  token_hash char(64) [not null, unique]
-  status varchar(16) [not null, default: 'pending', note: 'pending | accepted | revoked | expired']
-  expires_at timestamp [not null]
-  accepted_by_client_id bigint
-  accepted_at timestamp
-  created_at timestamp
-  updated_at timestamp
-  indexes {
-    (workspace_id, email, status)
-  }
-  Note: '[PROPOSED] Supporting membership flow; exact invitation UI not designed. Do not implement until membership scope approved.'
-}
-
 // [NEW] contract_types
 Table contract_types [headercolor: #dcfce7] {
   id bigint [pk, increment]
@@ -1646,7 +1626,7 @@ Table job_postings [headercolor: #dcfce7] {
   indexes {
     (status, professional_field_id, published_at)
   }
-  Note: '[NEW/S03] 4541:62666 / 4528:95530. The posting is also the Job Form aggregate. Department maps to professional field; no seniority/country/city columns in the current setup screen.'
+  Note: '[NEW] S03 4541:62666 / 4528:95530. The posting is also the Job Form aggregate. Department maps to professional field; no seniority/country/city columns in the current setup screen.'
 }
 
 // [NEW] job_posting_sections
@@ -1661,7 +1641,7 @@ Table job_posting_sections [headercolor: #dcfce7] {
   indexes {
     (job_posting_id, section, display_order) [unique]
   }
-  Note: '[NEW/S03] Ordered public responsibilities, requirements and qualifications. Benefits are absent from the current setup design.'
+  Note: '[NEW] S03 ordered public responsibilities, requirements and qualifications. Benefits are absent from the current setup design.'
 }
 
 // [NEW] job_form_versions
@@ -1690,7 +1670,7 @@ Table job_form_fields [headercolor: #dcfce7] {
   indexes {
     (form_version_id, professional_form_field_id) [pk]
   }
-  Note: '[NEW/S03] Same key-selection approach as internal professional forms. Frontend owns presentation/order; backend owns validation by key.'
+  Note: '[NEW] S03 same key-selection approach as internal professional forms. Frontend owns presentation/order; backend owns validation by key.'
 }
 
 // [NEW] job_form_submissions
@@ -1729,7 +1709,7 @@ Table job_form_answers [headercolor: #dcfce7] {
   indexes {
     (submission_id, professional_form_field_id) [unique]
   }
-  Note: '[NEW/S03] Submission and selected professional field key must share a version. Fixed CV uses private Spatie media collection cv.'
+  Note: '[NEW] S03 submission and selected professional field key must share a version. Fixed CV uses private Spatie media collection cv.'
 }
 
 // [PROPOSED] saved_job_postings
@@ -2409,10 +2389,6 @@ Ref: workspace_role_permissions.workspace_role_id > workspace_roles.id [delete: 
 Ref: workspace_role_permissions.permission_id > permissions.id [delete: restrict]
 Ref: workspace_member_roles.workspace_member_id > workspace_members.id [delete: cascade]
 Ref: workspace_member_roles.workspace_role_id > workspace_roles.id [delete: cascade]
-Ref: workspace_invitations.workspace_id > workspaces.id [delete: restrict]
-Ref: workspace_invitations.role_id > workspace_roles.id [delete: restrict]
-Ref: workspace_invitations.invited_by_member_id > workspace_members.id [delete: restrict]
-Ref: workspace_invitations.accepted_by_client_id > clients.id [delete: restrict]
 Ref: contract_type_versions.contract_type_id > contract_types.id [delete: restrict]
 Ref: contract_type_versions.created_by_admin_id > admins.id [delete: restrict]
 Ref: contract_type_benefits.contract_type_version_id > contract_type_versions.id [delete: restrict]
@@ -2648,7 +2624,6 @@ TableGroup Workspace {
   workspace_roles
   workspace_role_permissions
   workspace_member_roles
-  workspace_invitations
 }
 
 TableGroup Commercial {

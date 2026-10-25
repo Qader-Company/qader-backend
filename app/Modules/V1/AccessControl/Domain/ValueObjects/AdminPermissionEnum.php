@@ -40,6 +40,9 @@ enum AdminPermissionEnum: string implements PermissionDefinition
     case CURRENCIES_VIEW = 'admin.currencies.view';
     case CURRENCIES_MANAGE = 'admin.currencies.manage';
 
+    case INDUSTRIES_VIEW = 'admin.industries.view';
+    case INDUSTRIES_MANAGE = 'admin.industries.manage';
+
     case TALENT_APPLICATIONS_VIEW = 'admin.talent-applications.view';
     case TALENT_APPLICATIONS_ASSIGN_REVIEWER = 'admin.talent-applications.assign-reviewer';
     case TALENT_APPLICATIONS_REVIEW = 'admin.talent-applications.review';

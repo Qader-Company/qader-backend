@@ -33,6 +33,9 @@ class TalentApplication extends Model implements HasMedia
     protected function casts(): array
     {
         return [
+            'talent_id' => 'integer',
+            'assigned_admin_id' => 'integer',
+            'review_decided_by_admin_id' => 'integer',
             'submitted_at' => 'datetime',
             'submission_snapshot' => 'array',
             'profile_completion_at_submission' => 'integer',

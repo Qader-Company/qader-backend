@@ -18,6 +18,11 @@ return [
         'skills' => 'Skills',
         'tools' => 'Tools',
         'currencies' => 'Currencies',
+        'industries' => 'Industries',
+        'workspace' => 'Workspace',
+        'dashboard' => 'Dashboard',
+        'members' => 'Team members',
+        'roles' => 'Roles',
         'talent-applications' => 'Talent applications',
         'job-forms' => 'Job forms',
         'job-form-submissions' => 'Job form submissions',
@@ -65,6 +70,7 @@ return [
             'view' => 'View currencies',
             'manage' => 'Manage currencies',
         ],
+        'industries' => ['view' => 'View industries', 'manage' => 'Manage industries'],
         'talent-applications' => [
             'view' => 'View talent applications',
             'assign-reviewer' => 'Assign talent application reviewers',
@@ -79,5 +85,11 @@ return [
         'platform' => [
             'access' => 'Access the talent platform',
         ],
+    ],
+    'client' => [
+        'workspace' => ['view' => 'View workspace', 'update' => 'Update workspace'],
+        'dashboard' => ['view' => 'View dashboard'],
+        'members' => ['view' => 'View team members', 'create' => 'Create team members', 'manage' => 'Manage team members'],
+        'roles' => ['view' => 'View roles', 'manage' => 'Manage roles'],
     ],
 ];

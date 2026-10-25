@@ -18,7 +18,7 @@
 2. `hiring_requests`: طلب العميل لتوظيف مرشح أو عدة مرشحين.
 3. `job_form_submissions`: تقديم على وظيفة عامة من نموذج منشور، وقد يقدمه زائر دون حساب.
 
-تم الرجوع إلى تصميم الويب للبوابات الثلاث وملفات البيزنس وملفات migrations. المقترح الكامل يعرض **118 جدولًا و239 علاقة مفتاح أجنبي** في 17 مجموعة. هذه ليست دعوة لتنفيذ كل الجداول دفعة واحدة.
+تم الرجوع إلى تصميم الويب للبوابات الثلاث وملفات البيزنس وملفات migrations. المقترح الكامل يعرض **114 جدولًا و225 علاقة مفتاح أجنبي** في 17 مجموعة. هذه ليست دعوة لتنفيذ كل الجداول دفعة واحدة.
 
 | التصنيف | العدد | المعنى |
 | --- | ---: | --- |
@@ -1410,7 +1410,7 @@ flowchart LR
 
 ## مساحات العمل
 
-تضم هذه المجموعة 7 جدولًا.
+تضم هذه المجموعة 6 جداول.
 
 ```mermaid
 flowchart LR
@@ -1420,18 +1420,15 @@ flowchart LR
   workspace_roles["workspace_roles"]
   workspace_role_permissions["workspace_role_permissions"]
   workspace_member_roles["workspace_member_roles"]
-  workspace_invitations["workspace_invitations"]
   cities["cities · خارجي"]
   clients["clients · خارجي"]
   countries["countries · خارجي"]
-  currencies["currencies · خارجي"]
   industries["industries · خارجي"]
   permissions["permissions · خارجي"]
   workspaces -->|"owner_client_id"| clients
   workspaces -->|"industry_id"| industries
   workspaces -->|"country_id"| countries
   workspaces -->|"city_id"| cities
-  workspaces -->|"default_currency_id"| currencies
   workspace_social_links -->|"workspace_id"| workspaces
   workspace_members -->|"workspace_id"| workspaces
   workspace_members -->|"client_id"| clients
@@ -1440,12 +1437,8 @@ flowchart LR
   workspace_role_permissions -->|"permission_id"| permissions
   workspace_member_roles -->|"workspace_member_id"| workspace_members
   workspace_member_roles -->|"workspace_role_id"| workspace_roles
-  workspace_invitations -->|"workspace_id"| workspaces
-  workspace_invitations -->|"role_id"| workspace_roles
-  workspace_invitations -->|"invited_by_member_id"| workspace_members
-  workspace_invitations -->|"accepted_by_client_id"| clients
   classDef external fill:#f4f4f5,stroke:#9ca3af,stroke-dasharray:5 4
-  class cities,clients,countries,currencies,industries,permissions external
+  class cities,clients,countries,industries,permissions external
 ```
 
 ### `workspaces`
@@ -1459,25 +1452,19 @@ flowchart LR
 | `id` | `bigint` | نعم | مفتاح أساسي؛ ترقيم تلقائي | — |
 | `owner_client_id` | `bigint` | نعم | — | `clients.id`؛ `RESTRICT` |
 | `name` | `varchar(255)` | نعم | — | — |
-| `slug` | `varchar(255)` | نعم | فريد | — |
-| `industry_id` | `bigint` | نعم | — | `industries.id`؛ `RESTRICT` |
+| `industry_id` | `bigint` | نعم | قطاع نشاط مساحة العمل من Master Data مستقلة | `industries.id`؛ `RESTRICT` |
 | `description` | `text` | نعم | — | — |
 | `is_company` | `boolean` | نعم | — | — |
 | `country_id` | `bigint` | نعم | — | `countries.id`؛ `RESTRICT` |
 | `city_id` | `bigint` | لا | — | `cities.id`؛ `RESTRICT` |
-| `size_band` | `varchar(32)` | لا | — | — |
+| `size_band` | `varchar(16)` | نعم | القيم: `1-10`, `11-50`, `51-200`, `201-500`, `500+` | — |
 | `website_url` | `varchar(2048)` | لا | — | — |
-| `commercial_registration_number` | `varchar(100)` | لا | — | — |
-| `status` | `varchar(32)` | نعم | الافتراضي: `'active'`؛ القيم: `active, suspended, archived` | — |
-| `timezone` | `varchar(64)` | نعم | — | — |
-| `default_currency_id` | `bigint` | لا | — | `currencies.id`؛ `RESTRICT` |
-| `deleted_at` | `timestamp` | لا | — | — |
 | `created_at` | `timestamp` | لا | — | — |
 | `updated_at` | `timestamp` | لا | — | — |
 
 **الفهارس والقيود المركبة:**
 
-- فهرس بحث: `(owner_client_id, status)`.
+- فهرس بحث: `owner_client_id`.
 ### `workspace_social_links`
 
 **التصنيف:** جدول جديد مقترح لتدفق ظاهر في التصميم.
@@ -1488,9 +1475,8 @@ flowchart LR
 | --- | --- | --- | --- | --- |
 | `id` | `bigint` | نعم | مفتاح أساسي؛ ترقيم تلقائي | — |
 | `workspace_id` | `bigint` | نعم | — | `workspaces.id`؛ `CASCADE` |
-| `platform` | `varchar(32)` | نعم | — | — |
+| `platform` | `varchar(32)` | نعم | قيمة من `WorkspaceSocialPlatformEnum` | — |
 | `url` | `varchar(2048)` | نعم | — | — |
-| `display_order` | `smallint` | نعم | الافتراضي: `0` | — |
 | `created_at` | `timestamp` | لا | — | — |
 | `updated_at` | `timestamp` | لا | — | — |
 ### `workspace_members`
@@ -1504,9 +1490,9 @@ flowchart LR
 | `id` | `bigint` | نعم | مفتاح أساسي؛ ترقيم تلقائي | — |
 | `workspace_id` | `bigint` | نعم | — | `workspaces.id`؛ `RESTRICT` |
 | `client_id` | `bigint` | نعم | — | `clients.id`؛ `RESTRICT` |
-| `status` | `varchar(16)` | نعم | الافتراضي: `'active'`؛ القيم: `active, suspended, removed` | — |
+| `status` | `varchar(16)` | نعم | الافتراضي: `'active'`؛ القيم: `active, suspended` | — |
 | `joined_at` | `timestamp` | نعم | — | — |
-| `removed_at` | `timestamp` | لا | — | — |
+| `deleted_at` | `timestamp` | لا | Soft Delete عند إزالة العضو | — |
 | `created_at` | `timestamp` | لا | — | — |
 | `updated_at` | `timestamp` | لا | — | — |
 
@@ -1518,7 +1504,7 @@ flowchart LR
 
 **التصنيف:** جدول جديد مقترح لتدفق ظاهر في التصميم.
 
-أدوار محلية لكل مساحة عمل، معزولة عن صلاحيات الأدمن العامة.
+أدوار محلية لكل مساحة عمل، معزولة عن صلاحيات الأدمن العامة. ينشئ النظام دور `owner` المحمي تلقائيًا مع مساحة العمل، ويعامل مثل `super_admin` داخل مساحته فقط.
 
 | العمود | النوع | إلزامي | القيود والملاحظات المختصرة | المرجع عند وجوده |
 | --- | --- | --- | --- | --- |
@@ -1534,6 +1520,7 @@ flowchart LR
 **الفهارس والقيود المركبة:**
 
 - قيد تفرد: `(workspace_id, key)`.
+- لا يمكن إنشاء دور آخر بالمفتاح `owner` أو تعديل الدور الأصلي أو تعطيله أو حذفه أو إسناده يدويًا.
 ### `workspace_role_permissions`
 
 **التصنيف:** جدول جديد مقترح لتدفق ظاهر في التصميم.
@@ -1562,31 +1549,6 @@ flowchart LR
 **الفهارس والقيود المركبة:**
 
 - مفتاح أساسي مركب: `(workspace_member_id, workspace_role_id)`.
-### `workspace_invitations`
-
-**التصنيف:** اقتراح يحتاج اعتماد تفاصيله.
-
-دعوات عضوية مساحة العمل. تفاصيل تجربة الدعوة ما زالت مقترحة.
-
-| العمود | النوع | إلزامي | القيود والملاحظات المختصرة | المرجع عند وجوده |
-| --- | --- | --- | --- | --- |
-| `id` | `bigint` | نعم | مفتاح أساسي؛ ترقيم تلقائي | — |
-| `workspace_id` | `bigint` | نعم | — | `workspaces.id`؛ `RESTRICT` |
-| `email` | `varchar(255)` | نعم | — | — |
-| `role_id` | `bigint` | لا | — | `workspace_roles.id`؛ `RESTRICT` |
-| `invited_by_member_id` | `bigint` | نعم | — | `workspace_members.id`؛ `RESTRICT` |
-| `token_hash` | `char(64)` | نعم | فريد | — |
-| `status` | `varchar(16)` | نعم | الافتراضي: `'pending'`؛ القيم: `pending, accepted, revoked, expired` | — |
-| `expires_at` | `timestamp` | نعم | — | — |
-| `accepted_by_client_id` | `bigint` | لا | — | `clients.id`؛ `RESTRICT` |
-| `accepted_at` | `timestamp` | لا | — | — |
-| `created_at` | `timestamp` | لا | — | — |
-| `updated_at` | `timestamp` | لا | — | — |
-
-**الفهارس والقيود المركبة:**
-
-- فهرس بحث: `(workspace_id, email, status)`.
-
 <a id="module-commercial"></a>
 
 ## أنواع العقود والرسوم

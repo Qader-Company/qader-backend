@@ -59,7 +59,7 @@ class TalentApplicationReviewWorkflow
             $application = TalentApplication::query()->lockForUpdate()->findOrFail($applicationId);
             $this->ensureReviewIsOpen($application);
 
-            if ($application->assigned_admin_id !== null && $application->assigned_admin_id !== $actor->id) {
+            if ($application->assigned_admin_id !== null && ! $this->isAssignedTo($application, $actor)) {
                 throw new ConflictHttpException(__('talents.review.assigned_to_another_reviewer'));
             }
 
@@ -366,7 +366,7 @@ class TalentApplicationReviewWorkflow
 
     private function assignLockedApplication(TalentApplication $application, Admin $reviewer, Admin $actor): void
     {
-        if ($application->assigned_admin_id === $reviewer->id) {
+        if ($this->isAssignedTo($application, $reviewer)) {
             return;
         }
 
@@ -400,9 +400,15 @@ class TalentApplicationReviewWorkflow
 
     private function ensureCurrentReviewer(TalentApplication $application, Admin $actor): void
     {
-        if ($application->assigned_admin_id != $actor->id) {
+        if (! $this->isAssignedTo($application, $actor)) {
             throw new ConflictHttpException(__('talents.review.current_reviewer_required'));
         }
+    }
+
+    private function isAssignedTo(TalentApplication $application, Admin $admin): bool
+    {
+        return $application->assigned_admin_id !== null
+            && (string) $application->assigned_admin_id === (string) $admin->getKey();
     }
 
     private function ensureDecisionAllowed(TalentApplication $application, Admin $actor): void

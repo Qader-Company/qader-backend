@@ -10,6 +10,15 @@ enum ClientPermissionEnum: string implements PermissionDefinition
 {
     use InteractsWithPermissions;
 
+    case WORKSPACE_VIEW = 'client.workspace.view';
+    case WORKSPACE_UPDATE = 'client.workspace.update';
+    case DASHBOARD_VIEW = 'client.dashboard.view';
+    case MEMBERS_VIEW = 'client.members.view';
+    case MEMBERS_CREATE = 'client.members.create';
+    case MEMBERS_MANAGE = 'client.members.manage';
+    case ROLES_VIEW = 'client.roles.view';
+    case ROLES_MANAGE = 'client.roles.manage';
+
     public function portal(): PortalTypeEnum
     {
         return PortalTypeEnum::CLIENT;

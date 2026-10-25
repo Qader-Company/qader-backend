@@ -17,7 +17,7 @@ class PortalMetadata extends Strategy
             true
         );
         $isPublicJob = ($segments[2] ?? null) === 'public' && ($segments[3] ?? null) === 'jobs';
-        $portal = $isPublicJob ? 'marketing' : ($isAuth ? ($isSharedAuth ? 'talent' : $segments[3]) : $segments[2]);
+        $portal = $isPublicJob ? 'website' : ($isAuth ? ($isSharedAuth ? 'talent' : $segments[3]) : $segments[2]);
         $module = $isPublicJob ? 'jobs' : ($isAuth ? 'auth' : ($segments[3] ?? 'general'));
 
         if (! in_array($portal, PortalRouteMatcher::PORTALS, true)) {

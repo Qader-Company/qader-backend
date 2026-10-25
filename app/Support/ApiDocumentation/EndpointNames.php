@@ -99,6 +99,49 @@ class EndpointNames
             };
         }
 
+        if ($module === 'workspaces') {
+            return match ($route->getActionMethod()) {
+                '__invoke' => 'List Workspace Options',
+                'index' => match (true) {
+                    str_contains($route->uri(), '/members') => 'List Workspace Members',
+                    str_contains($route->uri(), '/roles') => 'List Workspace Roles',
+                    default => 'List Workspaces',
+                },
+                'store' => match (true) {
+                    str_contains($route->uri(), '/members') => 'Create Workspace Member',
+                    str_contains($route->uri(), '/roles') => 'Create Workspace Role',
+                    default => 'Create Workspace',
+                },
+                'show' => match (true) {
+                    str_contains($route->uri(), '/members/') => 'Get Workspace Member',
+                    str_contains($route->uri(), '/roles/') => 'Get Workspace Role',
+                    default => 'Get Workspace',
+                },
+                'update' => match (true) {
+                    str_contains($route->uri(), '/members/') => 'Update Workspace Member',
+                    str_contains($route->uri(), '/roles/') => 'Update Workspace Role',
+                    default => 'Update Workspace',
+                },
+                'permissions' => 'List Workspace Permissions', 'status' => 'Update Workspace Role Status',
+                'dashboard' => 'Get Workspace Dashboard',
+                'destroy' => str_contains($route->uri(), '/members/') ? 'Remove Workspace Member' : 'Delete Workspace Role',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'access-control' && str_contains($route->uri(), '/client/access-control/workspaces/')) {
+            return match ($route->getActionMethod()) {
+                'permissions' => 'List Workspace Permissions',
+                'index' => 'List Workspace Roles',
+                'store' => 'Create Workspace Role',
+                'show' => 'Get Workspace Role',
+                'update' => 'Update Workspace Role',
+                'status' => 'Update Workspace Role Status',
+                'destroy' => 'Delete Workspace Role',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
         if ($module === 'job-forms' || $isPublicJobs) {
             $isSubmissionRoute = str_contains($route->uri(), '/submissions');
 

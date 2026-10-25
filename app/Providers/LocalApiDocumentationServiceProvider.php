@@ -54,6 +54,6 @@ class LocalApiDocumentationServiceProvider extends ServiceProvider
             $response->setPrivate();
 
             return $response;
-        })->whereIn('portal', ['talent', 'client', 'admin', 'marketing'])->name('scribe.portal.openapi');
+        })->whereIn('portal', ['talent', 'client', 'admin', 'website'])->name('scribe.portal.openapi');
     }
 }

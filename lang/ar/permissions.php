@@ -18,6 +18,11 @@ return [
         'skills' => 'المهارات',
         'tools' => 'الأدوات',
         'currencies' => 'العملات',
+        'industries' => 'قطاعات النشاط',
+        'workspace' => 'مساحة العمل',
+        'dashboard' => 'لوحة التحكم',
+        'members' => 'أعضاء الفريق',
+        'roles' => 'الأدوار',
         'talent-applications' => 'طلبات المواهب',
         'job-forms' => 'نماذج الوظائف',
         'job-form-submissions' => 'تقديمات نماذج الوظائف',
@@ -65,6 +70,7 @@ return [
             'view' => 'عرض العملات',
             'manage' => 'إدارة العملات',
         ],
+        'industries' => ['view' => 'عرض قطاعات النشاط', 'manage' => 'إدارة قطاعات النشاط'],
         'talent-applications' => [
             'view' => 'عرض طلبات المواهب',
             'assign-reviewer' => 'تعيين مراجعي طلبات المواهب',
@@ -79,5 +85,11 @@ return [
         'platform' => [
             'access' => 'الدخول إلى منصة المواهب',
         ],
+    ],
+    'client' => [
+        'workspace' => ['view' => 'عرض مساحة العمل', 'update' => 'تعديل مساحة العمل'],
+        'dashboard' => ['view' => 'عرض لوحة التحكم'],
+        'members' => ['view' => 'عرض أعضاء الفريق', 'create' => 'إضافة أعضاء الفريق', 'manage' => 'إدارة أعضاء الفريق'],
+        'roles' => ['view' => 'عرض الأدوار', 'manage' => 'إدارة الأدوار'],
     ],
 ];

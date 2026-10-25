@@ -60,6 +60,10 @@ class DocumentationExamples
             $name === 'currently_working' => 0,
             $name === 'responsibilities' => 'Designed APIs and maintained backend services.',
             $name === 'description' => 'Example description for this record.',
+            $name === 'size_band' => '11-50',
+            $name === 'is_company' => true,
+            $name === 'website_url' => 'https://example-company.com',
+            $name === 'platform' => 'linkedin',
             $name === 'display_order' => 1,
             $name === 'scope' => 'all',
             $name === 'sort' => 'newest',
@@ -91,6 +95,7 @@ class DocumentationExamples
             $name === 'expected_salary_min' => 20000,
             $name === 'expected_salary_max' => 30000,
             $name === 'permissions' => ['admin.countries.view'],
+            $name === 'role_ids' => [2, 3],
             $name === 'form_fields' => ['github_url', 'portfolio_url'],
             $name === 'professional_form_field_ids' => [12, 23, 38],
             $name === 'screen_states' => ['under_review', 'rejected'],
@@ -137,6 +142,7 @@ class DocumentationExamples
                 str_contains($uri, '/cities') => $arabic ? 'مدينة تجريبية' : 'Example City',
                 str_contains($uri, '/languages') => $arabic ? 'لغة تجريبية' : 'Example Language',
                 str_contains($uri, '/currencies') => $arabic ? 'عملة تجريبية' : 'Example Currency',
+                str_contains($uri, '/industries') => $arabic ? 'التكنولوجيا' : 'Technology',
                 str_contains($uri, '/fields') => $arabic ? 'مجال تجريبي' : 'Example Professional Field',
                 default => $arabic ? 'اسم تجريبي' : 'Example Name',
             };
@@ -167,6 +173,7 @@ class DocumentationExamples
                 str_contains($uri, '/skills') => 'Laravel',
                 str_contains($uri, '/tools') => 'Docker',
                 str_contains($uri, '/projects') => 'Qader Platform',
+                str_contains($uri, '/workspaces') => 'Qader Technology',
                 default => 'Example Name',
             };
         }
