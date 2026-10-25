@@ -400,7 +400,7 @@ class TalentApplicationReviewWorkflow
 
     private function ensureCurrentReviewer(TalentApplication $application, Admin $actor): void
     {
-        if ($application->assigned_admin_id !== $actor->id) {
+        if ($application->assigned_admin_id != $actor->id) {
             throw new ConflictHttpException(__('talents.review.current_reviewer_required'));
         }
     }
