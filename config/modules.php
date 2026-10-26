@@ -36,6 +36,8 @@ return [
             ['prefix' => 'admin/currencies', 'file' => 'currencies.php', 'api_key' => true],
             ['prefix' => 'admin/industries', 'file' => 'industries.php', 'api_key' => true],
             ['prefix' => 'admin/talent-applications', 'file' => 'talent-applications.php', 'api_key' => true],
+            ['prefix' => 'admin/interviews', 'file' => 'interviews.php', 'api_key' => true],
+            ['prefix' => 'admin/talents', 'file' => 'talents.php', 'api_key' => true],
             ['prefix' => 'admin/talent-review-faqs', 'file' => 'talent-review-faqs.php', 'api_key' => true],
             ['prefix' => 'admin/job-forms', 'file' => 'job-forms.php', 'api_key' => true],
         ],

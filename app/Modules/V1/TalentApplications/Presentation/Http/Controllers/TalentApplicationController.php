@@ -4,6 +4,7 @@ namespace App\Modules\V1\TalentApplications\Presentation\Http\Controllers;
 
 use App\Facades\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Modules\V1\TalentApplications\Application\Services\InterviewStateSynchronizer;
 use App\Modules\V1\TalentApplications\Application\Services\TalentInterviewWorkflow;
 use App\Modules\V1\TalentApplications\Application\Services\TalentReviewFaqService;
 use App\Modules\V1\TalentApplications\Application\UseCases\GetTalentApplicationUseCase;
@@ -26,10 +27,22 @@ class TalentApplicationController extends Controller
         GetTalentProfileUseCase $profiles,
         GetTalentApplicationUseCase $applications,
         TalentReviewFaqService $faqs,
+        InterviewStateSynchronizer $synchronizer,
     ): JsonResponse {
         $profile = $profiles->execute($request->user()->id);
         $application = $applications->execute($profile->id);
-        $application->load(['media', 'blacklistEntry', 'interview.slots']);
+        $application->load([
+            'media', 'blacklistEntry', 'evaluation.tips', 'evaluation.currency.translations',
+            'evaluation.evaluator.user',
+            'interviews.slots', 'interviews.evaluation.evaluator.user',
+        ]);
+        foreach ($application->interviews as $interview) {
+            $synchronizer->synchronize($interview);
+        }
+        $application->load([
+            'interview.slots', 'interview.evaluation.evaluator.user',
+            'interviews.slots', 'interviews.evaluation.evaluator.user',
+        ]);
         $resource = new TalentApplicationResource($application);
         $data = $resource->resolve($request);
         $data['faqs'] = TalentReviewFaqResource::collection(

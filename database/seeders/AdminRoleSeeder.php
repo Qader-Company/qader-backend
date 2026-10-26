@@ -38,6 +38,11 @@ class AdminRoleSeeder extends Seeder
                 AdminPermissionEnum::TALENT_APPLICATIONS_VIEW->value,
                 AdminPermissionEnum::TALENT_APPLICATIONS_REVIEW->value,
                 AdminPermissionEnum::TALENT_APPLICATIONS_DECIDE->value,
+                AdminPermissionEnum::INTERVIEWS_VIEW->value,
+                AdminPermissionEnum::INTERVIEWS_MANAGE->value,
+                AdminPermissionEnum::INTERVIEWS_EVALUATE->value,
+                AdminPermissionEnum::INTERVIEWS_DECIDE->value,
+                AdminPermissionEnum::TALENTS_VIEW->value,
             ]
         );
     }

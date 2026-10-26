@@ -54,10 +54,13 @@ Route::middleware(['auth:sanctum', 'abilities:access,admin'])
             ->middleware(AdminPermissionEnum::TALENT_APPLICATIONS_REVIEW->middleware());
         Route::post('{application}/reject', 'reject')
             ->whereNumber('application')
-            ->middleware(AdminPermissionEnum::TALENT_APPLICATIONS_DECIDE->middleware());
+            ->middleware('permission:'.AdminPermissionEnum::TALENT_APPLICATIONS_DECIDE->value.'|'.AdminPermissionEnum::INTERVIEWS_DECIDE->value);
         Route::post('{application}/schedule-interview', 'scheduleInterview')
             ->whereNumber('application')
-            ->middleware(AdminPermissionEnum::TALENT_APPLICATIONS_DECIDE->middleware());
+            ->middleware('permission:'.AdminPermissionEnum::TALENT_APPLICATIONS_DECIDE->value.'|'.AdminPermissionEnum::INTERVIEWS_DECIDE->value);
+        Route::post('{application}/accept', 'accept')
+            ->whereNumber('application')
+            ->middleware(AdminPermissionEnum::INTERVIEWS_DECIDE->middleware());
         Route::post('{application}/interview/slots', 'replaceInterviewSlots')
             ->whereNumber('application')
             ->middleware(AdminPermissionEnum::TALENT_APPLICATIONS_DECIDE->middleware());

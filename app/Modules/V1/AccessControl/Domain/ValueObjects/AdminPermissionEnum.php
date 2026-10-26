@@ -48,6 +48,15 @@ enum AdminPermissionEnum: string implements PermissionDefinition
     case TALENT_APPLICATIONS_REVIEW = 'admin.talent-applications.review';
     case TALENT_APPLICATIONS_DECIDE = 'admin.talent-applications.decide';
 
+    case INTERVIEWS_VIEW = 'admin.interviews.view';
+    case INTERVIEWS_MANAGE = 'admin.interviews.manage';
+    case INTERVIEWS_EVALUATE = 'admin.interviews.evaluate';
+    case INTERVIEWS_DECIDE = 'admin.interviews.decide';
+
+    case TALENTS_VIEW = 'admin.talents.view';
+    case TALENTS_MANAGE_BLACKLIST = 'admin.talents.manage-blacklist';
+    case TALENTS_MANAGE_REAPPLY = 'admin.talents.manage-reapply';
+
     case TALENT_REVIEW_FAQS_VIEW = 'admin.talent-review-faqs.view';
     case TALENT_REVIEW_FAQS_MANAGE = 'admin.talent-review-faqs.manage';
 

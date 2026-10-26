@@ -5,6 +5,7 @@ namespace App\Modules\V1\TalentApplications\Presentation\Http\Controllers;
 use App\Facades\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Modules\V1\TalentApplications\Application\Services\AdminApplicationActor;
+use App\Modules\V1\TalentApplications\Application\Services\AdminInterviewWorkflow;
 use App\Modules\V1\TalentApplications\Application\Services\TalentApplicationQueryService;
 use App\Modules\V1\TalentApplications\Application\Services\TalentApplicationReviewWorkflow;
 use App\Modules\V1\TalentApplications\Presentation\Http\Requests\AssignTalentApplicationReviewerRequest;
@@ -172,6 +173,21 @@ class AdminTalentApplicationController extends Controller
         );
 
         return ApiResponse::created(new InterviewResource($interview), __('talents.review.interview_scheduled'));
+    }
+
+    public function accept(
+        Request $request,
+        int $application,
+        AdminApplicationActor $actors,
+        AdminInterviewWorkflow $workflow,
+        TalentApplicationQueryService $queries,
+    ): JsonResponse {
+        $workflow->accept($application, $actors->resolve($request->user()));
+
+        return ApiResponse::updated(
+            new AdminTalentApplicationResource($queries->findForDetails($application)),
+            __('talents.review.application_accepted'),
+        );
     }
 
     /**

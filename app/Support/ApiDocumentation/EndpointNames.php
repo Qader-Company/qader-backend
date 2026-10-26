@@ -81,8 +81,31 @@ class EndpointNames
                 'startReview' => 'Start Talent Application Review',
                 'saveEvaluation' => 'Save Talent Evaluation',
                 'reject' => 'Reject Talent Application',
+                'accept' => 'Accept Talent Application',
                 'scheduleInterview' => 'Schedule Talent Interview',
                 'replaceInterviewSlots' => 'Offer Replacement Interview Slots',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'interviews') {
+            return match ($route->getActionMethod()) {
+                'index' => 'List Interviews',
+                'show' => 'Get Interview Details',
+                'start' => 'Start Interview',
+                'complete' => 'Complete Interview',
+                'saveEvaluation' => 'Save Interview Evaluation',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'talents') {
+            return match ($route->getActionMethod()) {
+                'index' => 'List Talents',
+                'show' => 'Get Talent Details',
+                'addToBlacklist' => 'Add Talent to Blacklist',
+                'removeFromBlacklist' => 'Remove Talent from Blacklist',
+                'editReapply' => 'Edit Talent Reapply Period',
                 default => Str::headline($route->getActionMethod()),
             };
         }

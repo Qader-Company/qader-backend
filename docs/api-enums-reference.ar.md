@@ -337,6 +337,13 @@ admin.talent-applications.review
 admin.talent-applications.decide
 admin.talent-review-faqs.view
 admin.talent-review-faqs.manage
+admin.interviews.view
+admin.interviews.manage
+admin.interviews.evaluate
+admin.interviews.decide
+admin.talents.view
+admin.talents.manage-blacklist
+admin.talents.manage-reapply
 ```
 
 تُستخدم قيم Admin permissions عند إنشاء وتعديل الأدوار، وتظهر أيضًا في endpoint عرض الصلاحيات:
@@ -445,6 +452,7 @@ offline
 awaiting_slot_selection
 awaiting_new_slots
 confirmed
+in_progress
 completed
 cancelled
 ```
@@ -459,9 +467,11 @@ rejected
 interview_slot_required
 awaiting_new_interview_slots
 interview_confirmed
+interview_in_progress
 interview_completed
 interview_cancelled
 accepted
+blacklisted
 ```
 
 تُرجع في `screen_state` ويستخدمها الفرونت لاختيار شاشة الحالة، كما يستخدمها الأدمن لتحديد شاشات ظهور كل FAQ.

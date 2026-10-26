@@ -80,6 +80,7 @@ class TalentInterviewWorkflow
                 ->firstOrFail();
             $interview = Interview::query()
                 ->where('application_id', $application->id)
+                ->latest('round_number')
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -117,6 +118,7 @@ class TalentInterviewWorkflow
                 ->firstOrFail();
             $interview = Interview::query()
                 ->where('application_id', $application->id)
+                ->latest('round_number')
                 ->lockForUpdate()
                 ->firstOrFail();
             $selectedSlot = $interview->slots()
@@ -165,6 +167,6 @@ class TalentInterviewWorkflow
 
     private function loadForTalent(Interview $interview): Interview
     {
-        return $interview->load(['slots', 'admins.user']);
+        return $interview->load(['slots', 'admins.user', 'evaluation.evaluator.user']);
     }
 }

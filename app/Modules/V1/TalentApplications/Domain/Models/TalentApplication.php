@@ -74,7 +74,12 @@ class TalentApplication extends Model implements HasMedia
 
     public function interview(): HasOne
     {
-        return $this->hasOne(Interview::class, 'application_id');
+        return $this->hasOne(Interview::class, 'application_id')->latestOfMany('round_number');
+    }
+
+    public function interviews(): HasMany
+    {
+        return $this->hasMany(Interview::class, 'application_id')->orderBy('round_number');
     }
 
     public function blacklistEntry(): HasOne

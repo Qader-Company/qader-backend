@@ -14,19 +14,21 @@ class TalentApplicationResource extends JsonResource
     public function toArray(Request $request): array
     {
         $status = $this->status instanceof BackedEnum ? $this->status->value : $this->status;
+        $isBlacklisted = $this->blacklistEntry !== null && $this->blacklistEntry->removed_at === null;
 
         return [
             'id' => $this->id,
             'status' => $status,
+            'application_status' => $status,
+            'effective_status' => $isBlacklisted ? 'blacklisted' : $status,
             'screen_state' => $this->screenState()->value,
             'submitted_at' => $this->submitted_at,
             'review_decided_at' => $this->review_decided_at,
             'reapply_at' => $this->reapply_at,
             'can_reapply' => $status === TalentApplicationStatusEnum::REJECTED->value
-                && $this->blacklistEntry === null
-                && $this->reapply_at?->isPast(),
-            'is_blacklisted' => $this->blacklistEntry !== null
-                && $this->blacklistEntry->removed_at === null,
+                && ! $isBlacklisted
+                && $this->reapply_at?->isPast() === true,
+            'is_blacklisted' => $isBlacklisted,
             'profile_completion_at_submission' => $this->profile_completion_at_submission,
             'snapshot_version' => $this->snapshot_version,
             'snapshot_captured_at' => $this->snapshot_captured_at,
@@ -40,15 +42,31 @@ class TalentApplicationResource extends JsonResource
                     ]),
                 ],
             ),
+            'evaluation' => $this->whenLoaded(
+                'evaluation',
+                fn () => $this->evaluation ? new TalentEvaluationResource($this->evaluation) : null,
+            ),
             'interview' => $this->whenLoaded(
                 'interview',
                 fn () => $this->interview ? new TalentInterviewResource($this->interview) : null,
+            ),
+            'current_interview' => $this->whenLoaded(
+                'interview',
+                fn () => $this->interview ? new TalentInterviewResource($this->interview) : null,
+            ),
+            'interview_history' => $this->whenLoaded(
+                'interviews',
+                fn () => TalentInterviewResource::collection($this->interviews),
             ),
         ];
     }
 
     private function screenState(): TalentApplicationScreenStateEnum
     {
+        if ($this->blacklistEntry !== null && $this->blacklistEntry->removed_at === null) {
+            return TalentApplicationScreenStateEnum::BLACKLISTED;
+        }
+
         return match ($this->status) {
             TalentApplicationStatusEnum::SUBMITTED,
             TalentApplicationStatusEnum::UNDER_REVIEW => TalentApplicationScreenStateEnum::UNDER_REVIEW,
@@ -58,6 +76,7 @@ class TalentApplicationResource extends JsonResource
                 InterviewStatusEnum::AWAITING_SLOT_SELECTION => TalentApplicationScreenStateEnum::INTERVIEW_SLOT_REQUIRED,
                 InterviewStatusEnum::AWAITING_NEW_SLOTS => TalentApplicationScreenStateEnum::AWAITING_NEW_INTERVIEW_SLOTS,
                 InterviewStatusEnum::CONFIRMED => TalentApplicationScreenStateEnum::INTERVIEW_CONFIRMED,
+                InterviewStatusEnum::IN_PROGRESS => TalentApplicationScreenStateEnum::INTERVIEW_IN_PROGRESS,
                 InterviewStatusEnum::COMPLETED => TalentApplicationScreenStateEnum::INTERVIEW_COMPLETED,
                 InterviewStatusEnum::CANCELLED => TalentApplicationScreenStateEnum::INTERVIEW_CANCELLED,
                 default => TalentApplicationScreenStateEnum::INTERVIEW_SLOT_REQUIRED,

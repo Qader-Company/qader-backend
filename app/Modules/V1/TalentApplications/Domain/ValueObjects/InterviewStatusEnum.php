@@ -7,6 +7,7 @@ enum InterviewStatusEnum: string
     case AWAITING_SLOT_SELECTION = 'awaiting_slot_selection';
     case AWAITING_NEW_SLOTS = 'awaiting_new_slots';
     case CONFIRMED = 'confirmed';
+    case IN_PROGRESS = 'in_progress';
     case COMPLETED = 'completed';
     case CANCELLED = 'cancelled';
 }

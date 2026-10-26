@@ -64,7 +64,8 @@ return new class extends Migration
 
         Schema::create('interviews', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('application_id')->unique()->constrained('talent_applications')->restrictOnDelete();
+            $table->foreignId('application_id')->constrained('talent_applications')->restrictOnDelete();
+            $table->unsignedSmallInteger('round_number')->default(1);
             $table->string('type', 32);
             $table->string('status', 32)->default('awaiting_slot_selection')->index();
             $table->foreignId('created_by_admin_id')->constrained('admins')->restrictOnDelete();
@@ -73,7 +74,11 @@ return new class extends Migration
             $table->text('rejected_slots_reason')->nullable();
             $table->unsignedTinyInteger('slot_rejection_count')->default(0);
             $table->timestamp('talent_reschedule_used_at')->nullable();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
             $table->timestamps();
+            $table->unique(['application_id', 'round_number']);
+            $table->index(['application_id', 'status', 'round_number']);
         });
 
         Schema::create('interview_admin', function (Blueprint $table): void {
@@ -98,6 +103,21 @@ return new class extends Migration
             $table->index(['starts_at', 'ends_at', 'status']);
         });
 
+        Schema::create('interview_evaluations', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('interview_id')->unique()->constrained('interviews')->cascadeOnDelete();
+            $table->foreignId('evaluator_admin_id')->constrained('admins')->restrictOnDelete();
+            $table->unsignedTinyInteger('technical_skills_rating');
+            $table->unsignedTinyInteger('communication_skills_rating');
+            $table->unsignedTinyInteger('problem_solving_rating');
+            $table->unsignedTinyInteger('soft_skills_rating');
+            $table->text('hr_report')->nullable();
+            $table->text('technical_report')->nullable();
+            $table->text('psychology_report')->nullable();
+            $table->text('final_feedback');
+            $table->timestamps();
+        });
+
         Schema::create('talent_application_events', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('application_id')->constrained('talent_applications')->cascadeOnDelete();
@@ -112,6 +132,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('talent_application_events');
+        Schema::dropIfExists('interview_evaluations');
         Schema::dropIfExists('interview_slots');
         Schema::dropIfExists('interview_admin');
         Schema::dropIfExists('interviews');

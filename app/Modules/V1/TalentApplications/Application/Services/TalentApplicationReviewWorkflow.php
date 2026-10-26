@@ -124,7 +124,11 @@ class TalentApplicationReviewWorkflow
     {
         return DB::transaction(function () use ($applicationId, $data, $actor): TalentApplication {
             $application = TalentApplication::query()->lockForUpdate()->findOrFail($applicationId);
-            $this->ensureDecisionAllowed($application, $actor);
+            if ($this->status($application) === TalentApplicationStatusEnum::UNDER_REVIEW) {
+                $this->ensureDecisionAllowed($application, $actor);
+            } else {
+                $this->ensureInterviewDecisionAllowed($application, $actor);
+            }
             $decidedAt = now();
             $policy = ReapplyPolicyEnum::from($data['reapply_policy']);
             $reapplyAt = $policy === ReapplyPolicyEnum::ALLOWED_AFTER_PERIOD
@@ -151,6 +155,7 @@ class TalentApplicationReviewWorkflow
             $this->recordEvent($application, $actor, 'application_rejected', [
                 'reapply_policy' => $policy->value,
                 'reapply_at' => $reapplyAt?->toISOString(),
+                'after_interview' => $application->interviews()->exists(),
             ]);
 
             return $application->refresh();
@@ -161,7 +166,16 @@ class TalentApplicationReviewWorkflow
     {
         return DB::transaction(function () use ($applicationId, $data, $actor): Interview {
             $application = TalentApplication::query()->lockForUpdate()->findOrFail($applicationId);
-            $this->ensureDecisionAllowed($application, $actor);
+            $status = $this->status($application);
+            if ($status === TalentApplicationStatusEnum::UNDER_REVIEW) {
+                $this->ensureDecisionAllowed($application, $actor);
+                $roundNumber = 1;
+            } elseif ($status === TalentApplicationStatusEnum::INTERVIEW_REQUIRED) {
+                $lastInterview = $this->ensureInterviewDecisionAllowed($application, $actor);
+                $roundNumber = $lastInterview->round_number + 1;
+            } else {
+                throw new ConflictHttpException(__('talents.review.interview_schedule_not_allowed'));
+            }
             $interviewerIds = collect($data['interviewer_admin_ids'])
                 ->map(static fn ($id): int => (int) $id)
                 ->unique()
@@ -238,6 +252,7 @@ class TalentApplicationReviewWorkflow
 
             $interview = Interview::query()->create([
                 'application_id' => $application->id,
+                'round_number' => $roundNumber,
                 'type' => $data['type'],
                 'status' => InterviewStatusEnum::AWAITING_SLOT_SELECTION,
                 'created_by_admin_id' => $actor->id,
@@ -252,6 +267,7 @@ class TalentApplicationReviewWorkflow
             ]);
             $this->recordEvent($application, $actor, 'interview_scheduled', [
                 'interview_id' => $interview->id,
+                'round_number' => $roundNumber,
             ]);
 
             return $interview->load(['admins.user', 'slots']);
@@ -270,6 +286,7 @@ class TalentApplicationReviewWorkflow
 
             $interview = Interview::query()
                 ->where('application_id', $application->id)
+                ->latest('round_number')
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -426,6 +443,31 @@ class TalentApplicationReviewWorkflow
         if ($application->interview()->exists()) {
             throw new ConflictHttpException(__('talents.review.decision_already_recorded'));
         }
+    }
+
+    private function ensureInterviewDecisionAllowed(TalentApplication $application, Admin $actor): Interview
+    {
+        if ($this->status($application) !== TalentApplicationStatusEnum::INTERVIEW_REQUIRED) {
+            throw new ConflictHttpException(__('talents.review.decision_not_allowed'));
+        }
+
+        $this->ensureCurrentReviewer($application, $actor);
+
+        $interview = $application->interviews()
+            ->with('evaluation')
+            ->latest('round_number')
+            ->lockForUpdate()
+            ->first();
+
+        if (
+            $interview === null
+            || $interview->status !== InterviewStatusEnum::COMPLETED
+            || $interview->evaluation === null
+        ) {
+            throw new ConflictHttpException(__('talents.review.interview_evaluation_required'));
+        }
+
+        return $interview;
     }
 
     private function status(TalentApplication $application): TalentApplicationStatusEnum
