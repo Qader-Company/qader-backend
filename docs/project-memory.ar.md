@@ -59,12 +59,14 @@
 4. لا نعتبر الجداول الموسعة في السكيما منفذة قبل فتح flow العميل المرتبط بها واعتماده.
 5. الحساب يستطيع امتلاك أو الانضمام لأكثر من Workspace، وكل عمليات البورتال معزولة حسب المساحة.
 6. `Industry` هي Master Data مستقلة عن `professional_fields`. الموهبة تختار أكثر من Industry بجانب Skills، والـWorkspace تختار أكثر من Industry وأكثر من Professional Field عبر pivots. قيم الحجم هي `1-10`, `11-50`, `51-200`, `201-500`, `500+`.
-7. أعضاء Workspace يمكن إسناد أكثر من Role لهم. منشئ المساحة يحصل على دور `owner` محمي يعامل مثل `super_admin` داخل مساحته فقط.
-8. إضافة الموظفين تعتمد على دعوات بريدية، مع دعم الحساب الموجود أو إنشاء حساب Client جديد عند القبول.
-9. تم تنفيذ خطة [Client Workspace and Team Foundation](sprints/client-workspace-team-foundation-implementation.ar.md): Industries، Workspaces، Dashboard، أدوار وصلاحيات محلية، أعضاء ودعوات بريدية متعددة الأدوار.
-10. إضافة موظف Workspace تنشئ حساب Client وعضويته مباشرة وترسل بيانات الدخول المؤقتة بالبريد؛ لا توجد دورة دعوة أو قبول مستقلة.
-11. حالة عضو Workspace هي `active` أو `suspended`، والإزالة تتم بـSoft Delete.
-12. منصات روابط Workspace معرفة في `WorkspaceSocialPlatformEnum` وتتاح للواجهة من `GET /api/v1/client/workspaces/options`.
+7. العميل يختار Workspace من الصفحة الرئيسية، وكل Marketplace واختيار مواهب أوطلبات لاحقة تعمل داخل `{workspace}` صريحة. S04 تحفظ قائمة المواهب المختارة فقط؛ إنشاء Hiring Request وعناصرها وإجراءات الأدمن يبدأ في S05، والمقابلات والعروض والتفاوض في S06.
+8. أعضاء Workspace يمكن إسناد أكثر من Role لهم. منشئ المساحة يحصل على دور `owner` محمي يعامل مثل `super_admin` داخل مساحته فقط.
+9. إضافة الموظفين تعتمد على دعوات بريدية، مع دعم الحساب الموجود أو إنشاء حساب Client جديد عند القبول.
+10. تم تنفيذ خطة [Client Workspace and Team Foundation](sprints/client-workspace-team-foundation-implementation.ar.md): Industries، Workspaces، Dashboard، أدوار وصلاحيات محلية، أعضاء ودعوات بريدية متعددة الأدوار.
+11. إضافة موظف Workspace تنشئ حساب Client وعضويته مباشرة وترسل بيانات الدخول المؤقتة بالبريد؛ لا توجد دورة دعوة أو قبول مستقلة.
+12. حالة عضو Workspace هي `active` أو `suspended`، والإزالة تتم بـSoft Delete.
+13. منصات روابط Workspace معرفة في `WorkspaceSocialPlatformEnum` وتتاح للواجهة من `GET /api/v1/client/workspaces/options`.
+14. محاولة الوصول إلى Workspace لا يملك المستخدم عضوية فعالة فيها ترجع `404` لإخفاء وجودها، بينما نقص صلاحية Role داخل Workspace عضو فيها يرجع `403`.
 
 ## ما تم تنفيذه أو توثيقه
 
@@ -130,7 +132,7 @@
 - سياسة إعادة التقديم ترسل `reapply_after_months` ويحسب السيرفر `reapply_at` من وقت الرفض. `blacklist_reason` مطلوب فقط مع سياسة `blacklisted`.
 - `interview_slots` يخزن `starts_at` و`ends_at`. الواجهة لا تتغير؛ السيرفر يحسب النهاية افتراضيًا بعد 60 دقيقة من البداية. موقع الخريطة يخزن `latitude` و`longitude` بدل رابط خريطة.
 - `Automatic Slots` ملغي؛ المواعيد تُضاف يدويًا. قبل الجدولة يجب التأكد أن كل interviewer غير مشغول في أي فترة متداخلة، مع قفل المعنيين داخل transaction لمنع التعارض المتزامن.
-- لا يُنشأ Google Meet لكل موعد مقترح. بعد اختيار الموهبة slot واحدًا ينشئ السيرفر Google Calendar Event وMeet، ثم يحفظ `google_calendar_event_id` و`meeting_url` على `interviews`.
+- لا يُنشأ Google Meet لكل موعد مقترح. التشغيل اليدوي الحالي يسمح للأدمن بإرسال `meeting_url` مع `schedule-interview`؛ عند اختيار الموهبة slot أونلاين يستخدم السيرفر الرابط دون الاتصال بـGoogle. عند عدم إرسال الرابط، يحاول التكامل التلقائي إنشاء Google Calendar Event وMeet بعد اختيار slot واحد فقط.
 - تدفق الموهبة المقابل لـS02 منفذ من `GET /api/v1/talent/application`: يرجع `screen_state` والحالة الحالية والمقابلة والمواعيد والأفعال المتاحة وFAQs الخاصة بالشاشة الحالية.
 - الموهبة تستطيع رفض مجموعات مواعيد المقابلة مرتين فقط. كل رفض يخزن السبب ويزيد `slot_rejection_count`، والاستجابة ترجع المستخدم والمتبقي من الحد. بعد الرفض يرسل الأدمن مواعيد بديلة من endpoint مستقل.
 - إلغاء الموعد المؤكد وطلب إعادة الجدولة متاح مرة واحدة فقط، ويحذف Calendar Event قبل انتظار المواعيد البديلة.

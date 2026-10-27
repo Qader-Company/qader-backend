@@ -11,6 +11,7 @@ class ReplaceTalentInterviewSlotsRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'meeting_url' => ['nullable', 'url:http,https', 'max:2048'],
             'slots' => ['required', 'array', 'min:1', 'max:20'],
             'slots.*.mode' => ['required', Rule::enum(InterviewModeEnum::class)],
             'slots.*.start' => ['required', 'date', 'after:now', 'distinct'],

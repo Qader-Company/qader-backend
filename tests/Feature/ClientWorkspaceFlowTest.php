@@ -14,6 +14,7 @@ use App\Modules\V1\Workspaces\Application\Mail\WorkspaceMemberAccountMail;
 use App\Modules\V1\Workspaces\Application\Services\WorkspaceService;
 use App\Modules\V1\Workspaces\Application\Services\WorkspaceTeamService;
 use Database\Seeders\PermissionSeeder;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -50,6 +51,10 @@ class ClientWorkspaceFlowTest extends TestCase
         $this->assertSame('active', $member->status->value);
         $this->assertTrue($member->client->user->must_change_password);
         $this->assertDatabaseHas('workspace_members', ['workspace_id' => $workspace->id, 'client_id' => $member->client_id, 'deleted_at' => null]);
+
+        $outsider = $this->clientUser('outsider@example.test');
+        $this->expectException(ModelNotFoundException::class);
+        $workspaceService->show($outsider, $workspace);
     }
 
     private function clientUser(string $email): User

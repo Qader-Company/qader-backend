@@ -39,7 +39,11 @@ class TalentInterviewWorkflow
             }
 
             $meeting = null;
-            if ($slot->mode === InterviewModeEnum::ONLINE) {
+            $manualMeetingUrl = $slot->mode === InterviewModeEnum::ONLINE
+                ? $interview->meeting_url
+                : null;
+
+            if ($slot->mode === InterviewModeEnum::ONLINE && blank($manualMeetingUrl)) {
                 $interview->loadMissing(['admins.user', 'application.talent.user']);
                 $meeting = $this->calendar->createOnlineMeeting(
                     $slot,
@@ -63,7 +67,7 @@ class TalentInterviewWorkflow
             $interview->update([
                 'status' => InterviewStatusEnum::CONFIRMED,
                 'google_calendar_event_id' => $meeting?->eventId,
-                'meeting_url' => $meeting?->meetingUrl,
+                'meeting_url' => $meeting?->meetingUrl ?? $manualMeetingUrl,
                 'rejected_slots_reason' => null,
             ]);
 

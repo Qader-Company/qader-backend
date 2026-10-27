@@ -7,6 +7,7 @@ use App\Modules\V1\Workspaces\Domain\Models\Workspace;
 use App\Modules\V1\Workspaces\Domain\Models\WorkspaceMember;
 use App\Modules\V1\Workspaces\Domain\ValueObjects\WorkspaceMemberStatusEnum;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class WorkspaceAccessService
 {
@@ -15,7 +16,10 @@ class WorkspaceAccessService
         $client = $user->loadMissing('client')->client;
         $member = $client ? WorkspaceMember::query()->where('workspace_id', $workspace->id)->where('client_id', $client->id)->with('roles.permissions')->first() : null;
         if (! $member || $member->status !== WorkspaceMemberStatusEnum::ACTIVE) {
-            throw new AuthorizationException(__('workspaces.access_denied'));
+            throw (new ModelNotFoundException)->setModel(
+                Workspace::class,
+                [$workspace->id],
+            );
         }
 
         return $member;

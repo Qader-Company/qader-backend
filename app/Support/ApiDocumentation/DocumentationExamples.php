@@ -90,6 +90,7 @@ class DocumentationExamples
             $name === 'technical_report' => 'Meets the expected technical level.',
             $name === 'psychology_report' => 'Shows good adaptability and teamwork.',
             $name === 'reason' && str_contains($uri, '/interview/slots/reject') => 'I am unavailable on all offered dates. Please provide times next week.',
+            $name === 'meeting_url' => 'https://meet.google.com/abc-defg-hij',
             $name === 'priority' => 'high',
             $name === 'type' && str_contains($uri, '/schedule-interview') => 'technical',
             $name === 'mode' => 'online',

@@ -51,7 +51,8 @@ POST /api/v1/talent/application/interview/cancel
 - رفض كل المواعيد يحتاج `reason` من 10 إلى 1000 حرف.
 - الموهبة تستطيع رفض مجموعات المواعيد مرتين فقط. الاستجابة ترجع `slot_rejections.used`, `maximum`, `remaining`.
 - إلغاء الموعد المؤكد وإعادة الجدولة متاح مرة واحدة فقط حسب التصميم.
-- عند اختيار slot أونلاين ينشئ السيرفر Google Calendar Event وGoogle Meet، ثم يحفظ `google_calendar_event_id` و`meeting_url`.
+- التشغيل اليدوي الحالي: يستطيع الأدمن إرسال `meeting_url` مع `schedule-interview`. عند اختيار الموهبة slot أونلاين يستخدم السيرفر الرابط المحفوظ ويؤكد الموعد دون الاتصال بـGoogle Calendar.
+- عند عدم إرسال `meeting_url` يظل المسار التلقائي: بعد اختيار slot أونلاين ينشئ السيرفر Google Calendar Event وGoogle Meet، ثم يحفظ `google_calendar_event_id` و`meeting_url`.
 - عند فشل Google Calendar لا يثبت السيرفر اختيار الموعد، وتبقى البيانات في حالتها السابقة.
 
 بعد الرفض أو الإلغاء يرسل الأدمن مواعيد بديلة من:
@@ -117,13 +118,17 @@ GET /api/v1/admin/talent-applications/interview-slot-statuses
 
 ```dotenv
 GOOGLE_CALENDAR_CREDENTIALS=/var/www/html/storage/app/private/google-service-account.json
-GOOGLE_CALENDAR_ID=
-GOOGLE_CALENDAR_SUBJECT=
+GOOGLE_CALENDAR_ID=primary
+GOOGLE_CALENDAR_SUBJECT=interviews@your-domain.com
 ```
 
-- يمكن وضع نفس مسار `FIREBASE_CREDENTIALS` في `GOOGLE_CALENDAR_CREDENTIALS` إذا كان نفس Service Account مخولًا للوصول إلى Calendar API.
-- يجب تفعيل Google Calendar API ومشاركة التقويم مع بريد الـService Account.
-- `GOOGLE_CALENDAR_SUBJECT` يستخدم فقط عند إعداد Domain-Wide Delegation لانتحال مستخدم Google Workspace مخول بإنشاء Meet.
+- الربط المعتمد للمقابلات Online هو Service Account مع Domain-Wide Delegation وانتحال مستخدم Google Workspace مخصص للمقابلات، لأن الحدث يحتوي Attendees ويجب أن ينشئ Google Meet.
+- يجب تفعيل Google Calendar API في مشروع Google Cloud، وتفعيل Domain-Wide Delegation للـService Account.
+- داخل Google Admin Console يمنح الـClient ID الرقمي للـService Account نطاق `https://www.googleapis.com/auth/calendar.events`.
+- `GOOGLE_CALENDAR_SUBJECT` هو بريد مستخدم داخل نفس Google Workspace، ويجب أن تكون خدمتا Calendar وMeet متاحتين له. مع هذا الأسلوب تكون قيمة `GOOGLE_CALENDAR_ID=primary`.
+- يوضع ملف JSON محليًا في `storage/app/private/google-service-account.json`. ملف `compose.local.yaml` يربط هذا المجلد داخل `app`, `queue` و`scheduler` ولا يضاف الملف إلى Git.
+- يمكن استخدام Service Account نفسه الخاص بـFirebase فقط إذا فُعّلت له Domain-Wide Delegation ومنح نطاق Calendar السابق؛ مجرد وجود Firebase credentials لا يمنحه صلاحية Calendar تلقائيًا.
+- بعد تعديل `.env` أواستبدال ملف JSON يجب إعادة إنشاء الكونتينرات أوتشغيل `php artisan optimize:clear` داخل `app`.
 
 ## تطبيق قاعدة البيانات على السيرفر
 
@@ -293,6 +298,7 @@ POST /api/v1/admin/talent-applications/1/schedule-interview
 {
   "type": "technical",
   "interviewer_admin_ids": [4, 7],
+  "meeting_url": "https://meet.google.com/abc-defg-hij",
   "slots": [
     {
       "mode": "online",
@@ -308,6 +314,8 @@ POST /api/v1/admin/talent-applications/1/schedule-interview
   ]
 }
 ```
+
+`meeting_url` اختياري. يرسل حاليًا للتشغيل اليدوي للمقابلة Online؛ عند وجوده لا يحاول السيرفر إنشاء Google Calendar Event عند اختيار الموهبة للموعد. بعد تشغيل تكامل Google Workspace يمكن حذفه من الطلب ليُنشئ السيرفر الرابط تلقائيًا.
 
 الواجهة لا ترسل `end`. السيرفر يحسبها بعد 60 دقيقة ويعيد كل slot بالشكل:
 

@@ -12,6 +12,7 @@ use App\Modules\V1\TalentApplications\Domain\Models\TalentApplicationEvent;
 use App\Modules\V1\TalentApplications\Domain\Models\TalentApplicationReviewerAssignment;
 use App\Modules\V1\TalentApplications\Domain\Models\TalentBlacklistEntry;
 use App\Modules\V1\TalentApplications\Domain\Models\TalentEvaluation;
+use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewModeEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewSlotStatusEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewStatusEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\ReapplyPolicyEnum;
@@ -256,6 +257,9 @@ class TalentApplicationReviewWorkflow
                 'type' => $data['type'],
                 'status' => InterviewStatusEnum::AWAITING_SLOT_SELECTION,
                 'created_by_admin_id' => $actor->id,
+                'meeting_url' => $slots->contains(
+                    fn (array $slot): bool => $slot['mode'] === InterviewModeEnum::ONLINE->value
+                ) ? ($data['meeting_url'] ?? null) : null,
             ]);
             $interview->admins()->attach($interviewerIds);
             $interview->slots()->createMany($slots->all());
@@ -349,9 +353,15 @@ class TalentApplicationReviewWorkflow
             }
 
             $interview->slots()->createMany($slots->all());
+            $hasOnlineSlot = $slots->contains(
+                fn (array $slot): bool => $slot['mode'] === InterviewModeEnum::ONLINE->value
+            );
             $interview->update([
                 'status' => InterviewStatusEnum::AWAITING_SLOT_SELECTION,
                 'rejected_slots_reason' => null,
+                'meeting_url' => $hasOnlineSlot
+                    ? (array_key_exists('meeting_url', $data) ? $data['meeting_url'] : $interview->meeting_url)
+                    : null,
             ]);
             $this->recordEvent($application, $actor, 'replacement_interview_slots_offered', [
                 'interview_id' => $interview->id,

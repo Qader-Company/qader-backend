@@ -20,6 +20,7 @@ class ScheduleTalentInterviewRequest extends FormRequest
             'type' => ['required', Rule::enum(InterviewTypeEnum::class)],
             'interviewer_admin_ids' => ['required', 'array', 'min:1'],
             'interviewer_admin_ids.*' => ['required', 'integer', 'distinct', 'exists:admins,id'],
+            'meeting_url' => ['nullable', 'url:http,https', 'max:2048'],
             'slots' => ['required', 'array', 'min:1', 'max:20'],
             'slots.*.mode' => ['required', Rule::enum(InterviewModeEnum::class)],
             'slots.*.start' => ['required', 'date', 'after:now', 'distinct'],

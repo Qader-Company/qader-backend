@@ -68,6 +68,19 @@ class TalentInterviewWorkflowTest extends TestCase
         $this->assertCount(1, $this->calendar->createdSlots);
     }
 
+    public function test_talent_selects_an_online_slot_using_manual_meeting_url_without_google_calendar(): void
+    {
+        [$talent, $interview] = $this->createScheduledInterview('https://meet.google.com/manual-room');
+        $selected = $interview->slots->first();
+
+        $result = $this->talentWorkflow->selectSlot($talent, $selected->id);
+
+        $this->assertSame(InterviewStatusEnum::CONFIRMED, $result->status);
+        $this->assertNull($result->google_calendar_event_id);
+        $this->assertSame('https://meet.google.com/manual-room', $result->meeting_url);
+        $this->assertSame([], $this->calendar->createdSlots);
+    }
+
     public function test_talent_can_reject_all_available_slots_with_a_reason(): void
     {
         [$talent, $interview] = $this->createScheduledInterview();
@@ -124,7 +137,7 @@ class TalentInterviewWorkflowTest extends TestCase
     }
 
     /** @return array{Talent, Interview} */
-    private function createScheduledInterview(): array
+    private function createScheduledInterview(?string $meetingUrl = null): array
     {
         $user = User::query()->create([
             'first_name' => 'Talent',
@@ -158,6 +171,7 @@ class TalentInterviewWorkflowTest extends TestCase
         $interview = $this->adminWorkflow->scheduleInterview($application->id, [
             'type' => 'technical',
             'interviewer_admin_ids' => [$this->reviewer->id],
+            'meeting_url' => $meetingUrl,
             'slots' => [
                 ['mode' => 'online', 'start' => $start->toISOString()],
                 ['mode' => 'online', 'start' => $start->copy()->addHours(2)->toISOString()],
