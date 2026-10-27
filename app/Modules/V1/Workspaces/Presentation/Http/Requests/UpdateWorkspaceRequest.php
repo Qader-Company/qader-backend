@@ -35,7 +35,13 @@ class UpdateWorkspaceRequest extends FormRequest
             'size_band' => ['sometimes', Rule::enum(WorkspaceSizeBandEnum::class)], 'website_url' => ['sometimes', 'nullable', 'url', 'max:2048'],
             'logo' => ['sometimes', 'nullable', 'file', 'mimetypes:image/png,image/jpeg,image/webp', 'max:5120'],
             'remove_logo' => ['sometimes', 'boolean'], 'social_links' => ['sometimes', 'nullable', 'array', 'max:30'],
-            'social_links.*.platform' => ['required', Rule::enum(WorkspaceSocialPlatformEnum::class)], 'social_links.*.url' => ['required', 'url', 'max:2048'],
+            'social_links.*.platform' => ['required', Rule::enum(WorkspaceSocialPlatformEnum::class)],
+            'social_links.*.url' => [
+                'required',
+                'string',
+                'max:2048',
+                'regex:~^(?:https?://)?(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,63}(?::\d{1,5})?(?:[/?#][^\s]*)?$~i',
+            ],
         ];
     }
 }

@@ -77,6 +77,8 @@
 }
 ```
 
+قيمة `social_links.*.url` تقبل روابط `http` و`https` مع protocol اختياري، وتدعم subdomains والـpath والـquery والـhash. أما أسماء الحسابات المنفردة والنصوص العشوائية فلا تقبل. يظل `website_url` مطلوبًا بصيغة URL كاملة صحيحة عند إرساله.
+
 ### Client / Roles and Permissions
 
 - `GET /api/v1/client/access-control/workspaces/{workspace}/permissions`
