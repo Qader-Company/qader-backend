@@ -7,9 +7,11 @@ use App\Modules\V1\Cities\Domain\Models\City;
 use App\Modules\V1\Clients\Domain\Models\Client;
 use App\Modules\V1\Countries\Domain\Models\Country;
 use App\Modules\V1\Industries\Domain\Models\Industry;
+use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
 use App\Modules\V1\Workspaces\Domain\ValueObjects\WorkspaceSizeBandEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -18,7 +20,7 @@ class Workspace extends Model implements HasMedia
 {
     use InteractsWithMedia;
 
-    protected $fillable = ['owner_client_id', 'name', 'industry_id', 'description', 'is_company', 'country_id', 'city_id', 'size_band', 'website_url'];
+    protected $fillable = ['owner_client_id', 'name', 'description', 'is_company', 'country_id', 'city_id', 'size_band', 'website_url'];
 
     protected function casts(): array
     {
@@ -30,9 +32,18 @@ class Workspace extends Model implements HasMedia
         return $this->belongsTo(Client::class, 'owner_client_id');
     }
 
-    public function industry(): BelongsTo
+    public function industries(): BelongsToMany
     {
-        return $this->belongsTo(Industry::class);
+        return $this->belongsToMany(Industry::class, 'workspace_industries')
+            ->withTimestamps();
+    }
+
+    public function professionalFields(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            ProfessionalField::class,
+            'workspace_professional_fields',
+        )->withTimestamps();
     }
 
     public function country(): BelongsTo

@@ -31,7 +31,7 @@
 
 ## 3. القرارات المعتمدة
 
-1. `Industry` هي Master Data مستقلة عن Professional Fields، ويشير `workspaces.industry_id` إلى `industries.id`.
+1. `Industry` هي Master Data مستقلة عن Professional Fields. بعد تحديث S04 تختار الـWorkspace أكثر من Industry وأكثر من Professional Field عبر pivots مباشرة.
 2. العضو يستطيع حمل أكثر من Role داخل نفس Workspace.
 3. منشئ المساحة يصبح عضوًا فيها ويحصل تلقائيًا على دور محمي مفتاحه `owner`.
 4. `owner` يعامل مثل `super_admin` ولكن داخل Workspace واحدة فقط: يمتلك كل صلاحيات Client الحالية والمستقبلية، ولا يعدل أو يعطل أو يحذف أو يسند يدويًا.
@@ -77,7 +77,8 @@
 | `id` | bigint | نعم | المفتاح الأساسي |
 | `owner_client_id` | bigint | نعم | منشئ المساحة؛ `clients.id` |
 | `name` | varchar(255) | نعم | Workspace Name |
-| `industry_id` | bigint | نعم | FK إلى `industries.id` |
+| `industries` | علاقة متعددة | نعم | عبر `workspace_industries` |
+| `professional_fields` | علاقة متعددة | نعم | عبر `workspace_professional_fields` |
 | `description` | text | نعم | Business Description |
 | `is_company` | boolean | نعم | Yes/No من التصميم |
 | `country_id` | bigint | نعم | `countries.id` |
@@ -147,7 +148,10 @@ Pivot متعدد بين `workspace_members` و`workspace_roles`. يجب التح
 - `GET /api/v1/admin/industries`
 - `POST /api/v1/admin/industries`
 - `PATCH /api/v1/admin/industries/{industry}`
+- `GET /api/v1/client/master-data/countries`
+- `GET /api/v1/client/master-data/cities?country_id={country_id}`
 - `GET /api/v1/client/master-data/industries`
+- `GET /api/v1/client/master-data/professional-fields`
 
 تضاف صلاحيتا `admin.industries.view` و`admin.industries.manage` إلى `AdminPermissionEnum`.
 

@@ -18,7 +18,10 @@ class StoreWorkspaceRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'industry_id' => ['required', Rule::exists('industries', 'id')->where('is_active', true)],
+            'industry_ids' => ['required', 'array', 'min:1'],
+            'industry_ids.*' => ['required', 'integer', 'distinct', Rule::exists('industries', 'id')->where('is_active', true)],
+            'professional_field_ids' => ['required', 'array', 'min:1'],
+            'professional_field_ids.*' => ['required', 'integer', 'distinct', Rule::exists('professional_fields', 'id')->where('is_active', true)],
             'description' => ['required', 'string', 'max:5000'], 'is_company' => ['required', 'boolean'],
             'country_id' => ['required', Rule::exists('countries', 'id')->where('is_active', true)],
             'city_id' => ['nullable', Rule::exists('cities', 'id')->where(fn ($q) => $q->where('country_id', $this->input('country_id'))->where('is_active', true))],

@@ -210,6 +210,7 @@ class DocumentationBodyParameters extends GetFromFormRequest
                 'years_of_experience' => '3_to_5',
                 'notice_period_days' => '30 days',
                 'skill_ids' => [1, 2],
+                'industry_ids' => [1, 2],
                 'expected_salary' => ['amount' => 25000, 'currency_id' => 1],
             ],
         ];
@@ -231,7 +232,8 @@ class DocumentationBodyParameters extends GetFromFormRequest
         $examples = match (true) {
             preg_match('~/client/workspaces(?:/\{workspace\})?$~', $uri) === 1 => [
                 'name' => 'Qader Technology',
-                'industry_id' => 1,
+                'industry_ids' => [1, 2],
+                'professional_field_ids' => [1, 2],
                 'description' => 'Technology company building digital products and hiring specialized teams.',
                 'is_company' => true,
                 'country_id' => 1,

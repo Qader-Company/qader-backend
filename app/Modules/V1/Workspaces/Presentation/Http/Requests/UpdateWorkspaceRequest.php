@@ -24,7 +24,11 @@ class UpdateWorkspaceRequest extends FormRequest
         }
 
         return [
-            'name' => ['sometimes', 'string', 'max:255'], 'industry_id' => ['sometimes', Rule::exists('industries', 'id')->where('is_active', true)],
+            'name' => ['sometimes', 'string', 'max:255'],
+            'industry_ids' => ['sometimes', 'array', 'min:1'],
+            'industry_ids.*' => ['required', 'integer', 'distinct', Rule::exists('industries', 'id')->where('is_active', true)],
+            'professional_field_ids' => ['sometimes', 'array', 'min:1'],
+            'professional_field_ids.*' => ['required', 'integer', 'distinct', Rule::exists('professional_fields', 'id')->where('is_active', true)],
             'description' => ['sometimes', 'string', 'max:5000'], 'is_company' => ['sometimes', 'boolean'],
             'country_id' => ['sometimes', Rule::exists('countries', 'id')->where('is_active', true)],
             'city_id' => ['sometimes', 'nullable', Rule::exists('cities', 'id')->where(fn ($q) => $q->where('country_id', $countryId)->where('is_active', true))],

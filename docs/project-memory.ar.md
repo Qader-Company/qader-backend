@@ -58,7 +58,7 @@
 3. إنشاء طلبات التوظيف، استقبال المرشحين والعروض، ثم المقابلات والتعاقد كـ flows مستقلة لاحقًا.
 4. لا نعتبر الجداول الموسعة في السكيما منفذة قبل فتح flow العميل المرتبط بها واعتماده.
 5. الحساب يستطيع امتلاك أو الانضمام لأكثر من Workspace، وكل عمليات البورتال معزولة حسب المساحة.
-6. `Industry` هي Master Data مستقلة عن `professional_fields`، ويرتبط بها `workspaces.industry_id`. قيم الحجم هي `1-10`, `11-50`, `51-200`, `201-500`, `500+`.
+6. `Industry` هي Master Data مستقلة عن `professional_fields`. الموهبة تختار أكثر من Industry بجانب Skills، والـWorkspace تختار أكثر من Industry وأكثر من Professional Field عبر pivots. قيم الحجم هي `1-10`, `11-50`, `51-200`, `201-500`, `500+`.
 7. أعضاء Workspace يمكن إسناد أكثر من Role لهم. منشئ المساحة يحصل على دور `owner` محمي يعامل مثل `super_admin` داخل مساحته فقط.
 8. إضافة الموظفين تعتمد على دعوات بريدية، مع دعم الحساب الموجود أو إنشاء حساب Client جديد عند القبول.
 9. تم تنفيذ خطة [Client Workspace and Team Foundation](sprints/client-workspace-team-foundation-implementation.ar.md): Industries، Workspaces، Dashboard، أدوار وصلاحيات محلية، أعضاء ودعوات بريدية متعددة الأدوار.

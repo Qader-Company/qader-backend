@@ -109,7 +109,7 @@ class DocumentationExamples
             $name === 'form_fields' => ['github_url', 'portfolio_url'],
             $name === 'professional_form_field_ids' => [12, 23, 38],
             $name === 'screen_states' => ['under_review', 'rejected'],
-            $name === 'professional_field_ids', $name === 'skill_ids', $name === 'tool_ids',
+            $name === 'professional_field_ids', $name === 'industry_ids', $name === 'skill_ids', $name === 'tool_ids',
             $name === 'removed_image_ids' => [1],
             $name === 'role_ids' => [2],
             $name === 'role', $name === 'role_id' => 2,

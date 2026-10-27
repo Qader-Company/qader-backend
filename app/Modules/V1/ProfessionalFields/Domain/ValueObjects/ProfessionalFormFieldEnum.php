@@ -22,6 +22,7 @@ enum ProfessionalFormFieldEnum: string
     case SENIORITY_LEVEL = 'seniority_level';
     case YEARS_OF_EXPERIENCE = 'years_of_experience';
     case SKILLS = 'skill_ids';
+    case INDUSTRIES = 'industry_ids';
     case TOOLS = 'tool_ids';
     case LINKEDIN_URL = 'linkedin_url';
     case GITHUB_URL = 'github_url';
@@ -74,6 +75,7 @@ enum ProfessionalFormFieldEnum: string
             self::SENIORITY_LEVEL,
             self::YEARS_OF_EXPERIENCE,
             self::SKILLS,
+            self::INDUSTRIES,
             self::TOOLS,
             self::LINKEDIN_URL,
             self::GITHUB_URL,
@@ -104,6 +106,7 @@ enum ProfessionalFormFieldEnum: string
             self::SENIORITY_LEVEL,
             self::YEARS_OF_EXPERIENCE,
             self::SKILLS,
+            self::INDUSTRIES,
             self::LINKEDIN_URL,
             self::WORK_TYPES,
             self::WORK_MODES,
@@ -164,6 +167,7 @@ enum ProfessionalFormFieldEnum: string
             self::RESIDENCE_CITY => ['residence_city'],
             self::JOB_TITLE => ['job_title'],
             self::SKILLS => ['skills'],
+            self::INDUSTRIES => ['industries'],
             self::TOOLS => ['tools'],
             self::CURRENT_SALARY => [
                 'current_salary',

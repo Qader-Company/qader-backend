@@ -22,7 +22,7 @@ class WorkspaceService
         $client = $this->client($user);
 
         return Workspace::query()->whereHas('members', fn ($q) => $q->where('client_id', $client->id)->where('status', 'active'))
-            ->with(['industry.translations', 'country.translations', 'city.translations', 'socialLinks', 'media'])->withCount(['members' => fn ($q) => $q->where('status', 'active')])->latest()->get();
+            ->with(['industries.translations', 'professionalFields.translations', 'country.translations', 'city.translations', 'socialLinks', 'media'])->withCount(['members' => fn ($q) => $q->where('status', 'active')])->latest()->get();
     }
 
     public function create(User $user, array $data): Workspace
@@ -30,9 +30,13 @@ class WorkspaceService
         $client = $this->client($user);
         $logo = Arr::pull($data, 'logo');
         $links = Arr::pull($data, 'social_links', []);
+        $industryIds = Arr::pull($data, 'industry_ids');
+        $professionalFieldIds = Arr::pull($data, 'professional_field_ids');
 
-        return DB::transaction(function () use ($client, $data, $logo, $links) {
+        return DB::transaction(function () use ($client, $data, $logo, $links, $industryIds, $professionalFieldIds) {
             $workspace = Workspace::query()->create(['owner_client_id' => $client->id, ...$data]);
+            $workspace->industries()->sync($industryIds);
+            $workspace->professionalFields()->sync($professionalFieldIds);
             $member = WorkspaceMember::query()->create(['workspace_id' => $workspace->id, 'client_id' => $client->id, 'status' => WorkspaceMemberStatusEnum::ACTIVE, 'joined_at' => now()]);
             $owner = WorkspaceRole::query()->create(['workspace_id' => $workspace->id, 'key' => 'owner', 'name_en' => 'Owner', 'name_ar' => 'المالك', 'is_active' => true]);
             $member->roles()->attach($owner->id);
@@ -59,13 +63,23 @@ class WorkspaceService
         $remove = (bool) Arr::pull($data, 'remove_logo', false);
         $hasLinks = array_key_exists('social_links', $data);
         $links = Arr::pull($data, 'social_links', []);
+        $hasIndustries = array_key_exists('industry_ids', $data);
+        $industryIds = Arr::pull($data, 'industry_ids', []);
+        $hasProfessionalFields = array_key_exists('professional_field_ids', $data);
+        $professionalFieldIds = Arr::pull($data, 'professional_field_ids', []);
 
         if (array_key_exists('country_id', $data) && ! array_key_exists('city_id', $data)) {
             $data['city_id'] = null;
         }
 
-        return DB::transaction(function () use ($workspace, $data, $logo, $remove, $hasLinks, $links) {
+        return DB::transaction(function () use ($workspace, $data, $logo, $remove, $hasLinks, $links, $hasIndustries, $industryIds, $hasProfessionalFields, $professionalFieldIds) {
             $workspace->update($data);
+            if ($hasIndustries) {
+                $workspace->industries()->sync($industryIds);
+            }
+            if ($hasProfessionalFields) {
+                $workspace->professionalFields()->sync($professionalFieldIds);
+            }
             if ($hasLinks) {
                 $workspace->socialLinks()->delete();
                 $workspace->socialLinks()->createMany($links ?? []);
@@ -100,6 +114,6 @@ class WorkspaceService
 
     private function load(Workspace $workspace): Workspace
     {
-        return $workspace->load(['industry.translations', 'country.translations', 'city.translations', 'socialLinks', 'media'])->loadCount(['members' => fn ($q) => $q->where('status', 'active')]);
+        return $workspace->load(['industries.translations', 'professionalFields.translations', 'country.translations', 'city.translations', 'socialLinks', 'media'])->loadCount(['members' => fn ($q) => $q->where('status', 'active')]);
     }
 }

@@ -25,6 +25,14 @@
 - `workspace_members`, `workspace_roles`
 - `workspace_role_permissions`, `workspace_member_roles`
 
+وتضيف migration التحديثية `2026_11_02_000000_upgrade_talent_and_workspace_industries.php`:
+
+- `talent_industries`
+- `workspace_industries`
+- `workspace_professional_fields`
+
+كما تنقل `workspaces.industry_id` القديمة إلى `workspace_industries` قبل حذف العمود المفرد.
+
 ## Endpoints
 
 ### Admin / Industries
@@ -37,7 +45,10 @@
 
 ### Client / Master Data and Options
 
+- `GET /api/v1/client/master-data/countries`
+- `GET /api/v1/client/master-data/cities?country_id={country_id}`
 - `GET /api/v1/client/master-data/industries`
+- `GET /api/v1/client/master-data/professional-fields`
 - `GET /api/v1/client/workspaces/options`
 
 ### Client / Workspaces and Dashboard
@@ -51,7 +62,8 @@
 ```json
 {
   "name": "Qader Technology",
-  "industry_id": 1,
+  "industry_ids": [1, 2],
+  "professional_field_ids": [1, 2],
   "description": "Technology company building digital products.",
   "is_company": true,
   "country_id": 1,

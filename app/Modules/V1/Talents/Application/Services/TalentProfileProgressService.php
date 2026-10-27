@@ -131,6 +131,14 @@ class TalentProfileProgressService
                     ])
                     ->values()
                     ->all(),
+                'industries' => $talent->industries
+                    ->map(fn ($industry) => [
+                        'id' => $industry->id,
+                        'slug' => $industry->slug,
+                        'name' => $this->localizedName($industry),
+                    ])
+                    ->values()
+                    ->all(),
                 'tools' => $talent->tools
                     ->map(fn ($tool) => [
                         'id' => $tool->id,
@@ -260,6 +268,7 @@ class TalentProfileProgressService
                     selectedIds: $talent->skills->pluck('id')->all(),
                     professionalFieldId: $talent->professional_field_id,
                 ),
+            ProfessionalFormFieldEnum::INDUSTRIES => $talent->industries->isEmpty(),
             ProfessionalFormFieldEnum::TOOLS => $talent->tools->isEmpty()
                 || $this->hasSelectionsOutsideProfessionalField(
                     pivotTable: 'professional_field_tool',

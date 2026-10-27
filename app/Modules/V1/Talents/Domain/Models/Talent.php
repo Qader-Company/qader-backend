@@ -5,6 +5,7 @@ namespace App\Modules\V1\Talents\Domain\Models;
 use App\Modules\V1\Cities\Domain\Models\City;
 use App\Modules\V1\Countries\Domain\Models\Country;
 use App\Modules\V1\Currencies\Domain\Models\Currency;
+use App\Modules\V1\Industries\Domain\Models\Industry;
 use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
 use App\Modules\V1\Languages\Domain\Models\Language;
 use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
@@ -113,6 +114,12 @@ class Talent extends Model implements HasMedia
     public function skills(): BelongsToMany
     {
         return $this->belongsToMany(Skill::class, 'talent_skills')
+            ->withTimestamps();
+    }
+
+    public function industries(): BelongsToMany
+    {
+        return $this->belongsToMany(Industry::class, 'talent_industries')
             ->withTimestamps();
     }
 

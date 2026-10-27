@@ -187,6 +187,12 @@ class ProfessionalFieldFormValidationFactory implements ApplicationFormValidatio
                 'distinct',
                 Rule::exists('skills', 'id')->where('is_active', true),
             ],
+            $prefix.'industry_ids' => ['sometimes', 'array', 'min:1'],
+            $prefix.'industry_ids.*' => [
+                'integer',
+                'distinct',
+                Rule::exists('industries', 'id')->where('is_active', true),
+            ],
             $prefix.'tool_ids' => ['sometimes', 'array'],
             $prefix.'tool_ids.*' => [
                 'integer',

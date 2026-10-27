@@ -140,6 +140,10 @@ class TalentProfileWriter
             $talent->skills()->sync($data['skill_ids']);
         }
 
+        if (array_key_exists('industry_ids', $data)) {
+            $talent->industries()->sync($data['industry_ids']);
+        }
+
         if (array_key_exists('tool_ids', $data)) {
             $talent->tools()->sync($data['tool_ids']);
         }
