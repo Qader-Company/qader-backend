@@ -1,6 +1,5 @@
 <?php
 
-use App\Modules\V1\AccessControl\Domain\ValueObjects\TalentPermissionEnum;
 use App\Modules\V1\ProfessionalFields\Presentation\Http\Controllers\ProfessionalFormFieldController;
 use App\Modules\V1\TalentApplications\Presentation\Http\Controllers\TalentApplicationController;
 use App\Modules\V1\Talents\Domain\ValueObjects\OnboardingStepEnum;
@@ -12,5 +11,4 @@ Route::get('form-fields', [ProfessionalFormFieldController::class, 'index']);
 Route::patch('professional-field', [TalentOnboardingController::class, 'selectProfessionalField']);
 Route::post('{step}', [TalentOnboardingController::class, 'saveStep'])
     ->whereIn('step', OnboardingStepEnum::values());
-Route::get('application', [TalentApplicationController::class, 'show'])
-    ->middleware(TalentPermissionEnum::PLATFORM_ACCESS->middleware());
+Route::get('application', [TalentApplicationController::class, 'show']);
