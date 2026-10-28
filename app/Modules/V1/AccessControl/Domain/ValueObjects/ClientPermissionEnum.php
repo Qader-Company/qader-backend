@@ -18,6 +18,9 @@ enum ClientPermissionEnum: string implements PermissionDefinition
     case MEMBERS_MANAGE = 'client.members.manage';
     case ROLES_VIEW = 'client.roles.view';
     case ROLES_MANAGE = 'client.roles.manage';
+    case MARKETPLACE_VIEW = 'client.marketplace.view';
+    case TALENT_SELECTIONS_VIEW = 'client.talent-selections.view';
+    case TALENT_SELECTIONS_MANAGE = 'client.talent-selections.manage';
 
     public function portal(): PortalTypeEnum
     {

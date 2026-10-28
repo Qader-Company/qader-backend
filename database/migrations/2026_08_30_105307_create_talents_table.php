@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('talents', function (Blueprint $table) {
             $table->id();
+            $table->string('talent_code', 32)->unique();
             $table->foreignId('user_id')->unique()->constrained('users')->cascadeOnDelete();
             $table->unsignedTinyInteger('profile_completion_percentage')->default(0)->index();
             $table->string('onboarding_step')->default('personal-information');

@@ -19,6 +19,13 @@ class PortalMetadata extends Strategy
         $isPublicJob = ($segments[2] ?? null) === 'public' && ($segments[3] ?? null) === 'jobs';
         $portal = $isPublicJob ? 'website' : ($isAuth ? ($isSharedAuth ? 'talent' : $segments[3]) : $segments[2]);
         $module = $isPublicJob ? 'jobs' : ($isAuth ? 'auth' : ($segments[3] ?? 'general'));
+        if ($portal === 'client' && in_array($module, ['workspaces', 'access-control'], true)) {
+            $module = match (true) {
+                in_array('talent-marketplace', $segments, true) => 'talent-marketplace',
+                in_array('talent-selections', $segments, true) => 'talent-selections',
+                default => $module,
+            };
+        }
 
         if (! in_array($portal, PortalRouteMatcher::PORTALS, true)) {
             throw new \LogicException('Assign this API route to a documentation portal: '.$endpointData->route->uri());

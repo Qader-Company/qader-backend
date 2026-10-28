@@ -71,6 +71,11 @@ class Workspace extends Model implements HasMedia
         return $this->hasMany(WorkspaceRole::class);
     }
 
+    public function talentSelections(): HasMany
+    {
+        return $this->hasMany(WorkspaceTalentSelection::class);
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('logo')->singleFile()->acceptsMimeTypes(['image/png', 'image/jpeg', 'image/webp']);

@@ -109,8 +109,8 @@
 //
 // D04 - حدود الحالات: acceptance=accepted في المقترح؛ بعض docs تستخدم approved.
 // لا نغير البيانات مباشرة؛ نفحص القيم الفعلية ونحول aliases في backfill لاحقًا.
-// users.is_active للحساب؛ talents.availability_status للتوفر؛ marketplace.visibility
-// للظهور؛ talent_applications.status لقرار الطلب. لا نحشرها في status واحد.
+// users.is_active للحساب؛ notice_period_days لموعد التوفر؛
+// talent_applications.status لقرار الطلب والظهور في Marketplace. لا نحشرها في status واحد.
 // blacklist منفصل على مستوى talent؛ قائمة Rejected تضم المحظورين، لكن فك الحظر
 // لا يلغي سبب رفض قديم ولا يمنح قبولًا. الهويات غير النشطة لا تظهر بالmarketplace.
 //
@@ -716,6 +716,7 @@ Table professional_field_form_field [headercolor: #fef3c7] {
 // [CHANGE] talents
 Table talents [headercolor: #fef3c7] {
   id bigint [pk, increment]
+  talent_code varchar(32) [not null, unique, note: 'QDR-* public marketplace identifier']
   user_id bigint [not null, unique]
   profile_completion_percentage tinyint [not null, default: 0]
   onboarding_step varchar(255) [not null, default: 'personal-information']
@@ -748,17 +749,13 @@ Table talents [headercolor: #fef3c7] {
   expected_salary_min decimal(12,2)
   expected_salary_max decimal(12,2)
   expected_currency_id bigint
-  public_code varchar(32) [unique, note: 'ADD: QDR display ID, backfill then NOT NULL']
-  availability_status varchar(32) [not null, default: 'unavailable', note: 'ADD: available | notice_period | unavailable; independent from approval']
-  availability_updated_at timestamp [note: 'ADD']
   created_at timestamp
   updated_at timestamp
   indexes {
     profile_completion_percentage
     (job_title_id, seniority_level, years_of_experience)
-    (availability_status, professional_field_id)
   }
-  Note: '[CHANGE] Existing profile plus explicitly marked additions. No application status here. Legacy salary precision unchanged until D12 is approved.'
+  Note: '[CHANGE] Existing profile plus stable public marketplace code. Marketplace availability uses accepted application, active account, no active blacklist, and notice_period_days.'
 }
 
 // [KEEP] talent_languages
@@ -786,6 +783,18 @@ Table talent_skills [headercolor: #dbeafe] {
     (talent_id, skill_id) [unique]
   }
   Note: '[KEEP] Existing profile selection. No proficiency/years/is_primary columns: explicitly removed by alignment migration.'
+}
+
+// [NEW] talent_industries
+Table talent_industries [headercolor: #dcfce7] {
+  talent_id bigint [not null]
+  industry_id bigint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (talent_id, industry_id) [pk]
+  }
+  Note: '[NEW] Industry Experience selected by the talent from Industry master data.'
 }
 
 // [KEEP] talent_tools
@@ -944,44 +953,6 @@ Table talent_blacklist_entries [headercolor: #dcfce7] {
   Note: '[NEW] Figma 3130:26016 / 3130:26553. Block is talent-wide; removing a block does not accept/reopen old applications.'
 }
 
-// [NEW] talent_marketplace_profiles
-Table talent_marketplace_profiles [headercolor: #dcfce7] {
-  id bigint [pk, increment]
-  talent_id bigint [not null, unique]
-  application_id bigint [not null]
-  job_title_id bigint [not null]
-  professional_field_id bigint [not null]
-  seniority_level varchar(32) [not null]
-  years_of_experience smallint [not null]
-  public_summary text
-  main_specialization varchar(255)
-  salary_min decimal(18,4) [not null]
-  salary_max decimal(18,4) [not null]
-  currency_id bigint [not null]
-  salary_period varchar(16) [not null, default: 'month']
-  visibility varchar(16) [not null, default: 'hidden', note: 'visible | hidden']
-  public_profile_snapshot json [not null, note: 'Approved safe experiences/projects/languages/work preferences; never raw private profile']
-  approved_at timestamp [not null]
-  approved_by_admin_id bigint [not null]
-  created_at timestamp
-  updated_at timestamp
-  indexes {
-    (visibility, professional_field_id, job_title_id, seniority_level)
-    (currency_id, salary_min, salary_max)
-  }
-  Note: '[NEW] Approved public projection, separate from editable submission. Figma 3260:24102 and admin acceptance; DOC supports approved overrides. Application must belong to talent and be accepted.'
-}
-
-// [NEW] marketplace_profile_skills
-Table marketplace_profile_skills [headercolor: #dcfce7] {
-  marketplace_profile_id bigint [not null]
-  skill_id bigint [not null]
-  indexes {
-    (marketplace_profile_id, skill_id) [pk]
-  }
-  Note: '[NEW] Filterable approved skill set. No inferred proficiency rating.'
-}
-
 // [NEW] industries
 Table industries [headercolor: #dcfce7] {
   id bigint [pk, increment]
@@ -1004,23 +975,12 @@ Table industry_translations [headercolor: #dcfce7] {
   Note: '[NEW] Translated industry catalog.'
 }
 
-// [NEW] marketplace_profile_industries
-Table marketplace_profile_industries [headercolor: #dcfce7] {
-  marketplace_profile_id bigint [not null]
-  industry_id bigint [not null]
-  indexes {
-    (marketplace_profile_id, industry_id) [pk]
-  }
-  Note: '[NEW] Figma 3260:24102 Industry Experience. Admin-curated until capture source is agreed, D16.'
-}
-
 // [NEW] workspaces
 Table workspaces [headercolor: #dcfce7] {
   id bigint [pk, increment]
   owner_client_id bigint [not null]
   name varchar(255) [not null]
   slug varchar(255) [not null, unique]
-  industry_id bigint [not null]
   description text [not null]
   is_company boolean [not null]
   country_id bigint [not null]
@@ -1103,6 +1063,42 @@ Table workspace_member_roles [headercolor: #dcfce7] {
     (workspace_member_id, workspace_role_id) [pk]
   }
   Note: '[NEW] Member and role must belong to the same workspace; C01 validation required.'
+}
+
+// [NEW] workspace_industries
+Table workspace_industries [headercolor: #dcfce7] {
+  workspace_id bigint [not null]
+  industry_id bigint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (workspace_id, industry_id) [pk]
+  }
+}
+
+// [NEW] workspace_professional_fields
+Table workspace_professional_fields [headercolor: #dcfce7] {
+  workspace_id bigint [not null]
+  professional_field_id bigint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (workspace_id, professional_field_id) [pk]
+  }
+}
+
+// [NEW] workspace_talent_selections
+Table workspace_talent_selections [headercolor: #dcfce7] {
+  workspace_id bigint [not null]
+  talent_id bigint [not null]
+  added_by_member_id bigint [not null]
+  created_at timestamp
+  updated_at timestamp
+  indexes {
+    (workspace_id, talent_id) [pk]
+    (talent_id, workspace_id)
+  }
+  Note: '[NEW] S04 shared saved squad per workspace; not a hiring request or request item.'
 }
 
 // [NEW] contract_types
@@ -2352,6 +2348,8 @@ Ref: talent_languages.talent_id > talents.id [delete: cascade]
 Ref: talent_languages.language_id > languages.id [delete: restrict]
 Ref: talent_skills.talent_id > talents.id [delete: cascade]
 Ref: talent_skills.skill_id > skills.id [delete: restrict]
+Ref: talent_industries.talent_id > talents.id [delete: cascade]
+Ref: talent_industries.industry_id > industries.id [delete: restrict]
 Ref: talent_tools.talent_id > talents.id [delete: cascade]
 Ref: talent_tools.tool_id > tools.id [delete: restrict]
 Ref: talent_experiences.talent_id > talents.id [delete: cascade]
@@ -2365,19 +2363,8 @@ Ref: talent_blacklist_entries.talent_id > talents.id [delete: restrict]
 Ref: talent_blacklist_entries.application_id > talent_applications.id [delete: restrict]
 Ref: talent_blacklist_entries.blocked_by_admin_id > admins.id [delete: restrict]
 Ref: talent_blacklist_entries.removed_by_admin_id > admins.id [delete: restrict]
-Ref: talent_marketplace_profiles.talent_id > talents.id [delete: restrict]
-Ref: talent_marketplace_profiles.application_id > talent_applications.id [delete: restrict]
-Ref: talent_marketplace_profiles.job_title_id > job_titles.id [delete: restrict]
-Ref: talent_marketplace_profiles.professional_field_id > professional_fields.id [delete: restrict]
-Ref: talent_marketplace_profiles.currency_id > currencies.id [delete: restrict]
-Ref: talent_marketplace_profiles.approved_by_admin_id > admins.id [delete: restrict]
-Ref: marketplace_profile_skills.marketplace_profile_id > talent_marketplace_profiles.id [delete: cascade]
-Ref: marketplace_profile_skills.skill_id > skills.id [delete: restrict]
 Ref: industry_translations.industry_id > industries.id [delete: cascade]
-Ref: marketplace_profile_industries.marketplace_profile_id > talent_marketplace_profiles.id [delete: cascade]
-Ref: marketplace_profile_industries.industry_id > industries.id [delete: restrict]
 Ref: workspaces.owner_client_id > clients.id [delete: restrict]
-Ref: workspaces.industry_id > industries.id [delete: restrict]
 Ref: workspaces.country_id > countries.id [delete: restrict]
 Ref: workspaces.city_id > cities.id [delete: restrict]
 Ref: workspaces.default_currency_id > currencies.id [delete: restrict]
@@ -2389,6 +2376,13 @@ Ref: workspace_role_permissions.workspace_role_id > workspace_roles.id [delete: 
 Ref: workspace_role_permissions.permission_id > permissions.id [delete: restrict]
 Ref: workspace_member_roles.workspace_member_id > workspace_members.id [delete: cascade]
 Ref: workspace_member_roles.workspace_role_id > workspace_roles.id [delete: cascade]
+Ref: workspace_industries.workspace_id > workspaces.id [delete: cascade]
+Ref: workspace_industries.industry_id > industries.id [delete: restrict]
+Ref: workspace_professional_fields.workspace_id > workspaces.id [delete: cascade]
+Ref: workspace_professional_fields.professional_field_id > professional_fields.id [delete: restrict]
+Ref: workspace_talent_selections.workspace_id > workspaces.id [delete: cascade]
+Ref: workspace_talent_selections.talent_id > talents.id [delete: cascade]
+Ref: workspace_talent_selections.added_by_member_id > workspace_members.id [delete: restrict]
 Ref: contract_type_versions.contract_type_id > contract_types.id [delete: restrict]
 Ref: contract_type_versions.created_by_admin_id > admins.id [delete: restrict]
 Ref: contract_type_benefits.contract_type_version_id > contract_type_versions.id [delete: restrict]
@@ -2585,6 +2579,7 @@ TableGroup Talent {
   talents
   talent_languages
   talent_skills
+  talent_industries
   talent_tools
   talent_experiences
   talent_projects
@@ -2611,9 +2606,6 @@ TableGroup Infrastructure {
 TableGroup Applications {
   talent_applications
   talent_blacklist_entries
-  talent_marketplace_profiles
-  marketplace_profile_skills
-  marketplace_profile_industries
   talent_account_warnings
 }
 
@@ -2624,6 +2616,9 @@ TableGroup Workspace {
   workspace_roles
   workspace_role_permissions
   workspace_member_roles
+  workspace_industries
+  workspace_professional_fields
+  workspace_talent_selections
 }
 
 TableGroup Commercial {

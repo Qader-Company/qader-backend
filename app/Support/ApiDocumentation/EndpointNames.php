@@ -126,16 +126,20 @@ class EndpointNames
             return match ($route->getActionMethod()) {
                 '__invoke' => 'List Workspace Options',
                 'index' => match (true) {
+                    str_contains($route->uri(), '/talent-marketplace') => 'Explore Talent Marketplace',
+                    str_contains($route->uri(), '/talent-selections') => 'List Selected Talents',
                     str_contains($route->uri(), '/members') => 'List Workspace Members',
                     str_contains($route->uri(), '/roles') => 'List Workspace Roles',
                     default => 'List Workspaces',
                 },
                 'store' => match (true) {
+                    str_contains($route->uri(), '/talent-selections') => 'Add Talent to Squad',
                     str_contains($route->uri(), '/members') => 'Create Workspace Member',
                     str_contains($route->uri(), '/roles') => 'Create Workspace Role',
                     default => 'Create Workspace',
                 },
                 'show' => match (true) {
+                    str_contains($route->uri(), '/talent-marketplace/') => 'View Talent Profile',
                     str_contains($route->uri(), '/members/') => 'Get Workspace Member',
                     str_contains($route->uri(), '/roles/') => 'Get Workspace Role',
                     default => 'Get Workspace',
@@ -146,8 +150,13 @@ class EndpointNames
                     default => 'Update Workspace',
                 },
                 'permissions' => 'List Workspace Permissions', 'status' => 'Update Workspace Role Status',
+                'filters' => 'List Talent Marketplace Filters',
                 'dashboard' => 'Get Workspace Dashboard',
-                'destroy' => str_contains($route->uri(), '/members/') ? 'Remove Workspace Member' : 'Delete Workspace Role',
+                'destroy' => match (true) {
+                    str_contains($route->uri(), '/talent-selections/') => 'Remove Talent from Squad',
+                    str_contains($route->uri(), '/members/') => 'Remove Workspace Member',
+                    default => 'Delete Workspace Role',
+                },
                 default => Str::headline($route->getActionMethod()),
             };
         }

@@ -23,6 +23,8 @@ return [
         'dashboard' => 'Dashboard',
         'members' => 'Team members',
         'roles' => 'Roles',
+        'marketplace' => 'Talent marketplace',
+        'talent-selections' => 'Selected talents',
         'talent-applications' => 'Talent applications',
         'interviews' => 'Interviews',
         'talents' => 'Talents',
@@ -104,5 +106,7 @@ return [
         'dashboard' => ['view' => 'View dashboard'],
         'members' => ['view' => 'View team members', 'create' => 'Create team members', 'manage' => 'Manage team members'],
         'roles' => ['view' => 'View roles', 'manage' => 'Manage roles'],
+        'marketplace' => ['view' => 'View the talent marketplace'],
+        'talent-selections' => ['view' => 'View selected talents', 'manage' => 'Manage selected talents'],
     ],
 ];

@@ -44,8 +44,12 @@ class DocumentationExamples
             $name === 'gender' => 'male',
             $name === 'religion' => 'islam',
             $name === 'proficiency_level' => 'native',
+            $name === 'language_proficiency_level' => 'native',
             $name === 'professional_summary' => 'Backend engineer experienced in building scalable APIs.',
             $name === 'seniority_level' => 'mid_level',
+            $name === 'years_of_experience_min' => 5,
+            $name === 'salary_min' => 20000,
+            $name === 'salary_max' => 30000,
             $name === 'years_of_experience' => 5,
             $name === 'linkedin_url' => 'https://www.linkedin.com/in/ahmed-hassan',
             $name === 'github_url' => 'https://github.com/ahmed-hassan',
@@ -102,6 +106,7 @@ class DocumentationExamples
             $name === 'work_modes' => ['remote'],
             $name === 'willing_to_relocate' => true,
             $name === 'notice_period_days' => 30,
+            $name === 'notice_period_days_max' => 30,
             $name === 'current_salary' => 15000,
             $name === 'expected_salary_min' => 20000,
             $name === 'expected_salary_max' => 30000,
@@ -130,6 +135,14 @@ class DocumentationExamples
 
     private static function contextual(string $name, string $uri): mixed
     {
+        if ($name === 'seniority_level' && str_contains($uri, '/talent-marketplace')) {
+            return ['mid_level'];
+        }
+
+        if ($name === 'sort' && str_contains($uri, '/talent-marketplace')) {
+            return 'highest_match';
+        }
+
         if (str_ends_with($name, 'name') && str_contains($name, 'projects')) {
             return 'Qader Platform';
         }

@@ -23,6 +23,8 @@ return [
         'dashboard' => 'لوحة التحكم',
         'members' => 'أعضاء الفريق',
         'roles' => 'الأدوار',
+        'marketplace' => 'سوق المواهب',
+        'talent-selections' => 'المواهب المختارة',
         'talent-applications' => 'طلبات المواهب',
         'interviews' => 'المقابلات',
         'talents' => 'المواهب',
@@ -104,5 +106,7 @@ return [
         'dashboard' => ['view' => 'عرض لوحة التحكم'],
         'members' => ['view' => 'عرض أعضاء الفريق', 'create' => 'إضافة أعضاء الفريق', 'manage' => 'إدارة أعضاء الفريق'],
         'roles' => ['view' => 'عرض الأدوار', 'manage' => 'إدارة الأدوار'],
+        'marketplace' => ['view' => 'عرض سوق المواهب'],
+        'talent-selections' => ['view' => 'عرض المواهب المختارة', 'manage' => 'إدارة المواهب المختارة'],
     ],
 ];

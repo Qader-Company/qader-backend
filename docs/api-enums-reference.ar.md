@@ -304,7 +304,35 @@ talent.platform.access
 
 المصدر: `ClientPermissionEnum`.
 
-لا توجد قيم معرفة حاليًا.
+```text
+client.workspace.view
+client.workspace.update
+client.dashboard.view
+client.members.view
+client.members.create
+client.members.manage
+client.roles.view
+client.roles.manage
+client.marketplace.view
+client.talent-selections.view
+client.talent-selections.manage
+```
+
+صلاحيات العميل مرتبطة بالـWorkspace، وتظهر ضمن:
+
+```text
+GET /api/v1/client/access-control/workspaces/{workspace}/permissions
+```
+
+قيم ترتيب Talent Marketplace:
+
+```text
+highest_match
+newest
+experience_high_to_low
+salary_low_to_high
+salary_high_to_low
+```
 
 ### Admin permissions
 

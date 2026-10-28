@@ -1,5 +1,7 @@
 <?php
 
+use App\Modules\V1\TalentMarketplace\Presentation\Http\Controllers\TalentMarketplaceController;
+use App\Modules\V1\TalentMarketplace\Presentation\Http\Controllers\WorkspaceTalentSelectionController;
 use App\Modules\V1\Workspaces\Presentation\Http\Controllers\WorkspaceController;
 use App\Modules\V1\Workspaces\Presentation\Http\Controllers\WorkspaceMemberController;
 use App\Modules\V1\Workspaces\Presentation\Http\Controllers\WorkspaceOptionController;
@@ -16,3 +18,11 @@ Route::post('{workspace}/members', [WorkspaceMemberController::class, 'store']);
 Route::get('{workspace}/members/{member}', [WorkspaceMemberController::class, 'show']);
 Route::patch('{workspace}/members/{member}', [WorkspaceMemberController::class, 'update']);
 Route::delete('{workspace}/members/{member}', [WorkspaceMemberController::class, 'destroy']);
+
+Route::get('{workspace}/talent-marketplace/filters', [TalentMarketplaceController::class, 'filters']);
+Route::get('{workspace}/talent-marketplace', [TalentMarketplaceController::class, 'index']);
+Route::get('{workspace}/talent-marketplace/{talent}', [TalentMarketplaceController::class, 'show']);
+
+Route::get('{workspace}/talent-selections', [WorkspaceTalentSelectionController::class, 'index']);
+Route::post('{workspace}/talent-selections', [WorkspaceTalentSelectionController::class, 'store']);
+Route::delete('{workspace}/talent-selections/{talent}', [WorkspaceTalentSelectionController::class, 'destroy']);

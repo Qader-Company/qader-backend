@@ -10,17 +10,21 @@ use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
 use App\Modules\V1\Languages\Domain\Models\Language;
 use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
 use App\Modules\V1\Skills\Domain\Models\Skill;
+use App\Modules\V1\TalentApplications\Domain\Models\TalentApplication;
+use App\Modules\V1\TalentApplications\Domain\Models\TalentBlacklistEntry;
 use App\Modules\V1\Talents\Domain\ValueObjects\GenderEnum;
 use App\Modules\V1\Talents\Domain\ValueObjects\OnboardingStepEnum;
 use App\Modules\V1\Talents\Domain\ValueObjects\ReligionEnum;
 use App\Modules\V1\Talents\Domain\ValueObjects\SeniorityLevelEnum;
 use App\Modules\V1\Tools\Domain\Models\Tool;
 use App\Modules\V1\Users\Domain\Models\User;
+use App\Modules\V1\Workspaces\Domain\Models\WorkspaceTalentSelection;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -63,6 +67,21 @@ class Talent extends Model implements HasMedia
     use InteractsWithMedia;
 
     protected $table = 'talents';
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $talent): void {
+            if (filled($talent->talent_code)) {
+                return;
+            }
+
+            do {
+                $code = 'QDR-'.Str::upper(Str::random(8));
+            } while (self::query()->where('talent_code', $code)->exists());
+
+            $talent->forceFill(['talent_code' => $code]);
+        });
+    }
 
     public function user(): BelongsTo
     {
@@ -146,6 +165,21 @@ class Talent extends Model implements HasMedia
     public function workModes(): HasMany
     {
         return $this->hasMany(TalentWorkMode::class);
+    }
+
+    public function applications(): HasMany
+    {
+        return $this->hasMany(TalentApplication::class);
+    }
+
+    public function blacklistEntries(): HasMany
+    {
+        return $this->hasMany(TalentBlacklistEntry::class);
+    }
+
+    public function workspaceSelections(): HasMany
+    {
+        return $this->hasMany(WorkspaceTalentSelection::class);
     }
 
     public function registerMediaCollections(): void

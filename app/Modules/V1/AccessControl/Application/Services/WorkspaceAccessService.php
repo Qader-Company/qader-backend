@@ -28,11 +28,18 @@ class WorkspaceAccessService
     public function authorize(User $user, Workspace $workspace, string $permission): WorkspaceMember
     {
         $member = $this->member($user, $workspace);
-        $allowed = $member->roles->contains(fn ($role) => $role->key === 'owner' || ($role->is_active && $role->permissions->contains('name', $permission)));
-        if (! $allowed) {
+        if (! $this->allows($member, $permission)) {
             throw new AuthorizationException(__('workspaces.permission_denied'));
         }
 
         return $member;
+    }
+
+    public function allows(WorkspaceMember $member, string $permission): bool
+    {
+        return $member->roles->contains(
+            fn ($role): bool => $role->key === 'owner'
+                || ($role->is_active && $role->permissions->contains('name', $permission))
+        );
     }
 }
