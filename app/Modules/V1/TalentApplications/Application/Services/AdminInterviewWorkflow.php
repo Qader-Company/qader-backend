@@ -29,7 +29,7 @@ class AdminInterviewWorkflow
             if (
                 $interview->status !== InterviewStatusEnum::CONFIRMED
                 || $slot === null
-                || now()->lt($slot->starts_at->copy()->subMinutes(15))
+                // || now()->lt($slot->starts_at->copy()->subMinutes(15))
                 || now()->gte($slot->ends_at)
             ) {
                 throw new ConflictHttpException(__('talents.interview.start_not_allowed'));
