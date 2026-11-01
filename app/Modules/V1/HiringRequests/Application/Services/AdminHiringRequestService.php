@@ -191,12 +191,19 @@ class AdminHiringRequestService
         $canAssign = $user->can(AdminPermissionEnum::HIRING_REQUESTS_ASSIGN->value);
         $canHandle = $user->can(AdminPermissionEnum::HIRING_REQUESTS_HANDLE->value);
         $actorId = $user->admin?->id;
+        $actions = [];
 
-        return [
-            'can_assign' => $canAssign && $request->assigned_admin_id === null && $request->status === HiringRequestStatusEnum::PENDING,
-            'can_reassign' => $canAssign && $request->assigned_admin_id !== null && in_array($request->status, [HiringRequestStatusEnum::PENDING, HiringRequestStatusEnum::ACTIVE], true),
-            'can_start' => $canHandle && $request->status === HiringRequestStatusEnum::PENDING && ($request->assigned_admin_id === null || (int) $request->assigned_admin_id === (int) $actorId),
-        ];
+        if ($canAssign && $request->assigned_admin_id === null && $request->status === HiringRequestStatusEnum::PENDING) {
+            $actions[] = 'assign';
+        }
+        if ($canAssign && $request->assigned_admin_id !== null && in_array($request->status, [HiringRequestStatusEnum::PENDING, HiringRequestStatusEnum::ACTIVE], true)) {
+            $actions[] = 'reassign';
+        }
+        if ($canHandle && $request->status === HiringRequestStatusEnum::PENDING && ($request->assigned_admin_id === null || (int) $request->assigned_admin_id === (int) $actorId)) {
+            $actions[] = 'start';
+        }
+
+        return $actions;
     }
 
     private function load(int $requestId): HiringRequest

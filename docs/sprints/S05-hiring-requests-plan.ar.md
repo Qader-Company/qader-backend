@@ -563,12 +563,10 @@ POST /api/v1/admin/hiring-requests/{hiringRequest}/start
 الـresponses ترجع `available_actions` مثل:
 
 ```json
-{
-  "can_assign": true,
-  "can_reassign": false,
-  "can_start": true
-}
+["assign", "start"]
 ```
+
+القيمة دائمًا Array من أسماء الإجراءات المسموحة، بنفس نمط السبرنتات السابقة، ولا ترجع مفاتيح Boolean من نوع `can_*`.
 
 ولا يعتمد الـBackend على إخفاء الزر في Frontend وحده.
 

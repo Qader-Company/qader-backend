@@ -36,7 +36,7 @@ class HiringRequestResource extends JsonResource
                     'amount' => (string) $currencyItems->sum(fn ($item) => (float) $item->latestOffer->salary_amount),
                 ])->values(),
             'items' => HiringRequestItemResource::collection($this->whenLoaded('items')),
-            'available_actions' => $this->available_actions ?? ['view'],
+            'available_actions' => $this->available_actions ?? [],
             'activity' => $isAdmin && $this->relationLoaded('events')
                 ? $this->events->map(fn ($event): array => [
                     'id' => $event->id,

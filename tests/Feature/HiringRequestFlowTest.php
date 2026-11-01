@@ -164,7 +164,7 @@ class HiringRequestFlowTest extends TestCase
             ->assertJsonPath('data.status', 'active')
             ->assertJsonPath('data.items.0.status', 'awaiting_talent_response')
             ->assertJsonPath('data.items.0.offer.is_overdue', false)
-            ->assertJsonPath('data.available_actions.can_start', false);
+            ->assertJsonPath('data.available_actions', ['reassign']);
 
         $request = HiringRequest::query()->with('items.latestOffer')->findOrFail($id);
         $offer = $request->items->first()->latestOffer;

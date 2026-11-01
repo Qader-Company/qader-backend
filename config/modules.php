@@ -47,6 +47,7 @@ return [
             ['prefix' => 'client/master-data', 'file' => 'master-data.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
             ['prefix' => 'client/access-control', 'file' => 'access-control.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
             ['prefix' => 'client/workspaces', 'file' => 'workspaces.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
+            ['prefix' => 'client/workspaces', 'file' => 'hiring-requests.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
         ],
 
         'talent' => [
