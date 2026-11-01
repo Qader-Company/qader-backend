@@ -6,6 +6,7 @@ use App\Modules\V1\AccessControl\Domain\Models\WorkspaceRole;
 use App\Modules\V1\Cities\Domain\Models\City;
 use App\Modules\V1\Clients\Domain\Models\Client;
 use App\Modules\V1\Countries\Domain\Models\Country;
+use App\Modules\V1\HiringRequests\Domain\Models\HiringRequest;
 use App\Modules\V1\Industries\Domain\Models\Industry;
 use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
 use App\Modules\V1\Workspaces\Domain\ValueObjects\WorkspaceSizeBandEnum;
@@ -74,6 +75,11 @@ class Workspace extends Model implements HasMedia
     public function talentSelections(): HasMany
     {
         return $this->hasMany(WorkspaceTalentSelection::class);
+    }
+
+    public function hiringRequests(): HasMany
+    {
+        return $this->hasMany(HiringRequest::class);
     }
 
     public function registerMediaCollections(): void

@@ -61,8 +61,8 @@
 
 ## 3. القرارات المعتمدة في الخطة
 
-1. الموهبة المقبولة تظهر في Marketplace تلقائيًا بعد نجاح قرار القبول.
-2. الموهبة لا تظهر إذا كان الحساب غير فعال أو يوجد لها Blacklist entry نشط.
+1. الموهبة المقبولة تظهر في Marketplace بعد نجاح قرار القبول إذا كانت `is_marketplace_available=true`.
+2. الموهبة لا تظهر إذا أوقفت Availability، أوكان الحساب غير فعال، أووجد لها Blacklist entry نشط.
 3. لا نضيف حالة `marketplace` إلى `TalentApplicationStatusEnum`؛ حالة الطلب تبقى `accepted`.
 4. لا ننشئ `talent_marketplace_profiles` أوأي جداول وسيطة للـMarketplace؛ مصدر البيانات هو `talents` وعلاقاتها الحالية.
 5. كود الموهبة العام يحفظ في عمود `talents.talent_code` بصيغة ثابتة وفريدة مثل `QDR-9102`.
@@ -75,7 +75,7 @@
 12. لا يسمح بإضافة نفس الموهبة مرتين إلى قائمة الاختيار نفسها داخل الـWorkspace.
 13. تعديلات Talent بعد القبول تظهر مباشرة في Marketplace؛ لا توجد نسخة Snapshot مستقلة في S04.
 14. `Skills & Proficiency` هو اسم سكشن المهارات في التصميم، ولا يعني وجود مستوى مستقل لكل Skill. الموهبة تختار Skills الخاصة بها وتحفظ في `talent_skills`، بينما `professionalField.skills` هي مصدر الاختيارات المسموحة.
-15. لا نضيف Availability؛ `notice_period_days` الموجود هو المرجع الذي يوضح متى تستطيع الموهبة بدء العمل.
+15. `Availability` مستقلة عن `notice_period_days`: تحفظ في `talents.is_marketplace_available` وتتحكم فقط في ظهور الموهبة وإمكانية اختيارها من Marketplace، بينما Notice Period توضح مدة بدء العمل.
 16. `Industry Experience` حقل Multi-select تختار قيمه الموهبة من Master Data `industries`، وتحفظ الاختيارات في pivot بسيطة مرتبطة بالموهبة.
 17. `Highest Match` ترتيب بسيط يعتمد أولًا على تقاطع Professional Fields وIndustries المفضلة للـWorkspace، ثم تطابق الفلاتر النشطة مثل Job Title وSeniority/Years، ثم حداثة القبول، دون Match Score مخزن أوRecommendation Engine.
 18. تحفظ قيمة الراتب وعملته الأصلية. تحويل العرض لعملة يختارها العميل سيتم لاحقًا من خلال Exchange Rate API بعد اختيار المزود، دون تخزين أسعار تحويل داخل Talent.
@@ -89,6 +89,7 @@
 | بيانات Figma | المصدر الحالي |
 | --- | --- |
 | Talent Code | `talents.talent_code` |
+| Availability | `talents.is_marketplace_available`؛ بوابة ظهور وليست مدة زمنية |
 | Job Title | `talents.job_title_id` |
 | Main Specialization | Job Title مع Professional Field الحالية |
 | Professional Field | `talents.professional_field_id` |
@@ -115,7 +116,7 @@
 
 ### فروق مقصودة عن Figma بسبب القرارات وحدود السبرنت
 
-- `Availability` ظاهر في Drawer الفلاتر، لكنه لن ينفذ لأن القرار المعتمد هو استخدام `notice_period_days` بدلًا منه.
+- `Availability` ليست فلتر مدة؛ Talent غير المتاحة لا تدخل Query أصلًا، بينما فلتر Notice Period يظل مستقلًا.
 - الصورة/Avatar الظاهرة على بطاقة الموهبة Placeholder افتراضية من الـFrontend؛ لا ترجع Marketplace APIs صورة الموهبة أوأي بديل مشتق من هويتها.
 - زر `New Hiring Request` الظاهر في Empty State، وتأكيد Build Your Team، وإنشاء الطلب ليست ضمن S04؛ تبدأ في S05.
 - إعداد المقابلة والعرض والتفاوض الظاهر بعد اختيار الفريق ضمن S06.
@@ -126,7 +127,7 @@
 
 ### داخل S04
 
-- إظهار الموهبة المقبولة مباشرة من `talents` دون مزامنة أوBackfill لبيانات Marketplace؛ الـBackfill الوحيد هو توليد `talent_code` للمواهب القديمة.
+- إظهار الموهبة المقبولة مباشرة من `talents` دون جدول Marketplace؛ نضيف `talent_code` و`is_marketplace_available` على Talent نفسها، مع إبقاء المواهب الحالية متاحة افتراضيًا.
 - قائمة Marketplace مع البحث والفلترة والsorting والpagination.
 - خيارات الفلاتر من Master Data والـenums.
 - حالة النتائج الفارغة.
@@ -155,7 +156,7 @@
 ```mermaid
 flowchart TD
     A[Admin accepts Talent Application] --> B[Application status becomes accepted]
-    B --> C{Account active and not blacklisted}
+    B --> C{Marketplace available, account active, not blacklisted}
     C -->|Yes| D[Talent appears in Client Marketplace]
     C -->|No| E[Profile excluded from results]
     D --> F[Client searches and filters]
@@ -170,16 +171,18 @@ flowchart TD
 
 لا نضيف أي جدول خاص بعرض Marketplace. الاستعلام يبدأ من `talents` ويربط الطلب المقبول والحساب والحظر والعلاقات المهنية الموجودة. S04 يضيف جدولًا بسيطًا لحفظ اختيارات كل Workspace، بالإضافة إلى pivots بيانات Talent وWorkspace المتعددة.
 
-التعديلات على ملف Talent تقتصر على كود العرض وpivot اختيار Industry Experience، وليسا نسخة Marketplace.
+التعديلات على ملف Talent تشمل كود العرض وAvailability وpivot اختيار Industry Experience، دون إنشاء نسخة Marketplace.
 
 ### 7.1 تعديل `talents`
 
 | العمود | النوع |
 | --- | --- |
 | `talent_code` | unique varchar(32)، بصيغة `QDR-*` |
+| `is_marketplace_available` | boolean، الافتراضي `true`، index |
 
 - يولد السيرفر الكود مرة واحدة عند إنشاء Talent ولا يتغير.
 - يتم Backfill للمواهب الحالية عند تطبيق migration التحديثية.
+- Availability تتحكم في الظهور فقط، ولا تغير Notice Period أوApplication status.
 
 ### 7.2 `talent_industries` — منفذ كتأسيس قبل S04
 
@@ -293,7 +296,7 @@ page
 
 - `skill_ids[]` يفلتر عبر `talent_skills` حتى تكون النتيجة مبنية على اختيارات الموهبة الفعلية.
 - بطاقة الموهبة وصفحة التفاصيل تعرضان Skills الموهبة الفعلية كـchips؛ `Skills & Proficiency` هو عنوان السكشن ولا يحتاج درجة أوحقلًا إضافيًا.
-- لا نرجع Availability ضمن filters/options؛ فلتر Notice Period يغطي وقت بدء العمل.
+- لا نرجع Availability كفلتر مدة؛ المواهب ذات `is_marketplace_available=false` مستبعدة أصلًا، وفلتر Notice Period مستقل.
 - Industry Experience ترجع في التفاصيل من `talent.industries`. لا نضيف لها فلتر Marketplace ما لم يظهر الفلتر في التصميم.
 - حقل Years of Experience الظاهر في Figma يعامل كحد أدنى ويرسل `years_of_experience_min`.
 - اختيار اللغة في Figma مرتبط بمستوى الإتقان؛ لذلك يرسل `language_id` مع `language_proficiency_level` من enum الحالية.
@@ -379,12 +382,12 @@ Body الإضافة بسيط:
 
 1. الـWorkspace يجب أن تكون موجودة وعضوية المستخدم فيها `active` وغير محذوفة.
    عدم وجود عضوية فعالة يعامل كـ`404`، أما وجود العضوية مع نقص الصلاحية فيعامل كـ`403`.
-2. Talent تظهر فقط إذا كان طلبها `accepted` والحساب فعالًا ولا يوجد Blacklist نشط.
-3. لا يسمح بإضافة Talent غير مقبولة أو محظورة أو حسابها غير فعال.
+2. Talent تظهر فقط إذا كان طلبها `accepted` و`is_marketplace_available=true` والحساب فعالًا ولا يوجد Blacklist نشط.
+3. لا يسمح بإضافة Talent غير متاحة في Marketplace أوغير مقبولة أومحظورة أوحسابها غير فعال.
 4. لا يسمح بإضافة Talent نفسها مرتين إلى اختيارات Workspace نفسها.
 5. عضو Workspace A لا يقرأ أو يعدل اختيارات Workspace B حتى لو عرف IDs الخاصة بها.
 6. البحث لا يرجع PII حتى لو تم البحث بالاسم أوالبريد؛ البحث مهني فقط.
-7. إذا أصبحت Talent محظورة أوغير فعالة بعد اختيارها، لا تظهر ضمن القائمة المتاحة، ويعيد S05 التحقق قبل إنشاء أي طلب منها.
+7. إذا أوقفت Talent Availability أوأصبحت محظورة أوغير فعالة بعد اختيارها، لا تظهر ضمن القائمة المتاحة، ويعيد S05 التحقق قبل إنشاء أوSubmit أي طلب منها.
 8. `industry_ids` الخاصة بالموهبة تكون array من IDs فريدة، وكل Industry مطلوبة أن تكون فعالة وموجودة.
 9. عند إنشاء Workspace تكون `industry_ids` و`professional_field_ids` مطلوبتين، وكل منهما array غير فارغة من IDs فريدة وفعالة.
 10. عند تعديل Workspace، وجود أي من القائمتين يستبدل اختياراتها الحالية بـ`sync`، ولا يسمح بإرسال array فارغة.
@@ -397,19 +400,20 @@ Body الإضافة بسيط:
 
 1. يبدأ من `Talent::query()`.
 2. يتحقق من وجود `TalentApplication` حالتها `accepted`.
-3. يتحقق من `user.is_active = true`.
-4. يستبعد Talent التي لها `talent_blacklist_entries` فعال (`removed_at = null`).
-5. يحمل فقط العلاقات اللازمة للقائمة أوالتفاصيل باستخدام eager loading محدد.
-6. يستخدم Resource مخصصة لا تمرر User Resource ولا بيانات الاتصال أوCV.
-7. يأخذ Skills من `Talent::skills()`؛ وتظل `professionalField.skills` مرجع التحقق من أن اختيارات الموهبة تتبع مجالها.
-8. يحمل Industry Experience من `Talent::industries()`.
-9. يرجع `talent_code` المحفوظ ولا يشتقه من Talent ID أوApplication ID.
+3. يتحقق من `talents.is_marketplace_available = true`.
+4. يتحقق من `user.is_active = true`.
+5. يستبعد Talent التي لها `talent_blacklist_entries` فعال (`removed_at = null`).
+6. يحمل فقط العلاقات اللازمة للقائمة أوالتفاصيل باستخدام eager loading محدد.
+7. يستخدم Resource مخصصة لا تمرر User Resource ولا بيانات الاتصال أوCV.
+8. يأخذ Skills من `Talent::skills()`؛ وتظل `professionalField.skills` مرجع التحقق من أن اختيارات الموهبة تتبع مجالها.
+9. يحمل Industry Experience من `Talent::industries()`.
+10. يرجع `talent_code` المحفوظ ولا يشتقه من Talent ID أوApplication ID.
 
 هذا القرار يعني أن:
 
-- المواهب المقبولة سابقًا تظهر بعد توليد `talent_code` لها في Migration التحديثية، دون نسخ أوBackfill لبيانات Marketplace.
+- المواهب المقبولة سابقًا تظل متاحة عبر default `is_marketplace_available=true` بعد Migration التحديثية.
 - تعديل الملف بعد القبول ينعكس مباشرة على Marketplace.
-- إلغاء نشاط الحساب أوإضافة Blacklist يخفي الموهبة في الاستعلام التالي فورًا.
+- إيقاف Availability أوإلغاء نشاط الحساب أوإضافة Blacklist يخفي الموهبة في الاستعلام التالي فورًا.
 - لا توجد بيانات Marketplace مكررة يمكن أن تصبح قديمة أوغير متسقة.
 
 ## 12. تحديث Client Dashboard
@@ -423,9 +427,9 @@ Body الإضافة بسيط:
 - إضافة علاقات Talent اللازمة للوصول إلى الطلب والحظر إن كانت غير موجودة في الموديل.
 - التحقق من العلاقات المنفذة `Talent::industries()`, `Workspace::industries()` و`Workspace::professionalFields()` واستخدامها في الاستعلام.
 - إنشاء Query Service يبدأ من `talents` الحالية.
-- إضافة عمود `talent_code` وتوليده للمواهب الجديدة وعمل Backfill آمن للمواهب الحالية.
-- تطبيق شروط القبول والحظر ونشاط الحساب.
-- اختبارات الظهور والحظر وعدم نشاط الحساب وحماية البيانات.
+- إضافة `talent_code` و`is_marketplace_available`، وتوليد الكود للمواهب القديمة مع default متاح يحافظ على السلوك الحالي.
+- تطبيق شروط القبول و`is_marketplace_available` والحظر ونشاط الحساب.
+- اختبارات Availability والظهور والحظر وعدم نشاط الحساب وحماية البيانات.
 
 ### المرحلة 2 — Marketplace read APIs
 
@@ -472,11 +476,11 @@ Body الإضافة بسيط:
 17. إضافة Talent مرتين إلى Workspace نفسها ترفض برسالة واضحة.
 18. يمكن اختيار Talent نفسها داخل Workspace مختلفة مستقلة.
 19. حذف Talent من الاختيارات لا يحذف Talent ولا يؤثر في Workspaces أخرى.
-20. Talent محظورة أوغير فعالة لا تقبل الإضافة ولا تظهر في القائمة المتاحة.
+20. Talent غير متاحة في Marketplace أومحظورة أوغير فعالة لا تقبل الإضافة ولا تظهر في القائمة المتاحة.
 
 ## 15. Definition of Done
 
-- Talent مقبولة تظهر تلقائيًا من جدول `talents` الحالي دون جدول Marketplace جديد ولا تظهر بياناتها الخاصة.
+- Talent مقبولة ومتاحة تظهر من جدول `talents` الحالي دون جدول Marketplace جديد ولا تظهر بياناتها الخاصة.
 - كل Talent لها `talent_code` ثابت وفريد لا يعتمد على Application ID.
 - Industry Experience تحفظ للموهبة كـMulti-select بجانب Skills وتظهر في تفاصيلها.
 - الـWorkspace تحفظ أكثر من Industry وأكثر من Professional Field، وتظهر القيم في create/update/show دون كسر البيانات القديمة.

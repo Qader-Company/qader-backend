@@ -100,4 +100,10 @@ return [
     'job_work_types' => ['full_time' => 'Full Time', 'part_time' => 'Part Time', 'contract' => 'Contract', 'freelance' => 'Freelance', 'internship' => 'Internship'],
     'job_work_modes' => ['onsite' => 'On Site', 'remote' => 'Remote', 'hybrid' => 'Hybrid'],
     'job_experience_ranges' => ['less_than_1' => 'Less than 1 year', '1_to_3' => '1–3 years', '3_to_5' => '3–5 years', '5_to_10' => '5–10 years', 'more_than_10' => 'More than 10 years'],
+    'hiring_request_statuses' => ['draft' => 'Draft', 'pending' => 'Pending', 'active' => 'Active', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
+    'hiring_request_item_statuses' => ['draft' => 'Draft', 'pending' => 'Pending', 'awaiting_talent_response' => 'Waiting for Response', 'negotiating' => 'Negotiating', 'awaiting_interview_slots' => 'Interview Scheduling', 'interview_scheduled' => 'Interview Scheduled', 'awaiting_decisions' => 'Awaiting Decisions', 'ready_to_proceed' => 'Ready to Proceed', 'ready_for_contract' => 'Ready for Contract', 'on_hold' => 'On Hold', 'rejected' => 'Rejected', 'cancelled' => 'Cancelled', 'completed' => 'Completed'],
+    'hiring_contract_types' => ['managed' => 'Managed', 'one_time' => 'One-Time Commission'],
+    'hiring_offer_statuses' => ['pending' => 'Pending', 'accepted' => 'Accepted', 'rejected' => 'Rejected', 'countered' => 'Countered'],
+    'work_days' => ['sunday' => 'Sunday', 'monday' => 'Monday', 'tuesday' => 'Tuesday', 'wednesday' => 'Wednesday', 'thursday' => 'Thursday', 'friday' => 'Friday', 'saturday' => 'Saturday'],
+    'hiring_request_scopes' => ['all' => 'All Requests', 'mine' => 'My Requests'],
 ];

@@ -100,4 +100,10 @@ return [
     'job_work_types' => ['full_time' => 'دوام كامل', 'part_time' => 'دوام جزئي', 'contract' => 'عقد', 'freelance' => 'عمل حر', 'internship' => 'تدريب'],
     'job_work_modes' => ['onsite' => 'من مقر العمل', 'remote' => 'عن بُعد', 'hybrid' => 'هجين'],
     'job_experience_ranges' => ['less_than_1' => 'أقل من سنة', '1_to_3' => 'من سنة إلى 3 سنوات', '3_to_5' => 'من 3 إلى 5 سنوات', '5_to_10' => 'من 5 إلى 10 سنوات', 'more_than_10' => 'أكثر من 10 سنوات'],
+    'hiring_request_statuses' => ['draft' => 'مسودة', 'pending' => 'قيد الانتظار', 'active' => 'نشط', 'completed' => 'مكتمل', 'cancelled' => 'ملغى'],
+    'hiring_request_item_statuses' => ['draft' => 'مسودة', 'pending' => 'قيد الانتظار', 'awaiting_talent_response' => 'في انتظار الرد', 'negotiating' => 'قيد التفاوض', 'awaiting_interview_slots' => 'جدولة المقابلة', 'interview_scheduled' => 'تمت جدولة المقابلة', 'awaiting_decisions' => 'في انتظار القرارات', 'ready_to_proceed' => 'جاهز للمتابعة', 'ready_for_contract' => 'جاهز للعقد', 'on_hold' => 'معلق', 'rejected' => 'مرفوض', 'cancelled' => 'ملغى', 'completed' => 'مكتمل'],
+    'hiring_contract_types' => ['managed' => 'مُدار', 'one_time' => 'عمولة لمرة واحدة'],
+    'hiring_offer_statuses' => ['pending' => 'قيد الانتظار', 'accepted' => 'مقبول', 'rejected' => 'مرفوض', 'countered' => 'عرض مقابل'],
+    'work_days' => ['sunday' => 'الأحد', 'monday' => 'الاثنين', 'tuesday' => 'الثلاثاء', 'wednesday' => 'الأربعاء', 'thursday' => 'الخميس', 'friday' => 'الجمعة', 'saturday' => 'السبت'],
+    'hiring_request_scopes' => ['all' => 'كل الطلبات', 'mine' => 'طلباتي'],
 ];

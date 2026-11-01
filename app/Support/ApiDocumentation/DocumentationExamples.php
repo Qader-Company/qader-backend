@@ -77,6 +77,8 @@ class DocumentationExamples
             $name === 'scheduled_to' => '2026-11-30',
             $name === 'status' && str_contains($uri, '/talent-applications') => ['submitted'],
             $name === 'status' && str_contains($uri, '/interviews') => ['confirmed'],
+            $name === 'status' && str_contains($uri, '/admin/hiring-requests') => ['pending'],
+            $name === 'status' && str_contains($uri, '/client/workspaces') && str_contains($uri, '/hiring-requests') => 'pending',
             $name === 'type' && str_contains($uri, '/interviews') => ['technical'],
             $name === 'state' => ['accepted'],
             $name === 'rejection_stage' => 'after_interview',

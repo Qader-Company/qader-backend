@@ -116,8 +116,8 @@
 //
 // D05 - quotas/deadlines: Figma تمنح المرشح cancellation/reschedule واحدة، بينما
 // PDF تقترح محاولتي scheduling. هذان عدادان مختلفان. نحفظ actor وسبب كل attempt.
-// admin cancellation لا يستهلك quota المرشح. مهلة offer=48h وdecision=1 day
-// مستمدة من نسخ UI، تحتاج اعتماد policy. Overdue يعني متابعة يدوية، لا رفض تلقائي.
+// admin cancellation لا يستهلك quota المرشح. شاشات UI تعرض Overdue لكن لا تعرض
+// مهلة قابلة للإدخال أوسياسة معتمدة؛ لا نخزن offer deadline حتى اعتمادها لاحقًا.
 // Figma 3670:34090/4292:111785 توضح warning عند إغلاق admin بسبب عدم الرد؛
 // لذلك talent_account_warnings تحتفظ بكل warning ومصدره وإلغائه. عدد الفرص
 // وسياسة suspension/expiry غير محسومة؛ لا نخلط warning أو suspension مع blacklist.
@@ -139,7 +139,7 @@
 // D08 - التقييم: Figma أربع criteria 1..5، والـPDF weights/criteria مختلفة.
 // لا نزرع الستة أو نفسر badge 35% كوزن مؤكد. الوزن configurable+snapshot؛
 // الصيغة المقترحة sum(rating/5*weight) عندما sum(weight)=100.
-// Annual Salary في report مقابل monthly في offers: salary_period صريح.
+// Annual Salary في reports مستقل؛ hiring offers تستخدم راتبًا شهريًا ثابت المعنى بلا salary_period.
 // ranking يحتاج cohort/time/method، فلا نخزن Top15% كحقيقة دون أساس أو كـdefault.
 //
 // D09 - الحذف: Figma delete client تقول حذف دائم يشمل العقود والتاريخ.
@@ -224,16 +224,16 @@
 // TalentPlatformAccessService uses completion + application existence only.
 // Gate marketplace/hiring separately; pending applicants retain their review dashboard.
 //
-// C04 Hiring:
-// draft -> awaiting_response/negotiating -> interview_scheduling (if required)
-// -> interview_scheduled -> awaiting_decisions -> accepted -> ready_for_contract
-// -> contracted; no-interview route requires accepted offer before accepted.
+// C04 Hiring item summary:
+// draft -> pending -> awaiting_talent_response/negotiating
+// -> awaiting_interview_slots (if required) -> interview_scheduled
+// -> awaiting_decisions -> ready_to_proceed -> ready_for_contract -> completed.
+// A no-interview route may move from an accepted current offer to ready_to_proceed.
 // Reject/cancel are terminal; on_hold is resumable. Hold/cancel atomically cancel
 // open slots, active interviews and pending offers/decision deadlines; keep history.
 // Resume creates fresh activities/offer version; does not reactivate old cancelled rows.
-// Exactly one current sent offer per item (transaction lock + engine-specific active
-// uniqueness during implementation). Counteroffer supersedes current offer atomically.
-// accepted_offer_id must reference this item and status accepted; parent_offer too.
+// Only the latest sent offer with no response is actionable (transaction lock).
+// Counter response records countered on the current row and creates a new offer row.
 // Post-interview continue requires two valid, current, opposite-party decisions.
 // Replacement stays in same hiring request, different talent, no cycles; at most
 // one immediate successor via unique replaces_item_id. Whole-request progress derives
@@ -258,9 +258,9 @@
 // Amount and currency paired, nonnegative salary/fees, min<=max, percentage 0..100,
 // FX rates >0; both rate rows share base currency and correspond to source/target.
 // Decimal arithmetic only; round by configured currency exponent at invoice issuance.
-// work_type full_time/part_time; work_mode remote/onsite/hybrid; schedule JSON schema:
-// weekdays=[0..6] unique, timezone IANA, start_local/end_local OR daily_hours,
-// hybrid_onsite_days subset of weekdays; location required for onsite/hybrid.
+// Work terms are explicit: work_type full_time/part_time, work_mode
+// remote/onsite/hybrid, inclusive work_start_day/work_end_day, nullable hybrid_work_days
+// remote-day array required only for hybrid (remaining range days are onsite), and daily work_hours.
 // At contract signing copy accepted offer + fee version into immutable terms_snapshot.
 //
 // C07 Media/data retention:
@@ -717,6 +717,7 @@ Table professional_field_form_field [headercolor: #fef3c7] {
 Table talents [headercolor: #fef3c7] {
   id bigint [pk, increment]
   talent_code varchar(32) [not null, unique, note: 'QDR-* public marketplace identifier']
+  is_marketplace_available boolean [not null, default: true, note: 'Controls marketplace visibility only; separate from notice_period_days']
   user_id bigint [not null, unique]
   profile_completion_percentage tinyint [not null, default: 0]
   onboarding_step varchar(255) [not null, default: 'personal-information']
@@ -753,9 +754,10 @@ Table talents [headercolor: #fef3c7] {
   updated_at timestamp
   indexes {
     profile_completion_percentage
+    is_marketplace_available
     (job_title_id, seniority_level, years_of_experience)
   }
-  Note: '[CHANGE] Existing profile plus stable public marketplace code. Marketplace availability uses accepted application, active account, no active blacklist, and notice_period_days.'
+  Note: '[CHANGE] Existing profile plus stable public marketplace code and explicit visibility flag. Marketplace requires accepted application, is_marketplace_available, active account, and no active blacklist. Notice period remains independent.'
 }
 
 // [KEEP] talent_languages
@@ -1108,7 +1110,7 @@ Table contract_types [headercolor: #dcfce7] {
   is_active boolean [not null, default: true]
   created_at timestamp
   updated_at timestamp
-  Note: '[NEW] System-defined managed and one_time types, 3916:38766. Pricing details versioned separately.'
+  Note: '[NEW] System-defined managed and one_time types selected per request item. Pricing details are versioned separately.'
 }
 
 // [NEW] contract_type_versions
@@ -1123,9 +1125,6 @@ Table contract_type_versions [headercolor: #dcfce7] {
   description_ar text
   terms_en text
   terms_ar text
-  default_work_type varchar(32)
-  default_work_mode varchar(32)
-  default_schedule json [note: 'Validated weekdays, local start/end, timezone, hybrid onsite days, location']
   published_at timestamp
   created_by_admin_id bigint [not null]
   created_at timestamp
@@ -1178,9 +1177,9 @@ Table hiring_requests [headercolor: #dcfce7] {
   reference varchar(32) [not null, unique]
   created_by_member_id bigint [not null]
   assigned_admin_id bigint
-  currency_id bigint [not null]
-  status varchar(32) [not null, default: 'draft', note: 'draft | submitted | in_progress | completed | cancelled; aggregate rules C04']
+  status varchar(32) [not null, default: 'draft', note: 'draft | pending | active | completed | cancelled; aggregate rules C04']
   submitted_at timestamp
+  started_at timestamp
   closed_at timestamp
   version int [not null, default: 1]
   created_at timestamp
@@ -1202,15 +1201,16 @@ Table hiring_request_items [headercolor: #dcfce7] {
   job_title_id bigint [not null]
   contract_type_version_id bigint [not null]
   interview_required boolean [not null]
-  status varchar(32) [not null, default: 'draft', note: 'draft | awaiting_response | negotiating | interview_scheduling | interview_scheduled | awaiting_decisions | accepted | ready_for_contract | contracted | rejected | cancelled | on_hold | replaced']
+  status varchar(32) [not null, default: 'draft', note: 'draft | pending | awaiting_talent_response | negotiating | awaiting_interview_slots | interview_scheduled | awaiting_decisions | ready_to_proceed | ready_for_contract | on_hold | rejected | cancelled | completed']
   resume_status varchar(32) [note: 'Saved pre-hold stage; never resurrect cancelled interviews/offers']
   active_guard tinyint [note: '1 active, NULL terminal; prevents duplicate active talent in request']
-  accepted_offer_id bigint
   held_at timestamp
   cancelled_at timestamp
   closed_at timestamp
   last_activity_at timestamp
-  closure_reason_code varchar(64) [note: 'talent_rejected | client_rejected | no_response | cancelled | replaced; separate from actor']
+  rejection_reason text [note: 'Required when status=rejected']
+  hold_reason text [note: 'Required while status=on_hold; history remains in workflow event after resume']
+  cancellation_reason text [note: 'Required when status=cancelled']
   version int [not null, default: 1]
   created_at timestamp
   updated_at timestamp
@@ -1226,35 +1226,22 @@ Table hiring_request_items [headercolor: #dcfce7] {
 Table hiring_offers [headercolor: #dcfce7] {
   id bigint [pk, increment]
   request_item_id bigint [not null]
-  version_number int [not null]
-  parent_offer_id bigint
-  origin_party varchar(16) [not null, note: 'client | talent']
-  created_by_user_id bigint [not null]
-  on_behalf_of_user_id bigint
   salary_amount decimal(18,4) [not null]
   currency_id bigint [not null]
-  salary_period varchar(16) [not null, default: 'month']
   work_type varchar(32) [not null]
-  work_mode varchar(32) [not null]
-  notice_period_days smallint
-  contract_duration_months smallint
-  proposed_start_date date
-  work_schedule json [not null, note: 'C06: weekdays, local times or daily hours, timezone, hybrid onsite days, location']
-  message text
-  status varchar(16) [not null, default: 'draft', note: 'draft | sent | accepted | rejected | superseded | withdrawn | expired']
-  sent_at timestamp
-  response_due_at timestamp
-  responded_at timestamp
-  responded_by_user_id bigint
-  response_on_behalf_of_user_id bigint
-  response_reason text
+  work_mode varchar(32) [not null, note: 'remote | onsite | hybrid']
+  work_start_day varchar(16) [not null, note: 'sunday | monday | tuesday | wednesday | thursday | friday | saturday']
+  work_end_day varchar(16) [not null, note: 'sunday | monday | tuesday | wednesday | thursday | friday | saturday']
+  hybrid_work_days json [note: 'Required only for hybrid; unique array of remote weekdays. Remaining range days are onsite']
+  work_hours tinyint [not null, note: 'Daily hours count; integer 1..24. No start/end times are stored']
+  status varchar(16) [not null, default: 'pending', note: 'pending | accepted | rejected | countered']
   created_at timestamp
   updated_at timestamp
   indexes {
-    (request_item_id, version_number) [unique]
-    (status, response_due_at)
+    (request_item_id, created_at)
+    (request_item_id, status)
   }
-  Note: '[NEW] Versioned offer/counteroffer terms. Figma 3670:31371,3733:40359,4292:113232. Draft terms can change; sent terms immutable.'
+  Note: '[NEW] One row per offer/counter cycle. Request active/started_at controls first visibility; status records the response and updated_at is the response time.'
 }
 
 // [NEW] hiring_item_decisions
@@ -2392,20 +2379,13 @@ Ref: contract_fee_rules.fixed_currency_id > currencies.id [delete: restrict]
 Ref: hiring_requests.workspace_id > workspaces.id [delete: restrict]
 Ref: hiring_requests.created_by_member_id > workspace_members.id [delete: restrict]
 Ref: hiring_requests.assigned_admin_id > admins.id [delete: restrict]
-Ref: hiring_requests.currency_id > currencies.id [delete: restrict]
 Ref: hiring_request_items.hiring_request_id > hiring_requests.id [delete: restrict]
 Ref: hiring_request_items.talent_id > talents.id [delete: restrict]
 Ref: hiring_request_items.replaces_item_id > hiring_request_items.id [delete: restrict]
 Ref: hiring_request_items.job_title_id > job_titles.id [delete: restrict]
 Ref: hiring_request_items.contract_type_version_id > contract_type_versions.id [delete: restrict]
-Ref: hiring_request_items.accepted_offer_id > hiring_offers.id [delete: restrict]
 Ref: hiring_offers.request_item_id > hiring_request_items.id [delete: restrict]
-Ref: hiring_offers.parent_offer_id > hiring_offers.id [delete: restrict]
-Ref: hiring_offers.created_by_user_id > users.id [delete: restrict]
-Ref: hiring_offers.on_behalf_of_user_id > users.id [delete: restrict]
 Ref: hiring_offers.currency_id > currencies.id [delete: restrict]
-Ref: hiring_offers.responded_by_user_id > users.id [delete: restrict]
-Ref: hiring_offers.response_on_behalf_of_user_id > users.id [delete: restrict]
 Ref: hiring_item_decisions.request_item_id > hiring_request_items.id [delete: restrict]
 Ref: hiring_item_decisions.interview_id > interviews.id [delete: restrict]
 Ref: hiring_item_decisions.decided_by_user_id > users.id [delete: restrict]

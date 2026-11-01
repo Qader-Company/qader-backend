@@ -46,6 +46,7 @@ class DocumentationBodyParameters extends GetFromFormRequest
         $this->applyTalentApplicationExamples($endpointData, $parameters);
         $this->applyJobFormExamples($endpointData, $parameters);
         $this->applyWorkspaceExamples($endpointData, $parameters);
+        $this->applyHiringRequestExamples($endpointData, $parameters);
 
         return $parameters;
     }
@@ -268,6 +269,37 @@ class DocumentationBodyParameters extends GetFromFormRequest
             if (isset($parameters[$name])) {
                 $parameters[$name]['example'] = $example;
             }
+        }
+    }
+
+    private function applyHiringRequestExamples(ExtractedEndpointData $endpointData, ?array &$parameters): void
+    {
+        if ($parameters === null || ! str_contains($endpointData->route->uri(), '/hiring-requests')) {
+            return;
+        }
+
+        if (isset($parameters['items'])) {
+            $parameters['items']['example'] = [
+                [
+                    'talent_id' => 12,
+                    'contract_type' => 'managed',
+                    'interview_required' => true,
+                    'offer' => [
+                        'salary_amount' => 6500,
+                        'currency_id' => 1,
+                        'work_type' => 'full_time',
+                        'work_mode' => 'hybrid',
+                        'work_start_day' => 'sunday',
+                        'work_end_day' => 'thursday',
+                        'hybrid_work_days' => ['thursday'],
+                        'work_hours' => 8,
+                    ],
+                ],
+            ];
+        }
+
+        if (isset($parameters['admin_id'])) {
+            $parameters['admin_id']['example'] = 2;
         }
     }
 }

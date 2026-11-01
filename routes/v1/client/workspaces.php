@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\V1\HiringRequests\Presentation\Http\Controllers\ClientHiringRequestController;
 use App\Modules\V1\TalentMarketplace\Presentation\Http\Controllers\TalentMarketplaceController;
 use App\Modules\V1\TalentMarketplace\Presentation\Http\Controllers\WorkspaceTalentSelectionController;
 use App\Modules\V1\Workspaces\Presentation\Http\Controllers\WorkspaceController;
@@ -26,3 +27,10 @@ Route::get('{workspace}/talent-marketplace/{talent}', [TalentMarketplaceControll
 Route::get('{workspace}/talent-selections', [WorkspaceTalentSelectionController::class, 'index']);
 Route::post('{workspace}/talent-selections', [WorkspaceTalentSelectionController::class, 'store']);
 Route::delete('{workspace}/talent-selections/{talent}', [WorkspaceTalentSelectionController::class, 'destroy']);
+
+Route::get('{workspace}/hiring-requests/options', [ClientHiringRequestController::class, 'options']);
+Route::get('{workspace}/hiring-requests', [ClientHiringRequestController::class, 'index']);
+Route::post('{workspace}/hiring-requests', [ClientHiringRequestController::class, 'store']);
+Route::get('{workspace}/hiring-requests/{hiringRequest}', [ClientHiringRequestController::class, 'show'])->whereNumber('hiringRequest');
+Route::put('{workspace}/hiring-requests/{hiringRequest}', [ClientHiringRequestController::class, 'update'])->whereNumber('hiringRequest');
+Route::post('{workspace}/hiring-requests/{hiringRequest}/submit', [ClientHiringRequestController::class, 'submit'])->whereNumber('hiringRequest');

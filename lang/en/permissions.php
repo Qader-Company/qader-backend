@@ -25,6 +25,7 @@ return [
         'roles' => 'Roles',
         'marketplace' => 'Talent marketplace',
         'talent-selections' => 'Selected talents',
+        'hiring-requests' => 'Hiring requests',
         'talent-applications' => 'Talent applications',
         'interviews' => 'Interviews',
         'talents' => 'Talents',
@@ -94,6 +95,7 @@ return [
         ],
         'job-forms' => ['view' => 'View job forms', 'manage' => 'Manage job forms'],
         'job-form-submissions' => ['view' => 'View job form submissions', 'delete' => 'Delete job form submissions', 'start-hiring' => 'Start hiring from submissions'],
+        'hiring-requests' => ['view' => 'View hiring requests', 'assign' => 'Assign hiring requests', 'handle' => 'Handle hiring requests', 'respond-on-behalf' => 'Respond on behalf of hiring parties'],
     ],
 
     'talent' => [
@@ -108,5 +110,6 @@ return [
         'roles' => ['view' => 'View roles', 'manage' => 'Manage roles'],
         'marketplace' => ['view' => 'View the talent marketplace'],
         'talent-selections' => ['view' => 'View selected talents', 'manage' => 'Manage selected talents'],
+        'hiring-requests' => ['view' => 'View hiring requests', 'manage' => 'Create and submit hiring requests'],
     ],
 ];

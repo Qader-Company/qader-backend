@@ -39,7 +39,7 @@
 | D02 — نسخة التقديم والقفل | حفظ نسخة ثابتة من بيانات وملفات التقديم، وقفل التعديل أثناء المراجعة حسب Figma. الكود الحالي لا يحفظ النسخة المذكورة في بعض الوثائق. لا نخترع نسخة تاريخية للطلبات القديمة. |
 | D03 — جولات المقابلات | دعم أكثر من مقابلة لأن Figma تعرض جولتين، رغم أن إحدى الوثائق تؤجل المقابلة الثانية. الجولة مختلفة عن محاولة إعادة الجدولة. |
 | D04 — فصل الحالات | حالة الحساب والتوفر والظهور وقرار الطلب والحظر حقائق مختلفة. نعتمد `accepted` مع مراجعة القيم القديمة مثل `approved` قبل أي تحويل. |
-| D05 — المهل والإنذارات | مهلة الرد وعدد مرات الإلغاء والمحاولات سياسات قابلة للضبط. تجاوز المهلة يستدعي متابعة، ولا يرفض تلقائيًا. إنذار عدم الرد مستقل عن الحظر والإيقاف. |
+| D05 — المهل والإنذارات | التصميم يعرض Overdue لكنه لا يقدم مهلة قابلة للإدخال أوسياسة معتمدة. لا نخزن مهلة العرض حاليًا؛ تضاف لاحقًا عند اعتماد Policy، ولا ينتج رفض تلقائي. |
 | D06 — الموعد المشترك | طلب الاعتماد يختار فيه المرشح موعدًا؛ مقابلة التوظيف تحتاج توافق الطرفين. ترتيب الاختيار والتأكيد يحتاج اعتمادًا، فلا يكفي توليد المواعيد لتأكيد المقابلة. |
 | D07 — الرسوم | دعم ثابت ونسبة واستثناءات حسب المجال، لكن أساس النسبة والضريبة والتقريب غير محسومة. أرقام شاشة التحويل متعارضة، فلا تستخدم كقواعد حساب. |
 | D08 — التقييم والرواتب | معايير Figma الأربعة ودرجات 1–5 هي نقطة البداية. الأوزان وطريقة الترتيب تحتاج اعتمادًا. الراتب الشهري والسنوي يحفظان بفترة صريحة. |
@@ -763,6 +763,8 @@ flowchart LR
 | العمود | النوع | إلزامي | القيود والملاحظات المختصرة | المرجع عند وجوده |
 | --- | --- | --- | --- | --- |
 | `id` | `bigint` | نعم | مفتاح أساسي؛ ترقيم تلقائي | — |
+| `talent_code` | `varchar(32)` | نعم | فريد؛ معرف Marketplace عام بصيغة `QDR-*` | — |
+| `is_marketplace_available` | `boolean` | نعم | الافتراضي `true`؛ يتحكم في الظهور فقط ومستقل عن Notice Period | — |
 | `user_id` | `bigint` | نعم | فريد | `users.id`؛ `CASCADE` |
 | `profile_completion_percentage` | `tinyint` | نعم | الافتراضي: `0` | — |
 | `onboarding_step` | `varchar(255)` | نعم | الافتراضي: `'personal-information'` | — |
@@ -795,19 +797,16 @@ flowchart LR
 | `expected_salary_min` | `decimal(12,2)` | لا | — | — |
 | `expected_salary_max` | `decimal(12,2)` | لا | — | — |
 | `expected_currency_id` | `bigint` | لا | — | `currencies.id`؛ `SET NULL` |
-| `public_code` | `varchar(32)` | لا | فريد؛ إضافة مقترحة | — |
-| `availability_status` | `varchar(32)` | نعم | الافتراضي: `'unavailable'`؛ إضافة مقترحة؛ القيم: `available, notice_period, unavailable` | — |
-| `availability_updated_at` | `timestamp` | لا | إضافة مقترحة | — |
 | `created_at` | `timestamp` | لا | — | — |
 | `updated_at` | `timestamp` | لا | — | — |
 
 **الفهارس والقيود المركبة:**
 
 - فهرس بحث: `profile_completion_percentage`.
+- فهرس بحث: `is_marketplace_available`.
 - فهرس بحث: `(job_title_id, seniority_level, years_of_experience)`.
-- فهرس بحث: `(availability_status, professional_field_id)`.
 
-**مهم:** الإضافات هي `public_code`, `availability_status`, `availability_updated_at` وفهارس البحث المقترحة. لا تحفظ حالة اعتماد الطلب هنا.
+**مهم:** `is_marketplace_available` بوابة ظهور فقط، ولا تستبدل حالة اعتماد الطلب أو`notice_period_days`.
 ### `talent_languages`
 
 **التصنيف:** موجود دون تغيير مقترح.
@@ -1578,7 +1577,7 @@ flowchart LR
 
 **التصنيف:** جدول جديد مقترح لتدفق ظاهر في التصميم.
 
-نوعا التعاقد الرئيسيان: إدارة مستمرة أو توظيف بعمولة مرة واحدة.
+نوعا التعاقد الرئيسيان اللذان يختارهما العميل لكل عنصر: إدارة مستمرة أوعمولة مرة واحدة.
 
 | العمود | النوع | إلزامي | القيود والملاحظات المختصرة | المرجع عند وجوده |
 | --- | --- | --- | --- | --- |
@@ -1591,7 +1590,7 @@ flowchart LR
 
 **التصنيف:** جدول جديد مقترح لتدفق ظاهر في التصميم.
 
-إصدارات أسماء وشروط وإعدادات نوع العقد. الإصدار المنشور لا يعدل بأثر رجعي.
+إصدارات أسماء وشروط نوعي التعاقد. الإصدار المنشور لا يعدل بأثر رجعي، ولا يملأ جدول العمل تلقائيًا.
 
 | العمود | النوع | إلزامي | القيود والملاحظات المختصرة | المرجع عند وجوده |
 | --- | --- | --- | --- | --- |
@@ -1605,9 +1604,6 @@ flowchart LR
 | `description_ar` | `text` | لا | — | — |
 | `terms_en` | `text` | لا | — | — |
 | `terms_ar` | `text` | لا | — | — |
-| `default_work_type` | `varchar(32)` | لا | — | — |
-| `default_work_mode` | `varchar(32)` | لا | — | — |
-| `default_schedule` | `json` | لا | — | — |
 | `published_at` | `timestamp` | لا | — | — |
 | `created_by_admin_id` | `bigint` | نعم | — | `admins.id`؛ `RESTRICT` |
 | `created_at` | `timestamp` | لا | — | — |
@@ -1686,20 +1682,13 @@ flowchart LR
   hiring_requests -->|"workspace_id"| workspaces
   hiring_requests -->|"created_by_member_id"| workspace_members
   hiring_requests -->|"assigned_admin_id"| admins
-  hiring_requests -->|"currency_id"| currencies
   hiring_request_items -->|"hiring_request_id"| hiring_requests
   hiring_request_items -->|"talent_id"| talents
   hiring_request_items -->|"replaces_item_id"| hiring_request_items
   hiring_request_items -->|"job_title_id"| job_titles
   hiring_request_items -->|"contract_type_version_id"| contract_type_versions
-  hiring_request_items -->|"accepted_offer_id"| hiring_offers
   hiring_offers -->|"request_item_id"| hiring_request_items
-  hiring_offers -->|"parent_offer_id"| hiring_offers
-  hiring_offers -->|"created_by_user_id"| users
-  hiring_offers -->|"on_behalf_of_user_id"| users
   hiring_offers -->|"currency_id"| currencies
-  hiring_offers -->|"responded_by_user_id"| users
-  hiring_offers -->|"response_on_behalf_of_user_id"| users
   hiring_item_decisions -->|"request_item_id"| hiring_request_items
   hiring_item_decisions -->|"interview_id"| interviews
   hiring_item_decisions -->|"decided_by_user_id"| users
@@ -1729,9 +1718,9 @@ flowchart LR
 | `reference` | `varchar(32)` | نعم | فريد | — |
 | `created_by_member_id` | `bigint` | نعم | — | `workspace_members.id`؛ `RESTRICT` |
 | `assigned_admin_id` | `bigint` | لا | — | `admins.id`؛ `RESTRICT` |
-| `currency_id` | `bigint` | نعم | — | `currencies.id`؛ `RESTRICT` |
-| `status` | `varchar(32)` | نعم | الافتراضي: `'draft'`؛ القيم: `draft, submitted, in_progress, completed, cancelled` | — |
+| `status` | `varchar(32)` | نعم | الافتراضي: `'draft'`؛ القيم: `draft, pending, active, completed, cancelled` | — |
 | `submitted_at` | `timestamp` | لا | — | — |
+| `started_at` | `timestamp` | لا | — | — |
 | `closed_at` | `timestamp` | لا | — | — |
 | `version` | `int` | نعم | الافتراضي: `1` | — |
 | `created_at` | `timestamp` | لا | — | — |
@@ -1757,15 +1746,16 @@ flowchart LR
 | `job_title_id` | `bigint` | نعم | — | `job_titles.id`؛ `RESTRICT` |
 | `contract_type_version_id` | `bigint` | نعم | — | `contract_type_versions.id`؛ `RESTRICT` |
 | `interview_required` | `boolean` | نعم | — | — |
-| `status` | `varchar(32)` | نعم | الافتراضي: `'draft'`؛ القيم: `draft, awaiting_response, negotiating, interview_scheduling, interview_scheduled, awaiting_decisions, accepted, ready_for_contract, contracted, rejected, cancelled, on_hold, replaced` | — |
+| `status` | `varchar(32)` | نعم | الافتراضي: `'draft'`؛ القيم: `draft, pending, awaiting_talent_response, negotiating, awaiting_interview_slots, interview_scheduled, awaiting_decisions, ready_to_proceed, ready_for_contract, on_hold, rejected, cancelled, completed` | — |
 | `resume_status` | `varchar(32)` | لا | — | — |
 | `active_guard` | `tinyint` | لا | — | — |
-| `accepted_offer_id` | `bigint` | لا | — | `hiring_offers.id`؛ `RESTRICT` |
 | `held_at` | `timestamp` | لا | — | — |
 | `cancelled_at` | `timestamp` | لا | — | — |
 | `closed_at` | `timestamp` | لا | — | — |
 | `last_activity_at` | `timestamp` | لا | — | — |
-| `closure_reason_code` | `varchar(64)` | لا | القيم: `talent_rejected, client_rejected, no_response, cancelled, replaced` | — |
+| `rejection_reason` | `text` | لا | مطلوب عندما تكون الحالة `rejected` | — |
+| `hold_reason` | `text` | لا | مطلوب أثناء `on_hold`؛ التاريخ السابق يبقى في Event بعد Resume | — |
+| `cancellation_reason` | `text` | لا | مطلوب عندما تكون الحالة `cancelled` | — |
 | `version` | `int` | نعم | الافتراضي: `1` | — |
 | `created_at` | `timestamp` | لا | — | — |
 | `updated_at` | `timestamp` | لا | — | — |
@@ -1779,41 +1769,28 @@ flowchart LR
 
 **التصنيف:** جدول جديد مقترح لتدفق ظاهر في التصميم.
 
-إصدارات العرض والعرض المضاد وشروط العمل والراتب والرد. العرض المرسل لا يعاد تحرير شروطه.
+كل صف عرض واحد وشروطه والرد عليه. الـCounter ينشئ صفًا جديدًا لنفس العنصر، والعرض المرسل لا يعاد تحرير شروطه.
 
 | العمود | النوع | إلزامي | القيود والملاحظات المختصرة | المرجع عند وجوده |
 | --- | --- | --- | --- | --- |
 | `id` | `bigint` | نعم | مفتاح أساسي؛ ترقيم تلقائي | — |
 | `request_item_id` | `bigint` | نعم | — | `hiring_request_items.id`؛ `RESTRICT` |
-| `version_number` | `int` | نعم | — | — |
-| `parent_offer_id` | `bigint` | لا | — | `hiring_offers.id`؛ `RESTRICT` |
-| `origin_party` | `varchar(16)` | نعم | القيم: `client, talent` | — |
-| `created_by_user_id` | `bigint` | نعم | — | `users.id`؛ `RESTRICT` |
-| `on_behalf_of_user_id` | `bigint` | لا | — | `users.id`؛ `RESTRICT` |
 | `salary_amount` | `decimal(18,4)` | نعم | — | — |
 | `currency_id` | `bigint` | نعم | — | `currencies.id`؛ `RESTRICT` |
-| `salary_period` | `varchar(16)` | نعم | الافتراضي: `'month'` | — |
 | `work_type` | `varchar(32)` | نعم | — | — |
-| `work_mode` | `varchar(32)` | نعم | — | — |
-| `notice_period_days` | `smallint` | لا | — | — |
-| `contract_duration_months` | `smallint` | لا | — | — |
-| `proposed_start_date` | `date` | لا | — | — |
-| `work_schedule` | `json` | نعم | — | — |
-| `message` | `text` | لا | — | — |
-| `status` | `varchar(16)` | نعم | الافتراضي: `'draft'`؛ القيم: `draft, sent, accepted, rejected, superseded, withdrawn, expired` | — |
-| `sent_at` | `timestamp` | لا | — | — |
-| `response_due_at` | `timestamp` | لا | — | — |
-| `responded_at` | `timestamp` | لا | — | — |
-| `responded_by_user_id` | `bigint` | لا | — | `users.id`؛ `RESTRICT` |
-| `response_on_behalf_of_user_id` | `bigint` | لا | — | `users.id`؛ `RESTRICT` |
-| `response_reason` | `text` | لا | — | — |
+| `work_mode` | `varchar(32)` | نعم | القيم: `remote, onsite, hybrid` | — |
+| `work_start_day` | `varchar(16)` | نعم | قيمة من `WorkDayEnum`؛ أول يوم في المدى الأسبوعي | — |
+| `work_end_day` | `varchar(16)` | نعم | قيمة من `WorkDayEnum`؛ آخر يوم في المدى الأسبوعي | — |
+| `hybrid_work_days` | `json` | لا | مطلوب فقط للـHybrid؛ Array فريدة من أيام الـRemote، وباقي أيام المدى On-site | — |
+| `work_hours` | `tinyint` | نعم | عدد ساعات العمل اليومية؛ عدد صحيح من 1 إلى 24، دون Start/End times | — |
+| `status` | `varchar(16)` | نعم | الافتراضي `pending`؛ القيم: `pending, accepted, rejected, countered` | — |
 | `created_at` | `timestamp` | لا | — | — |
 | `updated_at` | `timestamp` | لا | — | — |
 
 **الفهارس والقيود المركبة:**
 
-- قيد تفرد: `(request_item_id, version_number)`.
-- فهرس بحث: `(status, response_due_at)`.
+- فهرس بحث: `(request_item_id, created_at)`.
+- فهرس بحث: `(request_item_id, status)`.
 ### `hiring_item_decisions`
 
 **التصنيف:** جدول جديد مقترح لتدفق ظاهر في التصميم.

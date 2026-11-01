@@ -25,6 +25,7 @@ return [
         'roles' => 'الأدوار',
         'marketplace' => 'سوق المواهب',
         'talent-selections' => 'المواهب المختارة',
+        'hiring-requests' => 'طلبات التوظيف',
         'talent-applications' => 'طلبات المواهب',
         'interviews' => 'المقابلات',
         'talents' => 'المواهب',
@@ -94,6 +95,7 @@ return [
         ],
         'job-forms' => ['view' => 'عرض نماذج الوظائف', 'manage' => 'إدارة نماذج الوظائف'],
         'job-form-submissions' => ['view' => 'عرض تقديمات نماذج الوظائف', 'delete' => 'حذف تقديمات نماذج الوظائف', 'start-hiring' => 'بدء التوظيف من التقديمات'],
+        'hiring-requests' => ['view' => 'عرض طلبات التوظيف', 'assign' => 'تعيين مسؤول طلبات التوظيف', 'handle' => 'إدارة طلبات التوظيف', 'respond-on-behalf' => 'الرد بالنيابة عن أطراف التوظيف'],
     ],
 
     'talent' => [
@@ -108,5 +110,6 @@ return [
         'roles' => ['view' => 'عرض الأدوار', 'manage' => 'إدارة الأدوار'],
         'marketplace' => ['view' => 'عرض سوق المواهب'],
         'talent-selections' => ['view' => 'عرض المواهب المختارة', 'manage' => 'إدارة المواهب المختارة'],
+        'hiring-requests' => ['view' => 'عرض طلبات التوظيف', 'manage' => 'إنشاء وإرسال طلبات التوظيف'],
     ],
 ];

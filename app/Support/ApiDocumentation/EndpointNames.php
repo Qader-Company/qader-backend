@@ -123,6 +123,18 @@ class EndpointNames
         }
 
         if ($module === 'workspaces') {
+            if (str_contains($route->uri(), '/hiring-requests')) {
+                return match ($route->getActionMethod()) {
+                    'options' => 'List Hiring Request Options',
+                    'index' => 'List Hiring Requests',
+                    'store' => 'Create Hiring Request Draft',
+                    'show' => 'Get Hiring Request',
+                    'update' => 'Update Hiring Request Draft',
+                    'submit' => 'Submit Hiring Request',
+                    default => Str::headline($route->getActionMethod()),
+                };
+            }
+
             return match ($route->getActionMethod()) {
                 '__invoke' => 'List Workspace Options',
                 'index' => match (true) {
@@ -157,6 +169,19 @@ class EndpointNames
                     str_contains($route->uri(), '/members/') => 'Remove Workspace Member',
                     default => 'Delete Workspace Role',
                 },
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'hiring-requests') {
+            return match ($route->getActionMethod()) {
+                '__invoke' => 'List Hiring Request Options',
+                'index' => 'List Hiring Requests',
+                'assignees' => 'List Hiring Request Assignees',
+                'show' => 'Get Hiring Request',
+                'assign' => 'Assign Hiring Request',
+                'reassign' => 'Reassign Hiring Request',
+                'start' => 'Start Hiring Request',
                 default => Str::headline($route->getActionMethod()),
             };
         }

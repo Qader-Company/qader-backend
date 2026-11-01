@@ -5,6 +5,7 @@ namespace App\Modules\V1\Talents\Domain\Models;
 use App\Modules\V1\Cities\Domain\Models\City;
 use App\Modules\V1\Countries\Domain\Models\Country;
 use App\Modules\V1\Currencies\Domain\Models\Currency;
+use App\Modules\V1\HiringRequests\Domain\Models\HiringRequestItem;
 use App\Modules\V1\Industries\Domain\Models\Industry;
 use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
 use App\Modules\V1\Languages\Domain\Models\Language;
@@ -180,6 +181,11 @@ class Talent extends Model implements HasMedia
     public function workspaceSelections(): HasMany
     {
         return $this->hasMany(WorkspaceTalentSelection::class);
+    }
+
+    public function hiringRequestItems(): HasMany
+    {
+        return $this->hasMany(HiringRequestItem::class);
     }
 
     public function registerMediaCollections(): void

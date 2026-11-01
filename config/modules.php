@@ -40,6 +40,7 @@ return [
             ['prefix' => 'admin/talents', 'file' => 'talents.php', 'api_key' => true],
             ['prefix' => 'admin/talent-review-faqs', 'file' => 'talent-review-faqs.php', 'api_key' => true],
             ['prefix' => 'admin/job-forms', 'file' => 'job-forms.php', 'api_key' => true],
+            ['prefix' => 'admin/hiring-requests', 'file' => 'hiring-requests.php', 'api_key' => true],
         ],
 
         'client' => [

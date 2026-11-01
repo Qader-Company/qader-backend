@@ -573,6 +573,73 @@ more_than_10
 90
 ```
 
+## S05 — Hiring Requests
+
+القيم متاحة للعميل من `GET /api/v1/client/workspaces/{workspace}/hiring-requests/options`، وللأدمن من `GET /api/v1/admin/hiring-requests/options`.
+
+### حالة طلب التوظيف
+
+```text
+draft
+pending
+active
+completed
+cancelled
+```
+
+### حالة عنصر الطلب
+
+```text
+draft
+pending
+awaiting_talent_response
+negotiating
+awaiting_interview_slots
+interview_scheduled
+awaiting_decisions
+ready_to_proceed
+ready_for_contract
+on_hold
+rejected
+cancelled
+completed
+```
+
+### نوع التعاقد
+
+```text
+managed
+one_time
+```
+
+### حالة العرض
+
+```text
+pending
+accepted
+rejected
+countered
+```
+
+### أيام العمل
+
+```text
+sunday
+monday
+tuesday
+wednesday
+thursday
+friday
+saturday
+```
+
+### نطاق قائمة الأدمن
+
+```text
+all
+mine
+```
+
 ## ملفات المصدر
 
 - Auth enums: `app/Modules/V1/Authentication/Domain/ValueObjects/`
@@ -582,3 +649,4 @@ more_than_10
 - Permission enums: `app/Modules/V1/AccessControl/Domain/ValueObjects/`
 - Talent application enums: `app/Modules/V1/TalentApplications/Domain/ValueObjects/`
 - Job form enums: `app/Modules/V1/JobForms/Domain/ValueObjects/`
+- Hiring request enums: `app/Modules/V1/HiringRequests/Domain/ValueObjects/`
