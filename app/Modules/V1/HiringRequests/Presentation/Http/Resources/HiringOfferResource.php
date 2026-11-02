@@ -13,6 +13,7 @@ class HiringOfferResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'proposed_by' => $this->value($this->proposed_by),
             'salary_amount' => $this->salary_amount,
             'currency' => $this->currency === null ? null : [
                 'id' => $this->currency->id,
@@ -26,6 +27,8 @@ class HiringOfferResource extends JsonResource
             'work_end_day' => $this->value($this->work_end_day),
             'hybrid_work_days' => $this->hybrid_work_days,
             'work_hours' => $this->work_hours,
+            'notice_period_days' => $this->notice_period_days,
+            'work_location' => $this->work_location,
             'status' => $this->value($this->status),
             'sent_at' => $this->sent_at,
             'response_due_at' => $this->response_due_at,

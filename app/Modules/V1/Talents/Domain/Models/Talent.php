@@ -62,6 +62,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
     'expected_salary_min',
     'expected_salary_max',
     'expected_currency_id',
+    'offer_no_response_count',
 ])]
 class Talent extends Model implements HasMedia
 {
@@ -215,6 +216,7 @@ class Talent extends Model implements HasMedia
             'current_salary' => 'decimal:2',
             'expected_salary_min' => 'decimal:2',
             'expected_salary_max' => 'decimal:2',
+            'offer_no_response_count' => 'integer',
         ];
     }
 }

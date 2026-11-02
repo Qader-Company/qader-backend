@@ -34,6 +34,8 @@ class SaveHiringRequestDraftRequest extends FormRequest
             'items.*.offer.hybrid_work_days' => ['nullable', 'array', 'min:1'],
             'items.*.offer.hybrid_work_days.*' => ['required', 'distinct', Rule::enum(WorkDayEnum::class)],
             'items.*.offer.work_hours' => ['required', 'integer', 'min:1', 'max:24'],
+            'items.*.offer.notice_period_days' => ['nullable', 'integer', 'min:0', 'max:3650'],
+            'items.*.offer.work_location' => ['nullable', 'string', 'max:500'],
         ];
     }
 

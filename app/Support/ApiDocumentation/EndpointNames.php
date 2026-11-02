@@ -123,7 +123,7 @@ class EndpointNames
         }
 
         if ($module === 'workspaces') {
-            if (str_contains($route->uri(), '/hiring-requests')) {
+            if (str_contains($route->uri(), '/hiring-requests') || str_contains($route->uri(), '/hiring-request-items') || str_contains($route->uri(), '/hiring-interviews')) {
                 return match ($route->getActionMethod()) {
                     'options' => 'List Hiring Request Options',
                     'index' => 'List Hiring Requests',
@@ -131,6 +131,15 @@ class EndpointNames
                     'show' => 'Get Hiring Request',
                     'update' => 'Update Hiring Request Draft',
                     'submit' => 'Submit Hiring Request',
+                    'interview' => 'Get Hiring Interview',
+                    'acceptInterviewSchedule' => 'Accept Hiring Interview Time',
+                    'requestInterviewScheduleChange' => 'Request a New Hiring Interview Time',
+                    'apologizeForInterview' => 'Apologize for Hiring Interview',
+                    'decision' => 'Submit Hiring Decision',
+                    'withdrawDecision' => 'Cancel Hiring Decision',
+                    'hold' => 'Hold Hiring Item',
+                    'resume' => 'Resume Hiring Item',
+                    'cancel' => 'Cancel Hiring Item',
                     default => Str::headline($route->getActionMethod()),
                 };
             }
@@ -182,6 +191,35 @@ class EndpointNames
                 'assign' => 'Assign Hiring Request',
                 'reassign' => 'Reassign Hiring Request',
                 'start' => 'Start Hiring Request',
+                'sendOffer' => 'Send Revised Offer',
+                'respondOnBehalf' => 'Respond to Offer on Behalf',
+                'proposeInterview' => 'Schedule Hiring Interview',
+                'confirmInterview' => 'Confirm Hiring Interview',
+                'startInterview' => 'Start Hiring Interview',
+                'completeInterview' => 'Complete Hiring Interview',
+                'decisionOnBehalf' => 'Record Hiring Decision on Behalf',
+                'withdrawDecisionOnBehalf' => 'Cancel Hiring Decision on Behalf',
+                'hold' => 'Hold Hiring Item',
+                'resume' => 'Resume Hiring Item',
+                'cancel' => 'Cancel Hiring Item',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if (in_array($module, ['hiring-offers', 'hiring-interviews', 'hiring-request-items'], true)) {
+            return match ($route->getActionMethod()) {
+                'options' => 'List Hiring Offer Options',
+                'index' => 'List Hiring Offers',
+                'show' => 'Get Hiring Offer',
+                'accept' => 'Accept Hiring Offer',
+                'reject' => 'Reject Hiring Offer',
+                'counter' => 'Send Counter Offer',
+                'interview' => 'Get Hiring Interview',
+                'acceptInterviewSchedule' => 'Accept Hiring Interview Time',
+                'requestInterviewScheduleChange' => 'Request a New Hiring Interview Time',
+                'apologizeForInterview' => 'Apologize for Hiring Interview',
+                'decision' => 'Submit Hiring Decision',
+                'withdrawDecision' => 'Cancel Hiring Decision',
                 default => Str::headline($route->getActionMethod()),
             };
         }

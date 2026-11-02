@@ -8,6 +8,7 @@ use App\Modules\V1\Currencies\Domain\Models\Currency;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequest;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequestItem;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringContractTypeEnum;
+use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferPartyEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestStatusEnum;
@@ -33,6 +34,9 @@ class ClientHiringRequestService
         'items.talent.jobTitle',
         'items.jobTitle',
         'items.latestOffer.currency.translations',
+        'items.offers.currency.translations',
+        'items.interview',
+        'items.hiringRequest.workspace.media',
     ];
 
     public function __construct(private readonly WorkspaceAccessService $access) {}
@@ -86,7 +90,7 @@ class ClientHiringRequestService
                 'status' => HiringRequestStatusEnum::DRAFT,
             ]);
 
-            $this->replaceItems($request, $data['items'], $talents);
+            $this->replaceItems($request, $data['items'], $talents, $workspace);
             $this->event($request, $user, 'created');
 
             $result = $this->load($request);
@@ -117,7 +121,7 @@ class ClientHiringRequestService
             $talents = $this->selectedEligibleTalents($workspace, collect($data['items'])->pluck('talent_id')->all());
 
             $request->items()->delete();
-            $this->replaceItems($request, $data['items'], $talents);
+            $this->replaceItems($request, $data['items'], $talents, $workspace);
             $this->event($request, $user, 'updated');
 
             $result = $this->load($request);
@@ -196,8 +200,12 @@ class ClientHiringRequestService
         return $talents;
     }
 
-    private function replaceItems(HiringRequest $request, array $items, $talents): void
+    private function replaceItems(HiringRequest $request, array $items, $talents, Workspace $workspace): void
     {
+        $workspace->loadMissing(['city.translations', 'country.translations']);
+        $defaultLocation = collect([$workspace->city?->name, $workspace->country?->name])
+            ->filter()->implode(', ') ?: null;
+
         foreach ($items as $data) {
             $talent = $talents->get($data['talent_id']);
             $item = $request->items()->create([
@@ -210,6 +218,9 @@ class ClientHiringRequestService
             $item->offers()->create([
                 ...$data['offer'],
                 'hybrid_work_days' => $data['offer']['hybrid_work_days'] ?? null,
+                'notice_period_days' => $data['offer']['notice_period_days'] ?? $talent->notice_period_days,
+                'work_location' => $data['offer']['work_location'] ?? $defaultLocation,
+                'proposed_by' => HiringOfferPartyEnum::CLIENT,
                 'status' => HiringOfferStatusEnum::PENDING,
             ]);
         }

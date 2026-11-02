@@ -3,6 +3,7 @@
 namespace App\Modules\V1\HiringRequests\Domain\Models;
 
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringContractTypeEnum;
+use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringDecisionEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
 use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
 use App\Modules\V1\Talents\Domain\Models\Talent;
@@ -18,6 +19,9 @@ class HiringRequestItem extends Model
         'hiring_request_id', 'talent_id', 'reference', 'job_title_id',
         'contract_type', 'interview_required', 'status',
         'rejection_reason', 'hold_reason', 'cancellation_reason',
+        'client_decision', 'client_decision_reason', 'client_decided_at',
+        'talent_decision', 'talent_decision_reason', 'talent_decided_at',
+        'decision_due_at',
     ];
 
     protected static function booted(): void
@@ -39,6 +43,11 @@ class HiringRequestItem extends Model
             'contract_type' => HiringContractTypeEnum::class,
             'interview_required' => 'boolean',
             'status' => HiringRequestItemStatusEnum::class,
+            'client_decision' => HiringDecisionEnum::class,
+            'talent_decision' => HiringDecisionEnum::class,
+            'client_decided_at' => 'datetime',
+            'talent_decided_at' => 'datetime',
+            'decision_due_at' => 'datetime',
         ];
     }
 
@@ -70,5 +79,10 @@ class HiringRequestItem extends Model
     public function events(): HasMany
     {
         return $this->hasMany(HiringRequestEvent::class, 'request_item_id')->latest('created_at');
+    }
+
+    public function interview(): HasOne
+    {
+        return $this->hasOne(HiringInterview::class, 'request_item_id');
     }
 }

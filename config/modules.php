@@ -6,6 +6,7 @@ use App\Modules\V1\Authentication\Infrastructure\Providers\AuthenticationModuleS
 use App\Modules\V1\Cities\Infrastructure\Providers\CityModuleServiceProvider;
 use App\Modules\V1\Countries\Infrastructure\Providers\CountryModuleServiceProvider;
 use App\Modules\V1\Currencies\Infrastructure\Providers\CurrencyModuleServiceProvider;
+use App\Modules\V1\HiringRequests\Infrastructure\Providers\HiringRequestModuleServiceProvider;
 use App\Modules\V1\Industries\Infrastructure\Providers\IndustryModuleServiceProvider;
 use App\Modules\V1\JobTitles\Infrastructure\Providers\JobTitleModuleServiceProvider;
 use App\Modules\V1\Languages\Infrastructure\Providers\LanguageModuleServiceProvider;
@@ -52,6 +53,12 @@ return [
 
         'talent' => [
             [
+                'prefix' => 'talent',
+                'file' => 'hiring.php',
+                'api_key' => true,
+                'middlewares' => ['auth:sanctum', 'abilities:access,talent'],
+            ],
+            [
                 'prefix' => 'talent/master-data',
                 'file' => 'master-data.php',
                 'api_key' => true,
@@ -87,6 +94,7 @@ return [
         CurrencyModuleServiceProvider::class,
         JobTitleModuleServiceProvider::class,
         IndustryModuleServiceProvider::class,
+        HiringRequestModuleServiceProvider::class,
         LanguageModuleServiceProvider::class,
         ProfessionalFieldModuleServiceProvider::class,
         SkillModuleServiceProvider::class,

@@ -23,7 +23,7 @@ class PortalMetadata extends Strategy
             $module = match (true) {
                 in_array('talent-marketplace', $segments, true) => 'talent-marketplace',
                 in_array('talent-selections', $segments, true) => 'talent-selections',
-                in_array('hiring-requests', $segments, true) => 'hiring-requests',
+                count(array_intersect(['hiring-requests', 'hiring-request-items', 'hiring-interviews'], $segments)) > 0 => 'hiring-requests',
                 default => $module,
             };
         }

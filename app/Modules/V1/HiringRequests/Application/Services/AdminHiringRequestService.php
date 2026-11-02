@@ -24,6 +24,9 @@ class AdminHiringRequestService
         'items.talent.jobTitle',
         'items.jobTitle',
         'items.latestOffer.currency.translations',
+        'items.offers.currency.translations',
+        'items.interview',
+        'items.hiringRequest.workspace.media',
         'events.actor',
     ];
 
@@ -103,7 +106,7 @@ class AdminHiringRequestService
 
             $previousAdminId = $request->assigned_admin_id;
             $sentAt = now();
-            $duration = max(1, (int) config('hiring.offer_response_duration_hours', 48));
+            $duration = app(HiringRuntimeSettings::class)->offerResponseHours();
             $dueAt = $sentAt->copy()->addHours($duration);
             $request->update([
                 'assigned_admin_id' => $actor->id,
@@ -117,6 +120,12 @@ class AdminHiringRequestService
                 if ($offer === null || $offer->sent_at !== null) {
                     continue;
                 }
+                $item->loadMissing(['talent', 'hiringRequest.workspace.city.translations', 'hiringRequest.workspace.country.translations']);
+                $workspace = $item->hiringRequest->workspace;
+                $offer->forceFill([
+                    'notice_period_days' => $offer->notice_period_days ?? $item->talent->notice_period_days,
+                    'work_location' => $offer->work_location ?? (collect([$workspace->city?->name, $workspace->country?->name])->filter()->implode(', ') ?: null),
+                ]);
                 $offer->update(['sent_at' => $sentAt, 'response_due_at' => $dueAt]);
                 $request->events()->create([
                     'request_item_id' => $item->id,

@@ -213,6 +213,41 @@ class PortalExports
 
     private static function withStableRequestExamples(string $uri, string $method, array $operation): array
     {
+        if (str_contains($uri, '/hiring-') && isset($operation['requestBody']['content']['application/json']['schema']['properties'])) {
+            $content = &$operation['requestBody']['content']['application/json'];
+            $overrides = [
+                'salary_amount' => 6500,
+                'currency_id' => 1,
+                'work_type' => 'full_time',
+                'work_mode' => 'hybrid',
+                'work_start_day' => 'sunday',
+                'work_end_day' => 'thursday',
+                'hybrid_work_days' => ['thursday'],
+                'work_hours' => 8,
+                'notice_period_days' => 30,
+                'work_location' => 'Cairo, Egypt',
+                'starts_at' => '2026-11-10T12:00:00+02:00',
+                'meeting_url' => 'https://meet.google.com/abc-defg-hij',
+                'response' => 'accepted',
+                'party' => 'talent',
+                'decision' => str_contains($uri, '/offers/respond-on-behalf') ? 'accepted' : 'proceed',
+                'reason' => 'The proposed time is not suitable. Please schedule another time.',
+            ];
+            $example = [];
+            foreach ($content['schema']['properties'] as $name => &$property) {
+                if (array_key_exists($name, $overrides)) {
+                    $property['example'] = $overrides[$name];
+                }
+                if (array_key_exists('example', $property)) {
+                    $example[$name] = $property['example'];
+                }
+            }
+            unset($property);
+            if ($example !== []) {
+                $content['example'] = $example;
+            }
+        }
+
         if ($uri !== '/api/v1/admin/talent-applications/{application}/reject' || $method !== 'post') {
             return $operation;
         }

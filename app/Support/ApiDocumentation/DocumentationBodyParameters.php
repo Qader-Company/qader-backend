@@ -274,9 +274,11 @@ class DocumentationBodyParameters extends GetFromFormRequest
 
     private function applyHiringRequestExamples(ExtractedEndpointData $endpointData, ?array &$parameters): void
     {
-        if ($parameters === null || ! str_contains($endpointData->route->uri(), '/hiring-requests')) {
+        if ($parameters === null || ! str_contains($endpointData->route->uri(), '/hiring-')) {
             return;
         }
+
+        $uri = $endpointData->route->uri();
 
         if (isset($parameters['items'])) {
             $parameters['items']['example'] = [
@@ -300,6 +302,30 @@ class DocumentationBodyParameters extends GetFromFormRequest
 
         if (isset($parameters['admin_id'])) {
             $parameters['admin_id']['example'] = 2;
+        }
+
+        $examples = [
+            'salary_amount' => 6500,
+            'currency_id' => 1,
+            'work_type' => 'full_time',
+            'work_mode' => 'hybrid',
+            'work_start_day' => 'sunday',
+            'work_end_day' => 'thursday',
+            'hybrid_work_days' => ['thursday'],
+            'work_hours' => 8,
+            'notice_period_days' => 30,
+            'work_location' => 'Cairo, Egypt',
+            'starts_at' => '2026-11-10T12:00:00+02:00',
+            'meeting_url' => 'https://meet.google.com/abc-defg-hij',
+            'reason' => 'The proposed time is not suitable. Please schedule another time.',
+            'party' => 'talent',
+            'decision' => str_contains($uri, '/offers/respond-on-behalf') ? 'accepted' : 'proceed',
+            'response' => 'accepted',
+        ];
+        foreach ($examples as $name => $example) {
+            if (isset($parameters[$name])) {
+                $parameters[$name]['example'] = $example;
+            }
         }
     }
 }

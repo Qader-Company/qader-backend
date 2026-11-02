@@ -103,7 +103,11 @@ return [
     'hiring_request_statuses' => ['draft' => 'Draft', 'pending' => 'Pending', 'active' => 'Active', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
     'hiring_request_item_statuses' => ['draft' => 'Draft', 'pending' => 'Pending', 'awaiting_talent_response' => 'Waiting for Response', 'negotiating' => 'Negotiating', 'awaiting_interview_slots' => 'Interview Scheduling', 'interview_scheduled' => 'Interview Scheduled', 'awaiting_decisions' => 'Awaiting Decisions', 'ready_to_proceed' => 'Ready to Proceed', 'ready_for_contract' => 'Ready for Contract', 'on_hold' => 'On Hold', 'rejected' => 'Rejected', 'cancelled' => 'Cancelled', 'completed' => 'Completed'],
     'hiring_contract_types' => ['managed' => 'Managed', 'one_time' => 'One-Time Commission'],
-    'hiring_offer_statuses' => ['pending' => 'Pending', 'accepted' => 'Accepted', 'rejected' => 'Rejected', 'countered' => 'Countered'],
+    'hiring_offer_statuses' => ['pending' => 'Pending', 'accepted' => 'Accepted', 'rejected' => 'Rejected', 'countered' => 'Countered', 'expired' => 'Expired'],
+    'hiring_offer_parties' => ['client' => 'Client', 'talent' => 'Talent'],
+    'hiring_interview_statuses' => ['awaiting_responses' => 'Awaiting Responses', 'awaiting_admin_confirmation' => 'Awaiting Admin Confirmation', 'awaiting_reschedule' => 'Awaiting Reschedule', 'confirmed' => 'Confirmed', 'in_progress' => 'In Progress', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
+    'hiring_interview_responses' => ['pending' => 'Pending', 'accepted' => 'Accepted', 'change_requested' => 'Change Requested', 'apologized' => 'Apologized'],
+    'hiring_decisions' => ['proceed' => 'Proceed', 'reject' => 'Reject'],
     'work_days' => ['sunday' => 'Sunday', 'monday' => 'Monday', 'tuesday' => 'Tuesday', 'wednesday' => 'Wednesday', 'thursday' => 'Thursday', 'friday' => 'Friday', 'saturday' => 'Saturday'],
     'hiring_request_scopes' => ['all' => 'All Requests', 'mine' => 'My Requests'],
 ];

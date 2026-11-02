@@ -9,6 +9,9 @@ use App\Modules\V1\Admins\Domain\Models\Admin;
 use App\Modules\V1\Clients\Domain\Models\Client;
 use App\Modules\V1\Countries\Domain\Models\Country;
 use App\Modules\V1\Currencies\Domain\Models\Currency;
+use App\Modules\V1\HiringRequests\Application\Services\HiringOfferExpirationService;
+use App\Modules\V1\HiringRequests\Domain\Models\HiringInterview;
+use App\Modules\V1\HiringRequests\Domain\Models\HiringOffer;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequest;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestStatusEnum;
@@ -175,6 +178,127 @@ class HiringRequestFlowTest extends TestCase
         $this->assertTrue($offer->sent_at->copy()->addHours(48)->equalTo($offer->response_due_at));
     }
 
+    public function test_s06_offer_interview_and_both_decisions_reach_ready_to_proceed(): void
+    {
+        $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
+        $this->postJson($this->clientUrl("/{$requestId}/submit"))->assertOk();
+        $admin = $this->adminUser('s06-admin@example.test');
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $started = $this->postJson("/api/v1/admin/hiring-requests/{$requestId}/start")->assertOk()->json('data');
+        $itemId = $started['items'][0]['id'];
+
+        Sanctum::actingAs($this->talent->user, ['access', 'talent']);
+        $this->postJson("/api/v1/talent/hiring-offers/{$itemId}/accept")
+            ->assertOk()->assertJsonPath('data.status', 'awaiting_interview_slots');
+
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $interview = $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/interview/schedule", [
+            'starts_at' => now()->addDay()->toIso8601String(),
+        ])->assertOk()->assertJsonPath('data.status', 'awaiting_responses')->json('data');
+
+        Sanctum::actingAs($this->talent->user, ['access', 'talent']);
+        $this->postJson("/api/v1/talent/hiring-interviews/{$interview['id']}/accept-schedule")
+            ->assertOk()->assertJsonPath('data.talent_response.status', 'accepted');
+
+        Sanctum::actingAs($this->owner, ['access', 'client']);
+        $this->postJson("/api/v1/client/workspaces/{$this->workspace->id}/hiring-interviews/{$interview['id']}/accept-schedule")
+            ->assertOk()->assertJsonPath('data.status', 'awaiting_admin_confirmation');
+
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/interview/confirm", [
+            'meeting_url' => 'https://meet.google.com/abc-defg-hij',
+        ])->assertOk()->assertJsonPath('data.status', 'confirmed');
+
+        HiringInterview::query()->where('request_item_id', $itemId)->update([
+            'starts_at' => now()->subMinute(), 'ends_at' => now()->addHour(),
+        ]);
+        $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/interview/start")
+            ->assertOk()->assertJsonPath('data.status', 'in_progress');
+        $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/interview/complete")
+            ->assertOk()->assertJsonPath('data.status', 'completed');
+
+        Sanctum::actingAs($this->owner, ['access', 'client']);
+        $this->postJson("/api/v1/client/workspaces/{$this->workspace->id}/hiring-request-items/{$itemId}/decision", ['decision' => 'proceed'])
+            ->assertOk()->assertJsonPath('data.status', 'awaiting_decisions');
+        Sanctum::actingAs($this->talent->user, ['access', 'talent']);
+        $this->postJson("/api/v1/talent/hiring-request-items/{$itemId}/decision", ['decision' => 'proceed'])
+            ->assertOk()->assertJsonPath('data.status', 'ready_to_proceed');
+    }
+
+    public function test_two_expired_offers_disable_talent_without_closing_item(): void
+    {
+        $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
+        $this->postJson($this->clientUrl("/{$requestId}/submit"))->assertOk();
+        $admin = $this->adminUser('expiry-admin@example.test');
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $item = $this->postJson("/api/v1/admin/hiring-requests/{$requestId}/start")->assertOk()->json('data.items.0');
+
+        $first = HiringOffer::query()->where('request_item_id', $item['id'])->firstOrFail();
+        $first->update(['response_due_at' => now()->subMinute()]);
+        app(HiringOfferExpirationService::class)->expire($first->id);
+        $second = $first->replicate(['status', 'sent_at', 'response_due_at']);
+        $second->status = 'pending';
+        $second->sent_at = now()->subHours(49);
+        $second->response_due_at = now()->subMinute();
+        $second->save();
+        app(HiringOfferExpirationService::class)->expire($second->id);
+
+        $this->assertFalse($this->talent->user->fresh()->is_active);
+        $this->assertSame(2, $this->talent->fresh()->offer_no_response_count);
+        $this->assertSame(HiringRequestItemStatusEnum::AWAITING_TALENT_RESPONSE, $this->talent->hiringRequestItems()->firstOrFail()->status);
+    }
+
+    public function test_talent_can_apologize_after_confirmation_and_admin_can_reschedule(): void
+    {
+        [$admin, $itemId, $interviewId] = $this->confirmedInterview();
+
+        Sanctum::actingAs($this->talent->user, ['access', 'talent']);
+        $this->postJson("/api/v1/talent/hiring-interviews/{$interviewId}/apologize", [
+            'reason' => 'I cannot attend the confirmed time.',
+        ])->assertOk()
+            ->assertJsonPath('data.status', 'awaiting_reschedule')
+            ->assertJsonPath('data.meeting_url', null);
+
+        $this->assertDatabaseHas('hiring_request_items', [
+            'id' => $itemId,
+            'status' => HiringRequestItemStatusEnum::AWAITING_INTERVIEW_SLOTS->value,
+        ]);
+
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/interview/schedule", [
+            'starts_at' => now()->addDays(2)->toIso8601String(),
+        ])->assertOk()
+            ->assertJsonPath('data.id', $interviewId)
+            ->assertJsonPath('data.status', 'awaiting_responses')
+            ->assertJsonPath('data.talent_response.status', 'pending')
+            ->assertJsonPath('data.client_response.status', 'pending');
+
+        $this->assertDatabaseHas('hiring_request_events', [
+            'request_item_id' => $itemId,
+            'action' => 'interview_rescheduled',
+        ]);
+    }
+
+    public function test_talent_offer_list_supports_design_filters_and_options(): void
+    {
+        $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
+        $this->postJson($this->clientUrl("/{$requestId}/submit"))->assertOk();
+        $admin = $this->adminUser('filters-admin@example.test');
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $this->postJson("/api/v1/admin/hiring-requests/{$requestId}/start")->assertOk();
+
+        Sanctum::actingAs($this->talent->user, ['access', 'talent']);
+        $this->getJson('/api/v1/talent/hiring-offers/options')
+            ->assertOk()
+            ->assertJsonFragment(['value' => 'awaiting_talent_response'])
+            ->assertJsonFragment(['value' => 'pending']);
+
+        $this->getJson('/api/v1/talent/hiring-offers?status[]=awaiting_talent_response&offer_status[]=pending&search=Hiring')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1)
+            ->assertJsonPath('data.items.0.company.name', 'Hiring Workspace');
+    }
+
     public function test_hybrid_remote_days_must_be_inside_selected_range(): void
     {
         $body = $this->draftBody();
@@ -236,6 +360,35 @@ class HiringRequestFlowTest extends TestCase
                 'work_hours' => 8,
             ],
         ]]];
+    }
+
+    /** @return array{Admin, int, int} */
+    private function confirmedInterview(): array
+    {
+        $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
+        $this->postJson($this->clientUrl("/{$requestId}/submit"))->assertOk();
+        $admin = $this->adminUser('reschedule-admin@example.test');
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $itemId = $this->postJson("/api/v1/admin/hiring-requests/{$requestId}/start")
+            ->assertOk()->json('data.items.0.id');
+
+        Sanctum::actingAs($this->talent->user, ['access', 'talent']);
+        $this->postJson("/api/v1/talent/hiring-offers/{$itemId}/accept")->assertOk();
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $interviewId = $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/interview/schedule", [
+            'starts_at' => now()->addDay()->toIso8601String(),
+        ])->assertOk()->json('data.id');
+
+        Sanctum::actingAs($this->talent->user, ['access', 'talent']);
+        $this->postJson("/api/v1/talent/hiring-interviews/{$interviewId}/accept-schedule")->assertOk();
+        Sanctum::actingAs($this->owner, ['access', 'client']);
+        $this->postJson("/api/v1/client/workspaces/{$this->workspace->id}/hiring-interviews/{$interviewId}/accept-schedule")->assertOk();
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/interview/confirm", [
+            'meeting_url' => 'https://meet.google.com/abc-defg-hij',
+        ])->assertOk();
+
+        return [$admin, $itemId, $interviewId];
     }
 
     private function selectTalent(): void
