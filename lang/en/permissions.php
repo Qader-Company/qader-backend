@@ -26,6 +26,7 @@ return [
         'marketplace' => 'Talent marketplace',
         'talent-selections' => 'Selected talents',
         'hiring-requests' => 'Hiring requests',
+        'contract-types' => 'Contract types',
         'talent-applications' => 'Talent applications',
         'interviews' => 'Interviews',
         'talents' => 'Talents',
@@ -96,6 +97,7 @@ return [
         'job-forms' => ['view' => 'View job forms', 'manage' => 'Manage job forms'],
         'job-form-submissions' => ['view' => 'View job form submissions', 'delete' => 'Delete job form submissions', 'start-hiring' => 'Start hiring from submissions'],
         'hiring-requests' => ['view' => 'View hiring requests', 'assign' => 'Assign hiring requests', 'handle' => 'Handle hiring requests', 'respond-on-behalf' => 'Respond on behalf of hiring parties'],
+        'contract-types' => ['view' => 'View contract types', 'update' => 'Update contract type configurations', 'toggle-status' => 'Activate and deactivate contract types'],
     ],
 
     'talent' => [

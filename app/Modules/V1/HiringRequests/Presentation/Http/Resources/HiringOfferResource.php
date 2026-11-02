@@ -29,6 +29,8 @@ class HiringOfferResource extends JsonResource
             'work_hours' => $this->work_hours,
             'notice_period_days' => $this->notice_period_days,
             'work_location' => $this->work_location,
+            'work_latitude' => $this->work_latitude,
+            'work_longitude' => $this->work_longitude,
             'status' => $this->value($this->status),
             'sent_at' => $this->sent_at,
             'response_due_at' => $this->response_due_at,

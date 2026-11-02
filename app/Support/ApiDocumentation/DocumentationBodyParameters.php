@@ -47,6 +47,7 @@ class DocumentationBodyParameters extends GetFromFormRequest
         $this->applyJobFormExamples($endpointData, $parameters);
         $this->applyWorkspaceExamples($endpointData, $parameters);
         $this->applyHiringRequestExamples($endpointData, $parameters);
+        $this->applyContractTypeExamples($endpointData, $parameters);
 
         return $parameters;
     }
@@ -280,22 +281,16 @@ class DocumentationBodyParameters extends GetFromFormRequest
 
         $uri = $endpointData->route->uri();
 
-        if (isset($parameters['items'])) {
+        $isDirectSubmission = str_ends_with($uri, '/hiring-requests')
+            || str_ends_with($uri, '/hiring-requests/preview');
+
+        if (isset($parameters['items']) && $isDirectSubmission) {
             $parameters['items']['example'] = [
                 [
                     'talent_id' => 12,
                     'contract_type' => 'managed',
                     'interview_required' => true,
-                    'offer' => [
-                        'salary_amount' => 6500,
-                        'currency_id' => 1,
-                        'work_type' => 'full_time',
-                        'work_mode' => 'hybrid',
-                        'work_start_day' => 'sunday',
-                        'work_end_day' => 'thursday',
-                        'hybrid_work_days' => ['thursday'],
-                        'work_hours' => 8,
-                    ],
+                    'salary_amount' => 25000,
                 ],
             ];
         }
@@ -322,6 +317,67 @@ class DocumentationBodyParameters extends GetFromFormRequest
             'decision' => str_contains($uri, '/offers/respond-on-behalf') ? 'accepted' : 'proceed',
             'response' => 'accepted',
         ];
+        foreach ($examples as $name => $example) {
+            if (isset($parameters[$name])) {
+                $parameters[$name]['example'] = $example;
+            }
+        }
+    }
+
+    private function applyContractTypeExamples(ExtractedEndpointData $endpointData, ?array &$parameters): void
+    {
+        if ($parameters === null || ! str_contains($endpointData->route->uri(), '/admin/contract-types/')) {
+            return;
+        }
+
+        $examples = [
+            'name' => ['en' => 'Managed Contract', 'ar' => 'عقد مُدار'],
+            'description' => [
+                'en' => 'Qader manages the employment lifecycle.',
+                'ar' => 'تدير قادر دورة التوظيف.',
+            ],
+            'fee' => [
+                'type' => 'percentage',
+                'fixed_amount' => null,
+                'fixed_currency_id' => null,
+                'percentage' => 5,
+            ],
+            'fee.type' => 'percentage',
+            'fee.fixed_amount' => null,
+            'fee.fixed_currency_id' => null,
+            'fee.percentage' => 5,
+            'benefits' => [[
+                'name' => ['en' => 'Managed support', 'ar' => 'دعم مُدار'],
+                'display_order' => 1,
+            ]],
+            'terms' => [
+                ['content' => ['en' => 'First contract term.', 'ar' => 'البند الأول للعقد.'], 'display_order' => 1],
+                ['content' => ['en' => 'Second contract term.', 'ar' => 'البند الثاني للعقد.'], 'display_order' => 2],
+            ],
+            'fee_overrides' => [[
+                'professional_field_id' => 1,
+                'min_employees' => 11,
+                'max_employees' => 50,
+                'fee_type' => 'percentage',
+                'fixed_amount' => null,
+                'fixed_currency_id' => null,
+                'percentage' => 4,
+                'is_active' => true,
+            ]],
+            'defaults' => [
+                'work_start_day' => 'sunday',
+                'work_end_day' => 'thursday',
+                'work_start_time' => '09:00',
+                'work_end_time' => '17:00',
+                'work_type' => 'full_time',
+                'work_mode' => 'hybrid',
+                'hybrid_work_days' => ['thursday'],
+                'work_location' => 'Cairo, Egypt',
+                'work_latitude' => 30.04442,
+                'work_longitude' => 31.235712,
+            ],
+        ];
+
         foreach ($examples as $name => $example) {
             if (isset($parameters[$name])) {
                 $parameters[$name]['example'] = $example;

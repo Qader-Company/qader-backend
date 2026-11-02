@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\V1\HiringRequests\Application\Services\ClientHiringRequestService;
 use App\Modules\V1\HiringRequests\Presentation\Http\Requests\ListClientHiringRequestsRequest;
 use App\Modules\V1\HiringRequests\Presentation\Http\Requests\SaveHiringRequestDraftRequest;
+use App\Modules\V1\HiringRequests\Presentation\Http\Requests\SubmitHiringRequestRequest;
 use App\Modules\V1\HiringRequests\Presentation\Http\Resources\HiringRequestResource;
 use App\Modules\V1\Workspaces\Domain\Models\Workspace;
 use Illuminate\Http\JsonResponse;
@@ -39,11 +40,16 @@ class ClientHiringRequestController extends Controller
         ]);
     }
 
-    public function store(SaveHiringRequestDraftRequest $request, Workspace $workspace, ClientHiringRequestService $service): JsonResponse
+    public function preview(SubmitHiringRequestRequest $request, Workspace $workspace, ClientHiringRequestService $service): JsonResponse
+    {
+        return ApiResponse::success($service->preview($request->user(), $workspace, $request->validated()));
+    }
+
+    public function store(SubmitHiringRequestRequest $request, Workspace $workspace, ClientHiringRequestService $service): JsonResponse
     {
         return ApiResponse::created(
-            new HiringRequestResource($service->createDraft($request->user(), $workspace, $request->validated())),
-            __('hiring.draft_created'),
+            new HiringRequestResource($service->submitDirect($request->user(), $workspace, $request->validated())),
+            __('hiring.submitted'),
         );
     }
 

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('{workspace}/hiring-requests/options', [ClientHiringRequestController::class, 'options']);
 Route::get('{workspace}/hiring-requests', [ClientHiringRequestController::class, 'index']);
+Route::post('{workspace}/hiring-requests/preview', [ClientHiringRequestController::class, 'preview']);
 Route::post('{workspace}/hiring-requests', [ClientHiringRequestController::class, 'store']);
 Route::get('{workspace}/hiring-requests/{hiringRequest}', [ClientHiringRequestController::class, 'show'])->whereNumber('hiringRequest');
 Route::put('{workspace}/hiring-requests/{hiringRequest}', [ClientHiringRequestController::class, 'update'])->whereNumber('hiringRequest');

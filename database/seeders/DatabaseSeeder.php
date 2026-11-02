@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             ToolSeeder::class,
             CurrencySeeder::class,
             IndustrySeeder::class,
+            ContractTypeSeeder::class,
             TalentReviewFaqSeeder::class,
         ]);
     }

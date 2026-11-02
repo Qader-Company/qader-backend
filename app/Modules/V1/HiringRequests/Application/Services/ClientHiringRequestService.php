@@ -4,6 +4,7 @@ namespace App\Modules\V1\HiringRequests\Application\Services;
 
 use App\Modules\V1\AccessControl\Application\Services\WorkspaceAccessService;
 use App\Modules\V1\AccessControl\Domain\ValueObjects\ClientPermissionEnum;
+use App\Modules\V1\ContractTypes\Domain\Models\ContractType;
 use App\Modules\V1\Currencies\Domain\Models\Currency;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequest;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequestItem;
@@ -32,6 +33,7 @@ class ClientHiringRequestService
         'workspace',
         'assignedAdmin.user',
         'items.talent.jobTitle',
+        'items.contractType',
         'items.jobTitle',
         'items.latestOffer.currency.translations',
         'items.offers.currency.translations',
@@ -39,7 +41,10 @@ class ClientHiringRequestService
         'items.hiringRequest.workspace.media',
     ];
 
-    public function __construct(private readonly WorkspaceAccessService $access) {}
+    public function __construct(
+        private readonly WorkspaceAccessService $access,
+        private readonly ContractConfigurationResolver $contracts,
+    ) {}
 
     public function options(User $user, Workspace $workspace): array
     {
@@ -47,6 +52,25 @@ class ClientHiringRequestService
 
         return [
             'contract_types' => EnumOptions::make(HiringContractTypeEnum::class, 'hiring_contract_types'),
+            'contract_configurations' => ContractType::query()
+                ->where('is_active', true)
+                ->with(['benefits', 'terms'])
+                ->orderBy('id')
+                ->get()
+                ->map(fn (ContractType $contractType): array => [
+                    'id' => $contractType->id,
+                    'type' => $contractType->type->value,
+                    'name' => ['en' => $contractType->name_en, 'ar' => $contractType->name_ar],
+                    'description' => ['en' => $contractType->description_en, 'ar' => $contractType->description_ar],
+                    'benefits' => $contractType->benefits->map(fn ($benefit): array => [
+                        'name' => ['en' => $benefit->name_en, 'ar' => $benefit->name_ar],
+                        'display_order' => $benefit->display_order,
+                    ])->values(),
+                    'terms' => $contractType->terms->map(fn ($term): array => [
+                        'content' => ['en' => $term->content_en, 'ar' => $term->content_ar],
+                        'display_order' => $term->display_order,
+                    ])->values(),
+                ])->values(),
             'work_types' => EnumOptions::make(WorkTypeEnum::class, 'work_types'),
             'work_modes' => EnumOptions::make(WorkModeEnum::class, 'work_modes'),
             'work_days' => EnumOptions::make(WorkDayEnum::class, 'work_days'),
@@ -95,6 +119,103 @@ class ClientHiringRequestService
 
             $result = $this->load($request);
             $result->setAttribute('available_actions', $this->clientActions($result, $member));
+
+            return $result;
+        });
+    }
+
+    public function preview(User $user, Workspace $workspace, array $data): array
+    {
+        $this->access->authorize($user, $workspace, ClientPermissionEnum::HIRING_REQUESTS_MANAGE->value);
+        $talents = $this->selectedEligibleTalents($workspace, collect($data['items'])->pluck('talent_id')->all());
+        $contractTypes = $this->activeContractTypes($data['items']);
+
+        return [
+            'items' => collect($data['items'])->map(function (array $item) use ($talents, $contractTypes, $workspace): array {
+                $talent = $talents->get($item['talent_id']);
+                $resolved = $this->contracts->resolve(
+                    $contractTypes->get($item['contract_type']),
+                    $talent,
+                    $workspace,
+                    (float) $item['salary_amount'],
+                );
+
+                return [
+                    'talent_id' => $talent->id,
+                    'talent_code' => $talent->talent_code,
+                    'job_title' => $talent->jobTitle === null ? null : [
+                        'id' => $talent->jobTitle->id,
+                        'name' => $talent->jobTitle->name,
+                    ],
+                    'contract_type' => $item['contract_type'],
+                    'interview_required' => (bool) $item['interview_required'],
+                    'salary_range' => [
+                        'minimum' => $talent->expected_salary_min,
+                        'maximum' => $talent->expected_salary_max,
+                        'currency' => $talent->expectedCurrency === null ? null : [
+                            'id' => $talent->expectedCurrency->id,
+                            'code' => $talent->expectedCurrency->code,
+                            'symbol' => $talent->expectedCurrency->symbol,
+                        ],
+                    ],
+                    'offer' => $resolved['offer'],
+                    'contract_configuration' => $resolved['snapshot'],
+                ];
+            })->values()->all(),
+        ];
+    }
+
+    public function submitDirect(User $user, Workspace $workspace, array $data): HiringRequest
+    {
+        $member = $this->access->authorize($user, $workspace, ClientPermissionEnum::HIRING_REQUESTS_MANAGE->value);
+
+        return DB::transaction(function () use ($user, $workspace, $member, $data): HiringRequest {
+            Workspace::query()->whereKey($workspace->id)->lockForUpdate()->firstOrFail();
+            $talentIds = collect($data['items'])->pluck('talent_id')->all();
+            WorkspaceTalentSelection::query()
+                ->where('workspace_id', $workspace->id)
+                ->whereIn('talent_id', $talentIds)
+                ->lockForUpdate()
+                ->get();
+            $talents = $this->selectedEligibleTalents($workspace, $talentIds);
+            $contractTypes = $this->activeContractTypes($data['items']);
+            $submittedAt = now();
+            $request = HiringRequest::query()->create([
+                'workspace_id' => $workspace->id,
+                'created_by_member_id' => $member->id,
+                'status' => HiringRequestStatusEnum::PENDING,
+                'submitted_at' => $submittedAt,
+            ]);
+            $this->ensureNoActiveRequests($workspace, $request, $talentIds);
+
+            foreach ($data['items'] as $dataItem) {
+                $talent = $talents->get($dataItem['talent_id']);
+                $contractType = $contractTypes->get($dataItem['contract_type']);
+                $resolved = $this->contracts->resolve($contractType, $talent, $workspace, (float) $dataItem['salary_amount']);
+                $item = $request->items()->create([
+                    'talent_id' => $talent->id,
+                    'job_title_id' => $talent->job_title_id,
+                    'contract_type' => $dataItem['contract_type'],
+                    'contract_type_id' => $resolved['contract_type_id'],
+                    'contract_configuration_snapshot' => $resolved['snapshot'],
+                    'interview_required' => $dataItem['interview_required'],
+                    'status' => HiringRequestItemStatusEnum::PENDING,
+                ]);
+                $item->offers()->create([
+                    ...$resolved['offer'],
+                    'proposed_by' => HiringOfferPartyEnum::CLIENT,
+                    'status' => HiringOfferStatusEnum::PENDING,
+                ]);
+            }
+
+            WorkspaceTalentSelection::query()
+                ->where('workspace_id', $workspace->id)
+                ->whereIn('talent_id', $talentIds)
+                ->delete();
+            $this->event($request, $user, 'submitted', ['submitted_at' => $submittedAt]);
+
+            $result = $this->load($request);
+            $result->setAttribute('available_actions', ['view']);
 
             return $result;
         });
@@ -187,6 +308,7 @@ class ClientHiringRequestService
 
         $talents = Talent::query()
             ->whereIn('id', $talentIds)
+            ->with(['jobTitle', 'expectedCurrency', 'professionalField'])
             ->whereNotNull('job_title_id')
             ->whereHas('user', fn (Builder $query) => $query->where('is_active', true))
             ->whereHas('applications', fn (Builder $query) => $query->where('status', TalentApplicationStatusEnum::ACCEPTED->value))
@@ -198,6 +320,23 @@ class ClientHiringRequestService
         }
 
         return $talents;
+    }
+
+    private function activeContractTypes(array $items)
+    {
+        $types = collect($items)->pluck('contract_type')->unique()->values();
+        $contractTypes = ContractType::query()
+            ->where('is_active', true)
+            ->whereIn('type', $types)
+            ->with(['benefits', 'terms', 'feeOverrides'])
+            ->get()
+            ->keyBy(fn (ContractType $contractType): string => $contractType->type->value);
+
+        if ($contractTypes->count() !== $types->count()) {
+            throw ValidationException::withMessages(['items' => [__('hiring.contract_type_inactive')]]);
+        }
+
+        return $contractTypes;
     }
 
     private function replaceItems(HiringRequest $request, array $items, $talents, Workspace $workspace): void

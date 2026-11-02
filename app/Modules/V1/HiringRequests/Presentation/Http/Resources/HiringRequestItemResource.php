@@ -26,6 +26,7 @@ class HiringRequestItemResource extends JsonResource
             'reference' => $this->reference,
             'status' => $this->value($this->status),
             'contract_type' => $this->value($this->contract_type),
+            'contract_configuration' => $this->contract_configuration_snapshot,
             'interview_required' => (bool) $this->interview_required,
             'company' => $this->hiringRequest?->workspace === null ? null : [
                 'id' => $this->hiringRequest->workspace->id,

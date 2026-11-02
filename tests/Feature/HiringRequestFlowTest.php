@@ -7,6 +7,7 @@ use App\Modules\V1\AccessControl\Domain\Models\Role;
 use App\Modules\V1\AccessControl\Domain\Models\WorkspaceRole;
 use App\Modules\V1\Admins\Domain\Models\Admin;
 use App\Modules\V1\Clients\Domain\Models\Client;
+use App\Modules\V1\ContractTypes\Domain\Models\ContractType;
 use App\Modules\V1\Countries\Domain\Models\Country;
 use App\Modules\V1\Currencies\Domain\Models\Currency;
 use App\Modules\V1\HiringRequests\Application\Services\HiringOfferExpirationService;
@@ -65,6 +66,17 @@ class HiringRequestFlowTest extends TestCase
             'code' => 'USD', 'symbol' => '$', 'is_active' => true,
             'en' => ['name' => 'US Dollar'], 'ar' => ['name' => 'دولار أمريكي'],
         ]);
+        ContractType::query()->where('type', 'managed')->update([
+            'is_active' => true,
+            'fee_type' => 'percentage',
+            'percentage' => 10,
+            'work_start_day' => 'sunday',
+            'work_end_day' => 'thursday',
+            'work_start_time' => '09:00',
+            'work_end_time' => '17:00',
+            'work_type' => 'full_time',
+            'work_mode' => 'remote',
+        ]);
 
         $this->owner = $this->clientUser('owner-hiring@example.test');
         $this->workspace = Workspace::query()->create([
@@ -101,6 +113,9 @@ class HiringRequestFlowTest extends TestCase
             'professional_field_id' => $field->id,
             'job_title_id' => $jobTitle->id,
             'notice_period_days' => 30,
+            'expected_salary_min' => 5000,
+            'expected_salary_max' => 7000,
+            'expected_currency_id' => $this->currency->id,
         ]);
         TalentApplication::query()->create([
             'talent_id' => $this->talent->id,
@@ -115,36 +130,30 @@ class HiringRequestFlowTest extends TestCase
 
     public function test_client_creates_and_submits_a_private_workspace_request(): void
     {
-        $draft = $this->postJson($this->clientUrl(), $this->draftBody())
+        $submitted = $this->postJson($this->clientUrl(), $this->draftBody())
             ->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status', 'pending')
             ->assertJsonPath('data.items.0.offer.notice_period_days', 30)
+            ->assertJsonPath('data.items.0.offer.work_hours', 8)
             ->assertJsonMissingPath('data.items.0.talent.full_name')
             ->json('data');
-
-        $this->postJson($this->clientUrl('/'.$draft['id'].'/submit'))
-            ->assertOk()
-            ->assertJsonPath('data.status', 'pending')
-            ->assertJsonPath('data.items.0.status', 'pending');
 
         $this->assertDatabaseMissing('workspace_talent_selections', [
             'workspace_id' => $this->workspace->id,
             'talent_id' => $this->talent->id,
         ]);
         $this->assertDatabaseHas('hiring_request_events', [
-            'hiring_request_id' => $draft['id'],
+            'hiring_request_id' => $submitted['id'],
             'action' => 'submitted',
         ]);
     }
 
     public function test_same_talent_cannot_be_submitted_twice_while_request_is_active(): void
     {
-        $first = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
-        $this->postJson($this->clientUrl("/{$first}/submit"))->assertOk();
+        $this->postJson($this->clientUrl(), $this->draftBody())->assertCreated();
 
         $this->selectTalent();
-        $second = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
-        $this->postJson($this->clientUrl("/{$second}/submit"))
+        $this->postJson($this->clientUrl(), $this->draftBody())
             ->assertUnprocessable()
             ->assertJsonValidationErrors('items');
 
@@ -157,7 +166,6 @@ class HiringRequestFlowTest extends TestCase
     public function test_responsible_admin_starts_request_and_sends_offer_with_fixed_deadline(): void
     {
         $id = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
-        $this->postJson($this->clientUrl("/{$id}/submit"))->assertOk();
 
         $admin = $this->adminUser('hiring-admin@example.test');
         Sanctum::actingAs($admin->user, ['access', 'admin']);
@@ -181,7 +189,6 @@ class HiringRequestFlowTest extends TestCase
     public function test_s06_offer_interview_and_both_decisions_reach_ready_to_proceed(): void
     {
         $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
-        $this->postJson($this->clientUrl("/{$requestId}/submit"))->assertOk();
         $admin = $this->adminUser('s06-admin@example.test');
         Sanctum::actingAs($admin->user, ['access', 'admin']);
         $started = $this->postJson("/api/v1/admin/hiring-requests/{$requestId}/start")->assertOk()->json('data');
@@ -228,7 +235,6 @@ class HiringRequestFlowTest extends TestCase
     public function test_two_expired_offers_disable_talent_without_closing_item(): void
     {
         $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
-        $this->postJson($this->clientUrl("/{$requestId}/submit"))->assertOk();
         $admin = $this->adminUser('expiry-admin@example.test');
         Sanctum::actingAs($admin->user, ['access', 'admin']);
         $item = $this->postJson("/api/v1/admin/hiring-requests/{$requestId}/start")->assertOk()->json('data.items.0');
@@ -282,7 +288,6 @@ class HiringRequestFlowTest extends TestCase
     public function test_talent_offer_list_supports_design_filters_and_options(): void
     {
         $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
-        $this->postJson($this->clientUrl("/{$requestId}/submit"))->assertOk();
         $admin = $this->adminUser('filters-admin@example.test');
         Sanctum::actingAs($admin->user, ['access', 'admin']);
         $this->postJson("/api/v1/admin/hiring-requests/{$requestId}/start")->assertOk();
@@ -299,21 +304,19 @@ class HiringRequestFlowTest extends TestCase
             ->assertJsonPath('data.items.0.company.name', 'Hiring Workspace');
     }
 
-    public function test_hybrid_remote_days_must_be_inside_selected_range(): void
+    public function test_offer_salary_must_be_inside_talent_range(): void
     {
         $body = $this->draftBody();
-        $body['items'][0]['offer']['work_mode'] = 'hybrid';
-        $body['items'][0]['offer']['hybrid_work_days'] = ['saturday'];
+        $body['items'][0]['salary_amount'] = 9000;
 
         $this->postJson($this->clientUrl(), $body)
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('items.0.offer.hybrid_work_days');
+            ->assertJsonValidationErrors('salary_amount');
     }
 
     public function test_assign_reassign_and_responsible_admin_rules_are_enforced(): void
     {
         $id = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
-        $this->postJson($this->clientUrl("/{$id}/submit"))->assertOk();
 
         $first = $this->adminUser('first-hiring-admin@example.test');
         $second = $this->adminUser('second-hiring-admin@example.test');
@@ -350,15 +353,7 @@ class HiringRequestFlowTest extends TestCase
             'talent_id' => $this->talent->id,
             'contract_type' => 'managed',
             'interview_required' => true,
-            'offer' => [
-                'salary_amount' => 6500,
-                'currency_id' => $this->currency->id,
-                'work_type' => 'full_time',
-                'work_mode' => 'remote',
-                'work_start_day' => 'sunday',
-                'work_end_day' => 'thursday',
-                'work_hours' => 8,
-            ],
+            'salary_amount' => 6500,
         ]]];
     }
 
@@ -366,7 +361,6 @@ class HiringRequestFlowTest extends TestCase
     private function confirmedInterview(): array
     {
         $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
-        $this->postJson($this->clientUrl("/{$requestId}/submit"))->assertOk();
         $admin = $this->adminUser('reschedule-admin@example.test');
         Sanctum::actingAs($admin->user, ['access', 'admin']);
         $itemId = $this->postJson("/api/v1/admin/hiring-requests/{$requestId}/start")

@@ -126,8 +126,9 @@ class EndpointNames
             if (str_contains($route->uri(), '/hiring-requests') || str_contains($route->uri(), '/hiring-request-items') || str_contains($route->uri(), '/hiring-interviews')) {
                 return match ($route->getActionMethod()) {
                     'options' => 'List Hiring Request Options',
+                    'preview' => 'Preview Hiring Request',
                     'index' => 'List Hiring Requests',
-                    'store' => 'Create Hiring Request Draft',
+                    'store' => 'Confirm and Submit Hiring Request',
                     'show' => 'Get Hiring Request',
                     'update' => 'Update Hiring Request Draft',
                     'submit' => 'Submit Hiring Request',
@@ -202,6 +203,16 @@ class EndpointNames
                 'hold' => 'Hold Hiring Item',
                 'resume' => 'Resume Hiring Item',
                 'cancel' => 'Cancel Hiring Item',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'contract-types') {
+            return match ($route->getActionMethod()) {
+                'index' => 'List Contract Types',
+                'show' => 'Get Contract Type Configuration',
+                'update' => 'Update Contract Type Configuration',
+                'status' => 'Update Contract Type Status',
                 default => Str::headline($route->getActionMethod()),
             };
         }

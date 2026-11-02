@@ -2,6 +2,7 @@
 
 namespace App\Modules\V1\HiringRequests\Domain\Models;
 
+use App\Modules\V1\ContractTypes\Domain\Models\ContractType;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringContractTypeEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringDecisionEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
@@ -17,7 +18,7 @@ class HiringRequestItem extends Model
 {
     protected $fillable = [
         'hiring_request_id', 'talent_id', 'reference', 'job_title_id',
-        'contract_type', 'interview_required', 'status',
+        'contract_type', 'contract_type_id', 'contract_configuration_snapshot', 'interview_required', 'status',
         'rejection_reason', 'hold_reason', 'cancellation_reason',
         'client_decision', 'client_decision_reason', 'client_decided_at',
         'talent_decision', 'talent_decision_reason', 'talent_decided_at',
@@ -41,6 +42,7 @@ class HiringRequestItem extends Model
     {
         return [
             'contract_type' => HiringContractTypeEnum::class,
+            'contract_configuration_snapshot' => 'array',
             'interview_required' => 'boolean',
             'status' => HiringRequestItemStatusEnum::class,
             'client_decision' => HiringDecisionEnum::class,
@@ -59,6 +61,11 @@ class HiringRequestItem extends Model
     public function talent(): BelongsTo
     {
         return $this->belongsTo(Talent::class);
+    }
+
+    public function contractType(): BelongsTo
+    {
+        return $this->belongsTo(ContractType::class);
     }
 
     public function jobTitle(): BelongsTo

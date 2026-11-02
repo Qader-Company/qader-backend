@@ -71,6 +71,10 @@ enum AdminPermissionEnum: string implements PermissionDefinition
     case HIRING_REQUESTS_HANDLE = 'admin.hiring-requests.handle';
     case HIRING_REQUESTS_RESPOND_ON_BEHALF = 'admin.hiring-requests.respond-on-behalf';
 
+    case CONTRACT_TYPES_VIEW = 'admin.contract-types.view';
+    case CONTRACT_TYPES_UPDATE = 'admin.contract-types.update';
+    case CONTRACT_TYPES_TOGGLE_STATUS = 'admin.contract-types.toggle-status';
+
     public function portal(): PortalTypeEnum
     {
         return PortalTypeEnum::ADMIN;

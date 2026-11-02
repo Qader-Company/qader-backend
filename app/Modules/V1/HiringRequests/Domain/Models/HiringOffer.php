@@ -16,7 +16,7 @@ class HiringOffer extends Model
     protected $fillable = [
         'request_item_id', 'proposed_by', 'salary_amount', 'currency_id', 'work_type',
         'work_mode', 'work_start_day', 'work_end_day', 'hybrid_work_days',
-        'work_hours', 'notice_period_days', 'work_location',
+        'work_hours', 'notice_period_days', 'work_location', 'work_latitude', 'work_longitude',
         'status', 'sent_at', 'response_due_at',
     ];
 
@@ -32,6 +32,8 @@ class HiringOffer extends Model
             'hybrid_work_days' => 'array',
             'status' => HiringOfferStatusEnum::class,
             'notice_period_days' => 'integer',
+            'work_latitude' => 'decimal:7',
+            'work_longitude' => 'decimal:7',
             'sent_at' => 'datetime',
             'response_due_at' => 'datetime',
         ];
