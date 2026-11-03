@@ -125,13 +125,9 @@ class EndpointNames
         if ($module === 'workspaces') {
             if (str_contains($route->uri(), '/hiring-requests') || str_contains($route->uri(), '/hiring-request-items') || str_contains($route->uri(), '/hiring-interviews')) {
                 return match ($route->getActionMethod()) {
-                    'options' => 'List Hiring Request Options',
-                    'preview' => 'Preview Hiring Request',
                     'index' => 'List Hiring Requests',
                     'store' => 'Confirm and Submit Hiring Request',
                     'show' => 'Get Hiring Request',
-                    'update' => 'Update Hiring Request Draft',
-                    'submit' => 'Submit Hiring Request',
                     'interview' => 'Get Hiring Interview',
                     'acceptInterviewSchedule' => 'Accept Hiring Interview Time',
                     'requestInterviewScheduleChange' => 'Request a New Hiring Interview Time',

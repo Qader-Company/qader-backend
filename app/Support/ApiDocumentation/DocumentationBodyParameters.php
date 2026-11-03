@@ -281,8 +281,7 @@ class DocumentationBodyParameters extends GetFromFormRequest
 
         $uri = $endpointData->route->uri();
 
-        $isDirectSubmission = str_ends_with($uri, '/hiring-requests')
-            || str_ends_with($uri, '/hiring-requests/preview');
+        $isDirectSubmission = str_ends_with($uri, '/hiring-requests');
 
         if (isset($parameters['items']) && $isDirectSubmission) {
             $parameters['items']['example'] = [

@@ -1,7 +1,7 @@
 # S05B — إعدادات أنواع العقود وتبسيط طلب التعيين
 
-الحالة: **خطة مقترحة للمراجعة قبل التنفيذ**  
-آخر مراجعة: 2 نوفمبر 2026  
+الحالة: **معتمدة ومنفذة**
+آخر مراجعة: 3 نوفمبر 2026
 النطاق: تنفيذ إعدادات أنواع العقود الظاهرة في Admin Portal، واستخدام إعدادات العقد الفعالة لبناء العرض المبدئي عند إرسال Hiring Request، وتبسيط Flow العميل ليتطابق مع Figma.  
 عرض التسليم: الأدمن يضبط عقد `managed`، والعميل يختار Talent ونوع العقد وخيار المقابلة ويدخل الراتب فقط، ثم يصل طلب مكتمل إلى الأدمن مع عرض يحتوي نسخة ثابتة من إعدادات العقد.
 
@@ -58,6 +58,9 @@
 11. `Add Talent to Squad` يبقى؛ لأنه جزء مستقل ومعتمد في S04 وFigma.
 12. ضغط `Confirm` ينشئ ويرسل الطلب مباشرة، ولا توجد شاشة Draft منفصلة في Figma.
 13. تعديل إعدادات العقد لاحقًا لا يغير عروض أوطلبات سبق إنشاؤها.
+14. لا يوجد Preview endpoint ولا Draft flow عند العميل.
+15. `GET talent-selections` يعيد المواهب المختارة وإعدادات أنواع العقود الفعالة في Response واحدة.
+16. Submit واحد ينشئ الطلب مباشرة بحالة `pending`.
 
 ## 4. حدود التنفيذ
 
@@ -72,11 +75,11 @@
 - Professional Field Fee Overrides مع Employee Range.
 - Terms & Conditions عربي/إنجليزي.
 - Managed Contract Defaults.
-- إرجاع الإعدادات الفعالة للعميل.
+- إرجاع الإعدادات الفعالة ضمن List Selected Talents.
 - التحقق من Salary Range.
 - اشتقاق عملة العرض من Talent Profile.
 - حساب `work_hours` من إعدادات العقد.
-- إنشاء Hiring Request وإرساله في عملية واحدة.
+- إنشاء Hiring Request وإرساله في عملية واحدة دون Preview أوDraft endpoints.
 - الحفاظ على نسخة شروط العقد المستخدمة داخل الطلب والعرض.
 - تحديث Admin/Client OpenAPI وأمثلة Apidog.
 - اختبارات Feature وValidation وAuthorization.
@@ -206,7 +209,7 @@
 
 ### 6.2 اختيار Fee Override
 
-عند تجهيز Preview أوSubmit:
+عند تجهيز Submit:
 
 1. يحدد النظام Professional Field الخاصة بالموهبة.
 2. يحدد عدد موظفي Workspace وفق القرار النهائي الموضح في قسم النقاط المفتوحة.
@@ -244,7 +247,7 @@ work_hours      = 8
 
 ## 7. Salary Validation
 
-قبل Preview وقبل Submit يجب التحقق من أن Talent:
+تعرض List Selected Talents البيانات اللازمة للنموذج، ثم يعيد Submit التحقق من أن Talent:
 
 - حسابها فعال.
 - طلبها مقبول.
@@ -273,10 +276,9 @@ flowchart TD
     C --> D[Choose Contract Type]
     D --> E[Choose Interview or No Interview]
     E --> F[Enter Monthly Salary]
-    F --> G[Preview defaults and fees]
-    G --> H{All salaries valid}
-    H -->|No| F
-    H -->|Yes| I[Confirm]
+    F --> G{All salaries valid}
+    G -->|No| F
+    G -->|Yes| I[Confirm]
     I --> J[Create pending Hiring Request atomically]
     J --> K[Remove submitted talents from Squad]
     K --> L[Show success and request details]
@@ -297,7 +299,7 @@ PATCH /api/v1/admin/contract-types/{contractType}/status
 
 ### 9.2 Client Squad
 
-تبقى بدون تغيير:
+تبقى عمليات الاختيار كما هي، ويعيد List أيضًا `contract_types` الفعالة بكامل إعدادات العقد اللازمة للنموذج:
 
 ```text
 GET    /api/v1/client/workspaces/{workspace}/talent-selections
@@ -307,17 +309,19 @@ DELETE /api/v1/client/workspaces/{workspace}/talent-selections/{talent}
 
 ### 9.3 Client Hiring Request
 
-الشكل النهائي المقترح:
+الشكل النهائي:
 
 ```text
-POST /api/v1/client/workspaces/{workspace}/hiring-requests/preview
+GET  /api/v1/client/workspaces/{workspace}/hiring-requests
+GET  /api/v1/client/workspaces/{workspace}/hiring-requests/{hiringRequest}
 POST /api/v1/client/workspaces/{workspace}/hiring-requests
 ```
 
-- `preview`: لا يحفظ بيانات؛ يتحقق من العناصر ويعيد Defaults والرسوم والإجماليات لعرض شاشة Figma بدقة.
-- `POST hiring-requests`: يعيد نفس التحقق ثم ينشئ الطلب مباشرة بحالة `pending` داخل Transaction واحدة.
+- `GET list`: لمتابعة الطلبات التي سبق إرسالها.
+- `GET details`: لعرض تفاصيل طلب واحد.
+- `POST`: يتحقق من العناصر ثم ينشئ الطلب مباشرة بحالة `pending` داخل Transaction واحدة.
 
-Body مشترك:
+Body الخاص بالـSubmit:
 
 ```json
 {
@@ -326,28 +330,22 @@ Body مشترك:
       "talent_id": 12,
       "contract_type": "managed",
       "interview_required": true,
-      "salary_amount": 6500
+      "salary_amount": 25000
     }
   ]
 }
 ```
 
-### 9.4 Endpoints الحالية المرشحة للإلغاء
+### 9.4 Endpoints الملغاة
 
 ```text
+GET  /api/v1/client/workspaces/{workspace}/hiring-requests/options
+POST /api/v1/client/workspaces/{workspace}/hiring-requests/preview
 PUT  /api/v1/client/workspaces/{workspace}/hiring-requests/{hiringRequest}
 POST /api/v1/client/workspaces/{workspace}/hiring-requests/{hiringRequest}/submit
 ```
 
-كما تتغير دلالة:
-
-```text
-POST /api/v1/client/workspaces/{workspace}/hiring-requests
-```
-
-من Create Draft إلى Confirm & Submit.
-
-الحذف أوتغيير الدلالة Breaking Change. قبل التنفيذ يجب التأكد أن Frontend لم يربط Create/Update/Submit الحالية. إن كانت مرتبطة، تنفذ مرحلة توافق مؤقتة بدل حذفها مباشرة.
+إعدادات العقد لم تعد تحتاج Options endpoint لأنها ترجع مع `GET talent-selections`. لا تنشأ Drafts جديدة من Client API.
 
 ## 10. Flow الحفظ الذري
 
@@ -411,7 +409,7 @@ admin.contract-types.toggle-status
 
 ### Client
 
-- Preview ناجح يعيد Defaults والرسوم.
+- List Selected Talents يعيد أنواع العقود الفعالة وDefaults والرسوم والشروط والمميزات.
 - Salary أقل من الحد الأدنى.
 - Salary أعلى من الحد الأقصى.
 - Talent بلا Salary Range أوCurrency.
@@ -433,23 +431,21 @@ admin.contract-types.toggle-status
 
 ## 14. ترتيب التنفيذ
 
-1. اعتماد النقاط المفتوحة أدناه.
-2. Migration + Models + Seeder.
-3. Admin Contract Types service والـvalidation.
-4. Admin endpoints والصلاحيات والتوثيق.
-5. Contract resolver لاختيار Defaults وFee Override وحساب الساعات.
-6. Preview endpoint.
-7. تبسيط Submit flow وإلغاء مدخلات العرض غير المسموحة.
-8. Backward compatibility أوإزالة Draft endpoints حسب حالة ربط الفرونت.
-9. تحديث Resources وExamples وApidog.
-10. تشغيل اختبارات SQLite داخل Docker، ثم Regression لسبرنتي S05 وS06.
-11. كتابة ملف تنفيذ يوضح ما تغير وطريقة تحديث السيرفر.
+1. Migration + Models + Seeder.
+2. Admin Contract Types service والـvalidation.
+3. Admin endpoints والصلاحيات والتوثيق.
+4. Contract resolver لاختيار Defaults وFee Override وحساب الساعات.
+5. إرجاع Contract Configurations مع List Selected Talents.
+6. تبسيط Submit flow وإلغاء Options وPreview وDraft endpoints.
+7. تحديث Resources وExamples وApidog.
+8. تشغيل اختبارات SQLite داخل Docker، ثم Regression لسبرنتي S05 وS06.
+9. كتابة ملف تنفيذ يوضح ما تغير وطريقة تحديث السيرفر.
 
-## 15. نقاط مفتوحة قبل التنفيذ
+## 15. قيود التنفيذ الحالية
 
-1. **مطابقة Employee Range:** Workspace تحفظ `size_band` مثل `1-10` ولا تحفظ عددًا دقيقًا. لا يمكن اختيار Override مثل `1-5` بدقة من `size_band=1-10`. نحتاج قرارًا: إضافة `employee_count` للـWorkspace، أم تقييد Overrides بنفس حدود Size Bands؟
-2. **One-Time Defaults:** لا توجد شاشة تفاصيل واضحة له. هل ننفذ Basic Info وFees وBenefits وTerms فقط، ونترك Work Defaults `null` حتى اعتماد تصميمه؟
-3. **Fee Percentage Basis:** التصميم يعرض Percentage لكنه لا يحدد صراحة هل تحسب على الراتب الشهري فقط. المثال يوحي بذلك، لكن يجب اعتماده صراحة قبل الحساب.
-4. **Overnight Work:** الخطة ترفض `end_time <= start_time`. إذا كانت الشيفتات الليلية مطلوبة نحتاج قاعدة حساب مختلفة.
-5. **Breaking endpoints:** هل الـFrontend الحالي مرتبط بالفعل بـCreate Draft وUpdate Draft وSubmit، أم يمكن استبدالها مباشرة بالـConfirm الواحد؟
+1. Workspace تحفظ `size_band`؛ لذلك يطبق Fee Override فقط إذا كان يغطي الـBand كاملة.
+2. `one_time` يظل غير فعال حتى يكمل الأدمن إعداداته المعتمدة.
+3. Percentage Fee تحسب على الراتب الشهري.
+4. الشيفت الذي يعبر منتصف الليل غير مدعوم حاليًا.
+5. Client API لا تدعم إنشاء أوتعديل Draft؛ التدفق المعتمد هو الاختيار ثم Submit المباشر.
 

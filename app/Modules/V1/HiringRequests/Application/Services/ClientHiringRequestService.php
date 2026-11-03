@@ -5,23 +5,17 @@ namespace App\Modules\V1\HiringRequests\Application\Services;
 use App\Modules\V1\AccessControl\Application\Services\WorkspaceAccessService;
 use App\Modules\V1\AccessControl\Domain\ValueObjects\ClientPermissionEnum;
 use App\Modules\V1\ContractTypes\Domain\Models\ContractType;
-use App\Modules\V1\Currencies\Domain\Models\Currency;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequest;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequestItem;
-use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringContractTypeEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferPartyEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestStatusEnum;
-use App\Modules\V1\HiringRequests\Domain\ValueObjects\WorkDayEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationStatusEnum;
 use App\Modules\V1\Talents\Domain\Models\Talent;
-use App\Modules\V1\Talents\Domain\ValueObjects\WorkModeEnum;
-use App\Modules\V1\Talents\Domain\ValueObjects\WorkTypeEnum;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Modules\V1\Workspaces\Domain\Models\Workspace;
 use App\Modules\V1\Workspaces\Domain\Models\WorkspaceTalentSelection;
-use App\Support\ApiMetadata\EnumOptions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -46,47 +40,9 @@ class ClientHiringRequestService
         private readonly ContractConfigurationResolver $contracts,
     ) {}
 
-    public function options(User $user, Workspace $workspace): array
-    {
-        $this->access->authorize($user, $workspace, ClientPermissionEnum::HIRING_REQUESTS_VIEW->value);
-
-        return [
-            'contract_types' => EnumOptions::make(HiringContractTypeEnum::class, 'hiring_contract_types'),
-            'contract_configurations' => ContractType::query()
-                ->where('is_active', true)
-                ->with(['benefits', 'terms'])
-                ->orderBy('id')
-                ->get()
-                ->map(fn (ContractType $contractType): array => [
-                    'id' => $contractType->id,
-                    'type' => $contractType->type->value,
-                    'name' => ['en' => $contractType->name_en, 'ar' => $contractType->name_ar],
-                    'description' => ['en' => $contractType->description_en, 'ar' => $contractType->description_ar],
-                    'benefits' => $contractType->benefits->map(fn ($benefit): array => [
-                        'name' => ['en' => $benefit->name_en, 'ar' => $benefit->name_ar],
-                        'display_order' => $benefit->display_order,
-                    ])->values(),
-                    'terms' => $contractType->terms->map(fn ($term): array => [
-                        'content' => ['en' => $term->content_en, 'ar' => $term->content_ar],
-                        'display_order' => $term->display_order,
-                    ])->values(),
-                ])->values(),
-            'work_types' => EnumOptions::make(WorkTypeEnum::class, 'work_types'),
-            'work_modes' => EnumOptions::make(WorkModeEnum::class, 'work_modes'),
-            'work_days' => EnumOptions::make(WorkDayEnum::class, 'work_days'),
-            'currencies' => Currency::query()->where('is_active', true)->with('translations')->orderBy('code')->get()
-                ->map(fn (Currency $currency): array => [
-                    'id' => $currency->id,
-                    'code' => $currency->code,
-                    'symbol' => $currency->symbol,
-                    'name' => $currency->name,
-                ])->values(),
-        ];
-    }
-
     public function paginate(User $user, Workspace $workspace, array $filters): LengthAwarePaginator
     {
-        $member = $this->access->authorize($user, $workspace, ClientPermissionEnum::HIRING_REQUESTS_VIEW->value);
+        $this->access->authorize($user, $workspace, ClientPermissionEnum::HIRING_REQUESTS_VIEW->value);
 
         $paginator = HiringRequest::query()
             ->where('workspace_id', $workspace->id)
@@ -97,72 +53,9 @@ class ClientHiringRequestService
             ->latest()
             ->paginate((int) ($filters['per_page'] ?? 15));
         $paginator->getCollection()->each(fn (HiringRequest $request) => $request
-            ->setAttribute('available_actions', $this->clientActions($request, $member)));
+            ->setAttribute('available_actions', ['view']));
 
         return $paginator;
-    }
-
-    public function createDraft(User $user, Workspace $workspace, array $data): HiringRequest
-    {
-        $member = $this->access->authorize($user, $workspace, ClientPermissionEnum::HIRING_REQUESTS_MANAGE->value);
-
-        return DB::transaction(function () use ($user, $workspace, $member, $data): HiringRequest {
-            $talents = $this->selectedEligibleTalents($workspace, collect($data['items'])->pluck('talent_id')->all());
-            $request = HiringRequest::query()->create([
-                'workspace_id' => $workspace->id,
-                'created_by_member_id' => $member->id,
-                'status' => HiringRequestStatusEnum::DRAFT,
-            ]);
-
-            $this->replaceItems($request, $data['items'], $talents, $workspace);
-            $this->event($request, $user, 'created');
-
-            $result = $this->load($request);
-            $result->setAttribute('available_actions', $this->clientActions($result, $member));
-
-            return $result;
-        });
-    }
-
-    public function preview(User $user, Workspace $workspace, array $data): array
-    {
-        $this->access->authorize($user, $workspace, ClientPermissionEnum::HIRING_REQUESTS_MANAGE->value);
-        $talents = $this->selectedEligibleTalents($workspace, collect($data['items'])->pluck('talent_id')->all());
-        $contractTypes = $this->activeContractTypes($data['items']);
-
-        return [
-            'items' => collect($data['items'])->map(function (array $item) use ($talents, $contractTypes, $workspace): array {
-                $talent = $talents->get($item['talent_id']);
-                $resolved = $this->contracts->resolve(
-                    $contractTypes->get($item['contract_type']),
-                    $talent,
-                    $workspace,
-                    (float) $item['salary_amount'],
-                );
-
-                return [
-                    'talent_id' => $talent->id,
-                    'talent_code' => $talent->talent_code,
-                    'job_title' => $talent->jobTitle === null ? null : [
-                        'id' => $talent->jobTitle->id,
-                        'name' => $talent->jobTitle->name,
-                    ],
-                    'contract_type' => $item['contract_type'],
-                    'interview_required' => (bool) $item['interview_required'],
-                    'salary_range' => [
-                        'minimum' => $talent->expected_salary_min,
-                        'maximum' => $talent->expected_salary_max,
-                        'currency' => $talent->expectedCurrency === null ? null : [
-                            'id' => $talent->expectedCurrency->id,
-                            'code' => $talent->expectedCurrency->code,
-                            'symbol' => $talent->expectedCurrency->symbol,
-                        ],
-                    ],
-                    'offer' => $resolved['offer'],
-                    'contract_configuration' => $resolved['snapshot'],
-                ];
-            })->values()->all(),
-        ];
     }
 
     public function submitDirect(User $user, Workspace $workspace, array $data): HiringRequest
@@ -223,77 +116,11 @@ class ClientHiringRequestService
 
     public function show(User $user, Workspace $workspace, int $requestId): HiringRequest
     {
-        $member = $this->access->authorize($user, $workspace, ClientPermissionEnum::HIRING_REQUESTS_VIEW->value);
+        $this->access->authorize($user, $workspace, ClientPermissionEnum::HIRING_REQUESTS_VIEW->value);
         $request = $this->findInWorkspace($workspace, $requestId);
-        $request->setAttribute('available_actions', $this->clientActions($request, $member));
+        $request->setAttribute('available_actions', ['view']);
 
         return $request;
-    }
-
-    public function updateDraft(User $user, Workspace $workspace, int $requestId, array $data): HiringRequest
-    {
-        $this->access->authorize($user, $workspace, ClientPermissionEnum::HIRING_REQUESTS_MANAGE->value);
-
-        $member = $this->access->member($user, $workspace);
-
-        return DB::transaction(function () use ($user, $workspace, $requestId, $data, $member): HiringRequest {
-            $request = HiringRequest::query()->where('workspace_id', $workspace->id)->lockForUpdate()->findOrFail($requestId);
-            $this->ensureDraft($request);
-            $talents = $this->selectedEligibleTalents($workspace, collect($data['items'])->pluck('talent_id')->all());
-
-            $request->items()->delete();
-            $this->replaceItems($request, $data['items'], $talents, $workspace);
-            $this->event($request, $user, 'updated');
-
-            $result = $this->load($request);
-            $result->setAttribute('available_actions', $this->clientActions($result, $member));
-
-            return $result;
-        });
-    }
-
-    public function submit(User $user, Workspace $workspace, int $requestId): HiringRequest
-    {
-        $this->access->authorize($user, $workspace, ClientPermissionEnum::HIRING_REQUESTS_MANAGE->value);
-
-        return DB::transaction(function () use ($user, $workspace, $requestId): HiringRequest {
-            // Serialize submissions inside the same workspace so two concurrent
-            // requests cannot reserve the same talent at the same time.
-            Workspace::query()->whereKey($workspace->id)->lockForUpdate()->firstOrFail();
-
-            $request = HiringRequest::query()
-                ->where('workspace_id', $workspace->id)
-                ->with('items')
-                ->lockForUpdate()
-                ->findOrFail($requestId);
-            $this->ensureDraft($request);
-
-            $talentIds = $request->items->pluck('talent_id')->all();
-            WorkspaceTalentSelection::query()
-                ->where('workspace_id', $workspace->id)
-                ->whereIn('talent_id', $talentIds)
-                ->lockForUpdate()
-                ->get();
-            $this->selectedEligibleTalents($workspace, $talentIds);
-            $this->ensureNoActiveRequests($workspace, $request, $talentIds);
-
-            $submittedAt = now();
-            $request->update([
-                'status' => HiringRequestStatusEnum::PENDING,
-                'submitted_at' => $submittedAt,
-            ]);
-            $request->items()->update(['status' => HiringRequestItemStatusEnum::PENDING->value]);
-            WorkspaceTalentSelection::query()
-                ->where('workspace_id', $workspace->id)
-                ->whereIn('talent_id', $talentIds)
-                ->delete();
-            $this->event($request, $user, 'submitted', ['submitted_at' => $submittedAt]);
-
-            $result = $this->load($request);
-            $result->setAttribute('available_actions', ['view']);
-
-            return $result;
-        });
     }
 
     private function selectedEligibleTalents(Workspace $workspace, array $talentIds)
@@ -339,32 +166,6 @@ class ClientHiringRequestService
         return $contractTypes;
     }
 
-    private function replaceItems(HiringRequest $request, array $items, $talents, Workspace $workspace): void
-    {
-        $workspace->loadMissing(['city.translations', 'country.translations']);
-        $defaultLocation = collect([$workspace->city?->name, $workspace->country?->name])
-            ->filter()->implode(', ') ?: null;
-
-        foreach ($items as $data) {
-            $talent = $talents->get($data['talent_id']);
-            $item = $request->items()->create([
-                'talent_id' => $talent->id,
-                'job_title_id' => $talent->job_title_id,
-                'contract_type' => $data['contract_type'],
-                'interview_required' => $data['interview_required'],
-                'status' => HiringRequestItemStatusEnum::DRAFT,
-            ]);
-            $item->offers()->create([
-                ...$data['offer'],
-                'hybrid_work_days' => $data['offer']['hybrid_work_days'] ?? null,
-                'notice_period_days' => $data['offer']['notice_period_days'] ?? $talent->notice_period_days,
-                'work_location' => $data['offer']['work_location'] ?? $defaultLocation,
-                'proposed_by' => HiringOfferPartyEnum::CLIENT,
-                'status' => HiringOfferStatusEnum::PENDING,
-            ]);
-        }
-    }
-
     private function ensureNoActiveRequests(Workspace $workspace, HiringRequest $request, array $talentIds): void
     {
         $exists = HiringRequestItem::query()
@@ -381,13 +182,6 @@ class ClientHiringRequestService
         }
     }
 
-    private function ensureDraft(HiringRequest $request): void
-    {
-        if ($request->status !== HiringRequestStatusEnum::DRAFT) {
-            throw ValidationException::withMessages(['hiring_request' => [__('hiring.draft_only')]]);
-        }
-    }
-
     private function findInWorkspace(Workspace $workspace, int $requestId): HiringRequest
     {
         return HiringRequest::query()->where('workspace_id', $workspace->id)->with(self::RELATIONS)->findOrFail($requestId);
@@ -396,17 +190,6 @@ class ClientHiringRequestService
     private function load(HiringRequest $request): HiringRequest
     {
         return $request->refresh()->load(self::RELATIONS);
-    }
-
-    private function clientActions(HiringRequest $request, $member): array
-    {
-        $actions = ['view'];
-        if ($request->status === HiringRequestStatusEnum::DRAFT && $this->access->allows($member, ClientPermissionEnum::HIRING_REQUESTS_MANAGE->value)) {
-            $actions[] = 'update';
-            $actions[] = 'submit';
-        }
-
-        return $actions;
     }
 
     private function event(HiringRequest $request, User $actor, string $action, array $data = []): void

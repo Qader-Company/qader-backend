@@ -4,13 +4,9 @@ use App\Modules\V1\HiringRequests\Presentation\Http\Controllers\ClientHiringRequ
 use App\Modules\V1\HiringRequests\Presentation\Http\Controllers\ClientHiringWorkflowController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('{workspace}/hiring-requests/options', [ClientHiringRequestController::class, 'options']);
 Route::get('{workspace}/hiring-requests', [ClientHiringRequestController::class, 'index']);
-Route::post('{workspace}/hiring-requests/preview', [ClientHiringRequestController::class, 'preview']);
 Route::post('{workspace}/hiring-requests', [ClientHiringRequestController::class, 'store']);
 Route::get('{workspace}/hiring-requests/{hiringRequest}', [ClientHiringRequestController::class, 'show'])->whereNumber('hiringRequest');
-Route::put('{workspace}/hiring-requests/{hiringRequest}', [ClientHiringRequestController::class, 'update'])->whereNumber('hiringRequest');
-Route::post('{workspace}/hiring-requests/{hiringRequest}/submit', [ClientHiringRequestController::class, 'submit'])->whereNumber('hiringRequest');
 Route::get('{workspace}/hiring-interviews/{interview}', [ClientHiringWorkflowController::class, 'interview'])->whereNumber(['workspace', 'interview']);
 Route::post('{workspace}/hiring-interviews/{interview}/accept-schedule', [ClientHiringWorkflowController::class, 'acceptInterviewSchedule'])->whereNumber(['workspace', 'interview']);
 Route::post('{workspace}/hiring-interviews/{interview}/request-schedule-change', [ClientHiringWorkflowController::class, 'requestInterviewScheduleChange'])->whereNumber(['workspace', 'interview']);

@@ -6,6 +6,7 @@ use App\Http\Middleware\CheckApiKey;
 use App\Modules\V1\AccessControl\Domain\Models\WorkspaceRole;
 use App\Modules\V1\Admins\Domain\Models\Admin;
 use App\Modules\V1\Clients\Domain\Models\Client;
+use App\Modules\V1\ContractTypes\Domain\Models\ContractType;
 use App\Modules\V1\Countries\Domain\Models\Country;
 use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
 use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
@@ -60,6 +61,17 @@ class ClientTalentMarketplaceFlowTest extends TestCase
         $this->skill = Skill::query()->create([
             'name' => 'Laravel',
             'is_active' => true,
+        ]);
+        ContractType::query()->where('type', 'managed')->update([
+            'is_active' => true,
+            'fee_type' => 'percentage',
+            'percentage' => 10,
+            'work_start_day' => 'sunday',
+            'work_end_day' => 'thursday',
+            'work_start_time' => '09:00',
+            'work_end_time' => '17:00',
+            'work_type' => 'full_time',
+            'work_mode' => 'remote',
         ]);
 
         $this->owner = $this->clientUser('owner@example.test');
@@ -142,7 +154,11 @@ class ClientTalentMarketplaceFlowTest extends TestCase
         $this->getJson($this->selectionUrl())
             ->assertOk()
             ->assertJsonCount(1, 'data.data')
-            ->assertJsonPath('data.data.0.id', $talent->id);
+            ->assertJsonPath('data.data.0.id', $talent->id)
+            ->assertJsonCount(1, 'data.contract_types')
+            ->assertJsonPath('data.contract_types.0.type', 'managed')
+            ->assertJsonPath('data.contract_types.0.defaults.work_hours', 8)
+            ->assertJsonPath('data.contract_types.0.fee.percentage', '10.0000');
 
         $this->deleteJson($this->selectionUrl('/'.$talent->id))
             ->assertOk();

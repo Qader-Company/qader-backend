@@ -5,6 +5,7 @@ namespace App\Modules\V1\TalentMarketplace\Application\Services;
 use App\Modules\V1\AccessControl\Application\Services\WorkspaceAccessService;
 use App\Modules\V1\AccessControl\Domain\ValueObjects\ClientPermissionEnum;
 use App\Modules\V1\Cities\Domain\Models\City;
+use App\Modules\V1\ContractTypes\Domain\Models\ContractType;
 use App\Modules\V1\Countries\Domain\Models\Country;
 use App\Modules\V1\Currencies\Domain\Models\Currency;
 use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
@@ -133,7 +134,7 @@ class TalentMarketplaceService
         ];
     }
 
-    /** @return array{paginator: LengthAwarePaginator} */
+    /** @return array{paginator: LengthAwarePaginator, contract_types: \Illuminate\Database\Eloquent\Collection} */
     public function selections(User $user, Workspace $workspace, int $perPage = 12): array
     {
         $member = $this->access->authorize(
@@ -151,7 +152,16 @@ class TalentMarketplaceService
             ->paginate($perPage);
         $this->decorate($paginator->getCollection(), $canManage);
 
-        return ['paginator' => $paginator];
+        $contractTypes = ContractType::query()
+            ->where('is_active', true)
+            ->with([
+                'fixedCurrency', 'benefits', 'terms',
+                'feeOverrides.professionalField.translations', 'feeOverrides.fixedCurrency',
+            ])
+            ->orderBy('id')
+            ->get();
+
+        return ['paginator' => $paginator, 'contract_types' => $contractTypes];
     }
 
     public function addSelection(User $user, Workspace $workspace, int $talentId): Talent

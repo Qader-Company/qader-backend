@@ -21,9 +21,9 @@
 - التحقق أن الراتب داخل Expected Salary Range للموهبة.
 - أخذ عملة العرض تلقائيًا من `expected_currency_id`.
 - أخذ Notice Period تلقائيًا من بروفايل الموهبة.
-- Preview للطلب قبل التأكيد دون حفظ.
+- إرجاع إعدادات العقود الفعالة ضمن List Selected Talents.
 - `POST hiring-requests` ينشئ الطلب مباشرة بحالة `pending` ويحذف العناصر المرسلة من Squad ذريًا.
-- الإبقاء مؤقتًا على Update Draft وSubmit Draft لدعم المسودات القديمة وعدم كسر ربط قائم.
+- إزالة Options وPreview وUpdate Draft وSubmit Draft من Client API.
 - عدم تغيير دورة Assign/Reassign/Start Request أوS06.
 
 ## Migration
@@ -54,7 +54,9 @@ database/migrations/2026_11_06_000000_create_contract_type_configuration_tables.
 database/seeders/ContractTypeSeeder.php
 ```
 
-يستخدم `updateOrCreate` ويحافظ على الإعدادات التي عدلها الأدمن. النوعان يبدأان غير فعالين عند أول Migration حتى يكمل الأدمن الإعدادات ثم يفعلهما.
+يكمل السيدر البيانات الأساسية الظاهرة في Figma لنوعي `managed` و`one_time`: الاسم والوصف ونوع الرسوم والمزايا والشروط. يملأ البيانات الناقصة فقط، ولا يكتب فوق إعدادات أو قوائم عدلها الأدمن عند إعادة تشغيله.
+
+لا يثبت السيدر مبلغ الرسوم أوالنسبة أوأيام وساعات ومكان العمل؛ لأنها قيم إعدادات قابلة للتغيير وليست قرارات ثابتة في التصميم. كذلك لا يزرع Professional Field Fee Overrides لأن الصفوف الموجودة في Figma بيانات توضيحية ومتداخلة. النوعان يبدآن غير فعالين حتى يكمل الأدمن الإعدادات المطلوبة ثم يفعلهما.
 
 ## Endpoints الأدمن
 
@@ -75,14 +77,27 @@ admin.contract-types.update
 admin.contract-types.toggle-status
 ```
 
-## Endpoints العميل المعدلة
+## Endpoints العميل النهائية
 
 ```text
-POST /api/v1/client/workspaces/{workspace}/hiring-requests/preview
+GET    /api/v1/client/workspaces/{workspace}/talent-selections
+POST   /api/v1/client/workspaces/{workspace}/talent-selections
+DELETE /api/v1/client/workspaces/{workspace}/talent-selections/{talent}
+GET  /api/v1/client/workspaces/{workspace}/hiring-requests
+GET  /api/v1/client/workspaces/{workspace}/hiring-requests/{hiringRequest}
 POST /api/v1/client/workspaces/{workspace}/hiring-requests
 ```
 
-الـBody في الاثنين:
+`GET talent-selections` يعيد المواهب المختارة، ومعها `contract_types` الفعالة وFees وBenefits وTerms وWork Defaults والموقع.
+
+في Apidog تظهر المسارات في مجلدات مستقلة:
+
+- `talent-selections`: الاختيار والإزالة والقائمة.
+- `hiring-requests`: List وDetails وConfirm فقط.
+- `hiring-interviews`: إجراءات مقابلات S06.
+- `hiring-request-items`: قرارات وإجراءات عناصر الطلب.
+
+Body الـSubmit:
 
 ```json
 {
@@ -123,18 +138,17 @@ Override: 11-30     => لا يطبق؛ يستخدم Default Fee
 
 - بقي `hiring_request_items.contract_type` دون حذف.
 - API ما زالت ترجع `contract_type` كنص.
-- المسودات القديمة لا تحذف.
-- Endpoints تعديل وإرسال Draft القديمة بقيت مؤقتًا.
-- الطلبات الجديدة تستخدم Confirm المباشر ولا تنشئ Draft.
+- البيانات القديمة لا تحذف، لكن Client API لم تعد تعرض Endpoints للمسودات.
+- الطلبات الجديدة تستخدم Confirm المباشر ولا تنشئ Drafts.
 
 ## الاختبارات
 
 تم تشغيل الاختبارات داخل Docker باستخدام SQLite `:memory:`:
 
 ```text
-ContractTypeConfigurationTest: 2 tests, 14 assertions — PASS
+ContractTypeConfigurationTest: 3 tests, 29 assertions — PASS
 HiringRequestFlowTest: 10 tests, 81 assertions — PASS
-Feature suite: 30 tests, 197 assertions — PASS
+Feature suite: 30 tests, 201 assertions — PASS
 ```
 
 ## تطبيق التحديث على السيرفر

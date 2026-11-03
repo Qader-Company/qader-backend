@@ -5,11 +5,13 @@ namespace Tests\Feature;
 use App\Http\Middleware\CheckApiKey;
 use App\Modules\V1\AccessControl\Domain\Models\Role;
 use App\Modules\V1\Admins\Domain\Models\Admin;
+use App\Modules\V1\ContractTypes\Domain\Models\ContractType;
 use App\Modules\V1\Currencies\Domain\Models\Currency;
 use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use Database\Seeders\AdminRoleSeeder;
+use Database\Seeders\ContractTypeSeeder;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -77,6 +79,42 @@ class ContractTypeConfigurationTest extends TestCase
         $this->putJson("/api/v1/admin/contract-types/{$id}", $payload)
             ->assertUnprocessable()
             ->assertJsonValidationErrors('fee_overrides.1.min_employees');
+    }
+
+    public function test_contract_type_seeder_populates_figma_base_data_and_preserves_admin_changes(): void
+    {
+        $this->seed(ContractTypeSeeder::class);
+
+        $managed = ContractType::query()->where('type', 'managed')->firstOrFail();
+        $oneTime = ContractType::query()->where('type', 'one_time')->firstOrFail();
+
+        $this->assertFalse($managed->is_active);
+        $this->assertSame('fixed_percentage', $managed->fee_type->value);
+        $this->assertSame('percentage', $oneTime->fee_type->value);
+        $this->assertSame(6, $managed->benefits()->count());
+        $this->assertSame(3, $oneTime->benefits()->count());
+        $this->assertSame(1, $managed->terms()->count());
+        $this->assertSame(1, $oneTime->terms()->count());
+        $this->assertNull($managed->fixed_amount);
+        $this->assertNull($managed->percentage);
+        $this->assertNull($managed->work_start_day);
+
+        $managed->update([
+            'description_en' => 'Administrator supplied description.',
+            'fee_type' => 'fixed',
+            'fixed_amount' => 125,
+            'fixed_currency_id' => $this->currency->id,
+        ]);
+        $managed->benefits()->firstOrFail()->update(['name_en' => 'Administrator supplied benefit']);
+
+        $this->seed(ContractTypeSeeder::class);
+
+        $managed->refresh();
+        $this->assertSame('Administrator supplied description.', $managed->description_en);
+        $this->assertSame('fixed', $managed->fee_type->value);
+        $this->assertSame('125.0000', $managed->fixed_amount);
+        $this->assertSame('Administrator supplied benefit', $managed->benefits()->firstOrFail()->name_en);
+        $this->assertSame(6, $managed->benefits()->count());
     }
 
     private function configuration(): array
