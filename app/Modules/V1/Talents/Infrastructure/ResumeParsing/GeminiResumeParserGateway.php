@@ -43,6 +43,12 @@ class GeminiResumeParserGateway implements ResumeParserGatewayInterface
 
         $content = Arr::get($response->json(), 'candidates.0.content.parts.0.text');
         if (! is_string($content) || trim($content) === '') {
+            Log::warning('Resume parser provider returned no structured content.', [
+                'provider' => 'gemini',
+                'finish_reason' => Arr::get($response->json(), 'candidates.0.finishReason'),
+                'block_reason' => Arr::get($response->json(), 'promptFeedback.blockReason'),
+            ]);
+
             throw new ResumeParsingFailedException(__('talents.resume_parse_failed'));
         }
 
@@ -84,7 +90,7 @@ class GeminiResumeParserGateway implements ResumeParserGatewayInterface
             'generationConfig' => [
                 'temperature' => 0,
                 'responseMimeType' => 'application/json',
-                'responseSchema' => $this->schema(),
+                'responseJsonSchema' => $this->schema(),
             ],
         ];
     }
@@ -182,6 +188,8 @@ PROMPT;
         Log::warning('Resume parser provider request failed.', [
             'provider' => 'gemini',
             'status' => $response->status(),
+            'provider_status' => Arr::get($response->json(), 'error.status'),
+            'provider_message' => Arr::get($response->json(), 'error.message'),
         ]);
 
         if (in_array($response->status(), [400, 422], true)) {

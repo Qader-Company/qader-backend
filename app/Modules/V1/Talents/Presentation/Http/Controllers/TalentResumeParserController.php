@@ -27,7 +27,7 @@ class TalentResumeParserController extends Controller
         } catch (ResumeParsingFailedException $exception) {
             return ApiResponse::validationError([
                 'cv' => [$exception->getMessage()],
-            ]);
+            ], $exception->getMessage());
         } catch (ResumeParserUnavailableException $exception) {
             return ApiResponse::failed(
                 message: $exception->getMessage(),

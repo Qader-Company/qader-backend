@@ -65,7 +65,8 @@ class GeminiResumeParserGatewayTest extends TestCase
             return $request->url() === 'https://generativelanguage.test/v1beta/models/gemini-test-flash:generateContent'
                 && $request->hasHeader('x-goog-api-key', 'test-api-key')
                 && data_get($payload, 'generationConfig.responseMimeType') === 'application/json'
-                && data_get($payload, 'generationConfig.responseSchema.type') === 'object'
+                && data_get($payload, 'generationConfig.responseJsonSchema.type') === 'object'
+                && data_get($payload, 'generationConfig.responseSchema') === null
                 && data_get($payload, 'contents.0.parts.1.inlineData.mimeType') === 'application/pdf'
                 && base64_decode((string) data_get($payload, 'contents.0.parts.1.inlineData.data'), true) === 'fake resume content';
         });
