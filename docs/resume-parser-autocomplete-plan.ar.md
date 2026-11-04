@@ -1,6 +1,6 @@
 # خطة Resume Parser وملء بيانات الموهبة تلقائيًا
 
-الحالة: **تم التنفيذ باستخدام APILayer Resume Parser بالخطة المجانية**  
+الحالة: **تم التنفيذ باستخدام Gemini Flash API**
 تاريخ المراجعة: 4 نوفمبر 2026  
 النطاق: رفع الموهبة للسيرة الذاتية، تحليلها، وإرجاع اقتراحات منظمة للواجهة لاستخدامها في Auto Complete لحقول Onboarding الحالية.  
 خارج النطاق: حفظ بيانات البروفايل تلقائيًا دون مراجعة الموهبة، إنشاء Master Data جديدة من نص السيرة الذاتية، أوتقييم جودة الموهبة.
@@ -53,10 +53,10 @@ sharpapi/laravel-resume-parser
 القرار الحالي:
 
 - لن تعتمد SharpAPI لأنها خدمة مدفوعة، وقد أزيلت الباكدج وإعداداتها من المشروع.
-- اعتمد APILayer Resume Parser كبديل Hosted لا يحتاج موديلًا محليًا، بخطة مجانية قدرها 100 طلب شهريًا وفق صفحة الخدمة وقت المراجعة.
+- اعتمد Gemini Flash كبديل Hosted لا يحتاج موديلًا محليًا، مع JSON Schema ثابت لبيانات الـCV.
 - تظل طبقة `ResumeParserGatewayInterface` مستقلة حتى يمكن تغيير المزود دون تغيير Endpoint أوResponse الخاصة بالFrontend.
-- يدعم المزود رفع ملفات PDF وDOC وDOCX، وتذكر وثائقه أن الملفات تحذف تلقائيًا بعد التحليل ولا تحفظ النتيجة.
-- يجب اختبار جودة CV العربية عمليًا؛ توثيق المزود يذكر أن أفضل جودة للغة الإنجليزية مع دعم مقبول للغات أخرى.
+- ترسل الملفات Inline في طلب التحليل ولا تستخدم Files API لأن الملف مؤقت ولا يحتاج إلى إعادة استخدامه.
+- يستخدم Free Tier فقط مع بيانات تجريبية، ويستخدم Paid Tier قبل Production حتى لا تستخدم بيانات الـCV لتحسين منتجات المزود وفق سياسة Gemini.
 
 ## 3. الوضع الحالي في المشروع
 
@@ -283,7 +283,7 @@ cv => required|file|mimes:pdf,doc,docx|max:10240
 
 ### 7.1 مزود التحليل
 
-لا توجد باكدج Composer إضافية. يستخدم Adapter عميل HTTP الموجود في Laravel للاتصال بخدمة APILayer.
+لا توجد باكدج Composer إضافية. يستخدم Adapter عميل HTTP الموجود في Laravel للاتصال بخدمة Gemini.
 
 ### 7.2 الملفات والمكونات
 
@@ -294,7 +294,7 @@ Application/Contracts/ResumeParserGatewayInterface.php
 Application/Data/ParsedResumeData.php
 Application/Services/ParseTalentResumeService.php
 Application/Services/ResumeAutocompleteMapper.php
-Infrastructure/ResumeParsing/ApiLayerResumeParserGateway.php
+Infrastructure/ResumeParsing/GeminiResumeParserGateway.php
 Presentation/Http/Controllers/TalentResumeParserController.php
 Presentation/Http/Requests/ParseTalentResumeRequest.php
 Presentation/Http/Resources/ParsedResumeResource.php
@@ -303,7 +303,7 @@ Presentation/Http/Resources/ParsedResumeResource.php
 المسؤوليات:
 
 - `ResumeParserGatewayInterface`: يعزل التطبيق عن مزود التحليل.
-- `ApiLayerResumeParserGateway`: يرفع الملف إلى APILayer ويحول الاستجابة إلى الشكل الداخلي ويعزل أخطاء المزود.
+- `GeminiResumeParserGateway`: يرسل الملف Inline مع Prompt وJSON Schema ويحول أخطاء المزود إلى Exceptions داخلية.
 - `ResumeAutocompleteMapper`: يحول النتيجة الخام إلى حقول Qader ويطابق Master Data.
 - `ParseTalentResumeService`: يدير الملف المؤقت، التحليل، وإتلاف الملف بعد انتهاء الطلب دون حفظه في Media Library.
 - `ParsedResumeResource`: يثبت شكل Response للFrontend.
@@ -312,7 +312,7 @@ Presentation/Http/Resources/ParsedResumeResource.php
 
 ## 8. الإعدادات المقترحة
 
-يحتاج التشغيل إلى `APILAYER_RESUME_PARSER_KEY`. عنوان الخدمة والـTimeout قابلان للضبط من Environment، وإعدادات Rate Limit الداخلية الخاصة بالـEndpoint موجودة بالفعل.
+يحتاج التشغيل إلى `GEMINI_API_KEY`. الموديل وعنوان الخدمة والـTimeout قابلة للضبط من Environment، وإعدادات Rate Limit الداخلية الخاصة بالـEndpoint موجودة بالفعل.
 
 ## 9. Error Handling المقترح
 
@@ -349,18 +349,18 @@ GET  /api/v1/talent/onboarding/resume/parses/{parse_id}
 
 ## 11. الخصوصية والأمان
 
-المقصود بالخصوصية هنا أن APILayer خدمة خارج Qader. عند التحليل سيخرج ملف الـCV من سيرفر Qader ويرسل إلى سيرفرات APILayer، وقد يحتوي الاسم والبريد والهاتف والعنوان والخبرات وغيرها من البيانات الشخصية.
+المقصود بالخصوصية هنا أن Gemini خدمة خارج Qader. عند التحليل سيخرج ملف الـCV من سيرفر Qader ويرسل إلى سيرفرات Google، وقد يحتوي الاسم والبريد والهاتف والعنوان والخبرات وغيرها من البيانات الشخصية.
 
 قبل Production يجب تنفيذ ومراجعة الآتي:
 
-1. مراجعة شروط APILayer وسياسة الاحتفاظ والحذف للملفات والنتائج.
+1. مراجعة شروط Gemini وسياسة معالجة الملفات والنتائج.
 2. التأكد من المنطقة الجغرافية التي تعالج فيها الملفات إذا كان ذلك مطلوبًا تعاقديًا.
 3. إضافة نص واضح للموهبة بأن الملف سيحلل بواسطة مزود خارجي، إذا تطلبت سياسة المنصة ذلك.
 4. عدم تسجيل محتوى الـCV أوResponse الخام في Logs.
 5. عدم حفظ الملف المؤقت محليًا بعد انتهاء Request.
 6. التأكد تعاقديًا من عدم استخدام ملفات المواهب للتدريب أوأغراض غير تقديم الخدمة.
 
-هذه ليست جداول أوFlow إضافية؛ هي مراجعة قانونية وتشغيلية لأننا نتعامل مع بيانات حقيقية لأشخاص. إذا لم تناسب شروط APILayer، يمكن تغيير المزود من خلال الـAdapter نفسه.
+هذه ليست جداول أوFlow إضافية؛ هي مراجعة قانونية وتشغيلية لأننا نتعامل مع بيانات حقيقية لأشخاص. إذا لم تناسب شروط Gemini، يمكن تغيير المزود من خلال الـAdapter نفسه.
 
 ## 12. الاختبارات المطلوبة
 
@@ -395,10 +395,10 @@ GET  /api/v1/talent/onboarding/resume/parses/{parse_id}
 
 ## 14. مراحل التنفيذ بعد الاعتماد
 
-1. إنشاء حساب APILayer والاشتراك في Free Plan واستخراج API Key.
+1. إنشاء مشروع في Google AI Studio واستخراج Gemini API Key.
 2. إضافة المفتاح إلى Environment على Local/Test دون حفظه في Git.
 3. اختبار دقة ملفات CV عربية وإنجليزية حقيقية.
-4. متابعة استهلاك الحد الشهري من Headers التي يرجعها المزود.
+4. متابعة الاستهلاك والـRate Limits من Google AI Studio.
 5. بناء Normalizer وMaster Data Matcher.
 6. بناء Request وService وController وResource.
 7. إضافة Route وRate Limiter.
@@ -410,7 +410,7 @@ GET  /api/v1/talent/onboarding/resume/parses/{parse_id}
 
 ## 15. القرارات المعتمدة
 
-1. **المزود الأساسي:** APILayer Resume Parser باستخدام Free Plan؛ SharpAPI غير معتمدة بسبب التكلفة.
+1. **المزود الأساسي:** Gemini Flash API؛ Free Tier للتطوير فقط وPaid Tier لبيانات Production الحقيقية.
 2. **التصميم البرمجي:** يظل الـGateway مستقلًا حتى لا يتغير عقد الـAPI عند تغيير المزود لاحقًا.
 3. **حفظ الملف:** Endpoint التحليل لا تحفظ الملف. يحذف بعد التحليل، ويرفعه Frontend مرة أخرى عند حفظ Personal Information.
 4. **شكل التنفيذ:** Endpoint واحدة متزامنة في النسخة الأولى، والتحويل إلى Queue فقط إذا أثبت قياس الزمن الحاجة.
@@ -419,4 +419,4 @@ GET  /api/v1/talent/onboarding/resume/parses/{parse_id}
 7. **الحفظ التلقائي:** لا تحفظ أي اقتراحات في Profile؛ الموهبة تراجعها ثم ترسلها عبر Endpoints الحفظ الحالية.
 8. **قاعدة البيانات:** لا توجد Migration جديدة لهذا الجزء.
 
-الـAPI والـMapping وAPILayer Adapter جاهزون. يحتاج التحليل الحقيقي فقط إلى وضع `APILAYER_RESUME_PARSER_KEY` صالح في Environment.
+الـAPI والـMapping وGemini Adapter جاهزون. يحتاج التحليل الحقيقي فقط إلى وضع `GEMINI_API_KEY` صالح في Environment.

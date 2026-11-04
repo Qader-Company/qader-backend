@@ -7,7 +7,7 @@ use App\Modules\V1\Talents\Application\Contracts\ResumeParserGatewayInterface;
 use App\Modules\V1\Talents\Application\Listeners\RefreshTalentsAfterProfessionalFieldFormUpdated;
 use App\Modules\V1\Talents\Domain\Repositories\TalentRepositoryInterface;
 use App\Modules\V1\Talents\Infrastructure\Persistence\Repositories\EloquentTalentRepository;
-use App\Modules\V1\Talents\Infrastructure\ResumeParsing\ApiLayerResumeParserGateway;
+use App\Modules\V1\Talents\Infrastructure\ResumeParsing\GeminiResumeParserGateway;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -16,7 +16,7 @@ class TalentModuleServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(TalentRepositoryInterface::class, EloquentTalentRepository::class);
-        $this->app->bind(ResumeParserGatewayInterface::class, ApiLayerResumeParserGateway::class);
+        $this->app->bind(ResumeParserGatewayInterface::class, GeminiResumeParserGateway::class);
     }
 
     public function boot(): void

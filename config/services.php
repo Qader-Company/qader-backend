@@ -44,11 +44,12 @@ return [
         ],
     ],
 
-    'apilayer' => [
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
         'resume_parser' => [
-            'key' => env('APILAYER_RESUME_PARSER_KEY'),
-            'base_url' => env('APILAYER_RESUME_PARSER_BASE_URL', 'https://api.apilayer.com/resume_parser'),
-            'timeout' => (int) env('APILAYER_RESUME_PARSER_TIMEOUT', 60),
+            'model' => env('GEMINI_RESUME_PARSER_MODEL', 'gemini-3.8-flash'),
+            'base_url' => env('GEMINI_RESUME_PARSER_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
+            'timeout' => (int) env('GEMINI_RESUME_PARSER_TIMEOUT', 90),
         ],
     ],
 
