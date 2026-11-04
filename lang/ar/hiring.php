@@ -3,6 +3,7 @@
 return [
     'contract_type_inactive' => 'نوع العقد المحدد غير متاح حاليًا.',
     'contract_type_incomplete' => 'إعدادات نوع العقد المحدد غير مكتملة.',
+    'contract_fixed_fee_incomplete' => 'يجب تحديد رسوم ثابتة وعملتها بشكل كامل لنوع العقد المحدد.',
     'contract_type_invalid_hours' => 'ساعات العمل في إعدادات نوع العقد غير صالحة.',
     'talent_salary_incomplete' => 'نطاق الراتب المتوقع وعملته غير مكتملين لهذه الموهبة.',
     'salary_outside_talent_range' => 'يجب أن يكون الراتب المعروض داخل نطاق الراتب المتوقع للموهبة.',

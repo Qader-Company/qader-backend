@@ -3,6 +3,7 @@
 return [
     'contract_type_inactive' => 'The selected contract type is unavailable.',
     'contract_type_incomplete' => 'The selected contract type configuration is incomplete.',
+    'contract_fixed_fee_incomplete' => 'The selected contract type must have a complete fixed fee and currency.',
     'contract_type_invalid_hours' => 'The selected contract type has invalid working hours.',
     'talent_salary_incomplete' => 'This talent does not have a complete expected salary range and currency.',
     'salary_outside_talent_range' => 'The offered salary must be within the talent expected salary range.',

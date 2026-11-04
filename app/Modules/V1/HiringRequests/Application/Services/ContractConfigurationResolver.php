@@ -12,16 +12,21 @@ use Illuminate\Validation\ValidationException;
 
 class ContractConfigurationResolver
 {
-    public function resolve(ContractType $contractType, Talent $talent, Workspace $workspace, float $salary): array
-    {
+    public function resolve(
+        ContractType $contractType,
+        Talent $talent,
+        Workspace $workspace,
+        float $salary,
+        string $attributePrefix = '',
+    ): array {
         if (! $contractType->is_active) {
-            throw ValidationException::withMessages(['contract_type' => [__('hiring.contract_type_inactive')]]);
+            $this->fail($attributePrefix, 'contract_type', 'hiring.contract_type_inactive');
         }
         if ($talent->expected_salary_min === null || $talent->expected_salary_max === null || $talent->expected_currency_id === null) {
-            throw ValidationException::withMessages(['salary_amount' => [__('hiring.talent_salary_incomplete')]]);
+            $this->fail($attributePrefix, 'salary_amount', 'hiring.talent_salary_incomplete');
         }
         if ($salary < (float) $talent->expected_salary_min || $salary > (float) $talent->expected_salary_max) {
-            throw ValidationException::withMessages(['salary_amount' => [__('hiring.salary_outside_talent_range')]]);
+            $this->fail($attributePrefix, 'salary_amount', 'hiring.salary_outside_talent_range');
         }
 
         $requiredDefaults = [
@@ -30,16 +35,16 @@ class ContractConfigurationResolver
             $contractType->work_type, $contractType->work_mode,
         ];
         if (in_array(null, $requiredDefaults, true)) {
-            throw ValidationException::withMessages(['contract_type' => [__('hiring.contract_type_incomplete')]]);
+            $this->fail($attributePrefix, 'contract_type', 'hiring.contract_type_incomplete');
         }
 
         $workHours = $this->workHours((string) $contractType->work_start_time, (string) $contractType->work_end_time);
         if ($workHours === null) {
-            throw ValidationException::withMessages(['contract_type' => [__('hiring.contract_type_invalid_hours')]]);
+            $this->fail($attributePrefix, 'contract_type', 'hiring.contract_type_invalid_hours');
         }
 
         $override = $this->matchingOverride($contractType, $talent, $workspace);
-        $fee = $this->fee($contractType, $override, $salary, (int) $talent->expected_currency_id);
+        $fee = $this->fixedFee($contractType, $override, $attributePrefix);
         $snapshot = [
             'type' => $this->value($contractType->type),
             'name' => ['en' => $contractType->name_en, 'ar' => $contractType->name_ar],
@@ -102,13 +107,19 @@ class ContractConfigurationResolver
         };
     }
 
-    private function fee(ContractType $contractType, ?ContractTypeFeeOverride $override, float $salary, int $salaryCurrencyId): array
-    {
+    private function fixedFee(
+        ContractType $contractType,
+        ?ContractTypeFeeOverride $override,
+        string $attributePrefix,
+    ): array {
         $source = $override ?? $contractType;
         $type = $this->value($source->fee_type);
-        $percentageAmount = in_array($type, [ContractFeeTypeEnum::PERCENTAGE->value, ContractFeeTypeEnum::FIXED_PERCENTAGE->value], true)
-            ? round($salary * ((float) $source->percentage / 100), 4)
-            : null;
+
+        if ($type !== ContractFeeTypeEnum::FIXED->value
+            || $source->fixed_amount === null
+            || $source->fixed_currency_id === null) {
+            $this->fail($attributePrefix, 'contract_type', 'hiring.contract_fixed_fee_incomplete');
+        }
 
         return [
             'source' => $override === null ? 'default' : 'override',
@@ -116,10 +127,14 @@ class ContractConfigurationResolver
             'type' => $type,
             'fixed_amount' => $source->fixed_amount,
             'fixed_currency_id' => $source->fixed_currency_id,
-            'percentage' => $source->percentage,
-            'percentage_amount' => $percentageAmount,
-            'percentage_currency_id' => $percentageAmount === null ? null : $salaryCurrencyId,
         ];
+    }
+
+    private function fail(string $prefix, string $attribute, string $translationKey): never
+    {
+        $key = $prefix === '' ? $attribute : "{$prefix}.{$attribute}";
+
+        throw ValidationException::withMessages([$key => [__($translationKey)]]);
     }
 
     private function value(mixed $value): mixed

@@ -68,8 +68,10 @@ class HiringRequestFlowTest extends TestCase
         ]);
         ContractType::query()->where('type', 'managed')->update([
             'is_active' => true,
-            'fee_type' => 'percentage',
-            'percentage' => 10,
+            'fee_type' => 'fixed',
+            'fixed_amount' => 500,
+            'fixed_currency_id' => $this->currency->id,
+            'percentage' => null,
             'work_start_day' => 'sunday',
             'work_end_day' => 'thursday',
             'work_start_time' => '09:00',
@@ -318,7 +320,33 @@ class HiringRequestFlowTest extends TestCase
 
         $this->postJson($this->clientUrl(), $body)
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('salary_amount');
+            ->assertJsonValidationErrors('items.0.salary_amount');
+    }
+
+    public function test_contract_type_must_have_a_complete_fixed_fee(): void
+    {
+        ContractType::query()->where('type', 'managed')->update([
+            'fee_type' => 'percentage',
+            'fixed_amount' => null,
+            'fixed_currency_id' => null,
+            'percentage' => 10,
+        ]);
+
+        $this->postJson($this->clientUrl(), $this->draftBody())
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('items.0.contract_type');
+
+        $this->assertDatabaseCount('hiring_requests', 0);
+    }
+
+    public function test_submitted_request_snapshots_the_contract_fixed_fee(): void
+    {
+        $this->postJson($this->clientUrl(), $this->draftBody())
+            ->assertCreated()
+            ->assertJsonPath('data.items.0.offer.salary_amount', '6500.0000')
+            ->assertJsonPath('data.items.0.contract_configuration.fee.type', 'fixed')
+            ->assertJsonPath('data.items.0.contract_configuration.fee.fixed_amount', '500.0000')
+            ->assertJsonPath('data.items.0.contract_configuration.fee.fixed_currency_id', $this->currency->id);
     }
 
     public function test_assign_reassign_and_responsible_admin_rules_are_enforced(): void

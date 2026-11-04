@@ -28,7 +28,7 @@ class SubmitHiringRequestRequest extends FormRequest
     {
         return [
             'items' => [
-                'description' => 'Talents to hire. Contract defaults are resolved by the backend; the client supplies only the salary and request choices.',
+                'description' => 'Talents to hire. The salary must be within each talent expected range. Contract defaults and the configured fixed fee are resolved by the backend.',
                 'example' => [[
                     'talent_id' => 12,
                     'contract_type' => HiringContractTypeEnum::MANAGED->value,

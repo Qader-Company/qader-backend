@@ -81,10 +81,16 @@ class ClientHiringRequestService
             ]);
             $this->ensureNoActiveRequests($workspace, $request, $talentIds);
 
-            foreach ($data['items'] as $dataItem) {
+            foreach ($data['items'] as $index => $dataItem) {
                 $talent = $talents->get($dataItem['talent_id']);
                 $contractType = $contractTypes->get($dataItem['contract_type']);
-                $resolved = $this->contracts->resolve($contractType, $talent, $workspace, (float) $dataItem['salary_amount']);
+                $resolved = $this->contracts->resolve(
+                    $contractType,
+                    $talent,
+                    $workspace,
+                    (float) $dataItem['salary_amount'],
+                    "items.{$index}",
+                );
                 $item = $request->items()->create([
                     'talent_id' => $talent->id,
                     'job_title_id' => $talent->job_title_id,

@@ -112,6 +112,7 @@ class PortalExports
     {
         $operation['parameters'] ??= [];
         self::upsertOpenApiHeader($operation['parameters'], 'Accept', 'application/json');
+        self::upsertOpenApiHeader($operation['parameters'], 'Accept-Language', 'en');
         self::upsertOpenApiHeader($operation['parameters'], 'X-Authorization', '{{api_key}}');
 
         $tokenVariable = self::tokenVariableFor($uri, $operation);
@@ -315,14 +316,20 @@ class PortalExports
 
     private static function normalizePostmanAuthentication(array &$collection): void
     {
-        $variables = ['api_key', 'access_token', 'verification_token', 'refresh_token', 'reset_password_token'];
+        $variables = [
+            'api_key' => '',
+            'access_token' => '',
+            'verification_token' => '',
+            'refresh_token' => '',
+            'reset_password_token' => '',
+        ];
         $existingVariables = array_column($collection['variable'] ?? [], 'key');
 
-        foreach ($variables as $variable) {
+        foreach ($variables as $variable => $value) {
             if (! in_array($variable, $existingVariables, true)) {
                 $collection['variable'][] = [
                     'key' => $variable,
-                    'value' => '',
+                    'value' => $value,
                     'type' => 'string',
                 ];
             }
@@ -352,6 +359,7 @@ class PortalExports
             unset($header);
 
             self::upsertPostmanHeader($request, 'Accept', 'application/json');
+            self::upsertPostmanHeader($request, 'Accept-Language', 'en');
 
             $tokenVariable = self::postmanTokenVariableFor($uri, $request);
             $request['auth'] = $tokenVariable === null
