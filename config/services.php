@@ -44,4 +44,12 @@ return [
         ],
     ],
 
+    'apilayer' => [
+        'resume_parser' => [
+            'key' => env('APILAYER_RESUME_PARSER_KEY'),
+            'base_url' => env('APILAYER_RESUME_PARSER_BASE_URL', 'https://api.apilayer.com/resume_parser'),
+            'timeout' => (int) env('APILAYER_RESUME_PARSER_TIMEOUT', 60),
+        ],
+    ],
+
 ];

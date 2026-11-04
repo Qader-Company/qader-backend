@@ -47,7 +47,9 @@ class PortalMetadata extends Strategy
 
         if ($portal === 'talent' && in_array($module, ['profile', 'onboarding'], true)
             && in_array($endpointData->httpMethods[0], ['POST', 'PATCH'], true)) {
-            $metadata['description'] = 'Use GET /api/v1/talent/onboarding/form-fields for the input keys enabled for the selected professional field. PATCH profile saves a partial draft; POST onboarding step validates the required backend rules before Next or Submit.';
+            $metadata['description'] = str_ends_with($endpointData->route->uri(), '/resume/parse')
+                ? 'Uploads a temporary PDF, DOC, or DOCX resume, returns autocomplete suggestions, and deletes the temporary file. This endpoint does not save the CV or update the talent profile.'
+                : 'Use GET /api/v1/talent/onboarding/form-fields for the input keys enabled for the selected professional field. PATCH profile saves a partial draft; POST onboarding step validates the required backend rules before Next or Submit.';
         }
 
         return $metadata;

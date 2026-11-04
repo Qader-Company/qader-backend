@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'resume_parsed' => 'Resume parsed successfully. Review the suggested data before saving.',
+    'resume_parse_failed' => 'The resume could not be parsed. Check the file and try again.',
+    'resume_parser_not_configured' => 'Resume parsing is not configured yet.',
+    'resume_parser_unavailable' => 'Resume parsing is temporarily unavailable. Please try again shortly.',
+    'resume_unmatched_master_data' => 'Some resume values could not be matched to the available options.',
     'application' => [
         'not_submitted' => 'No application has been submitted yet.',
     ],
