@@ -4,7 +4,7 @@ namespace App\Modules\V1\TalentMarketplace\Presentation\Http\Controllers;
 
 use App\Facades\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Modules\V1\ContractTypes\Presentation\Http\Resources\ContractTypeResource;
+use App\Modules\V1\ContractTypes\Presentation\Http\Resources\ClientContractTypeResource;
 use App\Modules\V1\TalentMarketplace\Application\Services\TalentMarketplaceService;
 use App\Modules\V1\TalentMarketplace\Presentation\Http\Requests\ListWorkspaceTalentSelectionsRequest;
 use App\Modules\V1\TalentMarketplace\Presentation\Http\Requests\StoreWorkspaceTalentSelectionRequest;
@@ -29,7 +29,9 @@ class WorkspaceTalentSelectionController extends Controller
         $data = TalentMarketplaceCardResource::collection($result['paginator'])
             ->response()
             ->getData(true);
-        $data['contract_types'] = ContractTypeResource::collection($result['contract_types'])
+        $data['selections'] = $data['data'];
+        unset($data['data']);
+        $data['contract_types'] = ClientContractTypeResource::collection($result['contract_types'])
             ->resolve($request);
 
         return ApiResponse::success($data);

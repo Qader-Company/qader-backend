@@ -5,6 +5,7 @@ namespace App\Modules\V1\Skills\Infrastructure\Persistence;
 use App\Modules\V1\Skills\Domain\Models\Skill;
 use App\Modules\V1\Skills\Domain\Repositories\SkillRepositoryInterface;
 use App\Modules\V1\Skills\Infrastructure\Filters\SkillFilter;
+use App\Support\Localization\LocalizedValue;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Arr;
@@ -175,17 +176,20 @@ class EloquentSkillRepository implements SkillRepositoryInterface
                 ),
             )
             ->orderBy(
-                app()->getLocale() === 'ar'
-                    ? 'professional_field_translation_ar.name'
-                    : 'professional_field_translation_en.name',
+                LocalizedValue::preferredColumn(
+                    'professional_field_translation_en.name',
+                    'professional_field_translation_ar.name',
+                ),
             )
             ->select([
                 self::PIVOT_TABLE.'.'.self::PIVOT_FOREIGN_KEY.' as record_id',
                 'professional_fields.id',
                 DB::raw(
-                    app()->getLocale() === 'ar'
-                        ? 'COALESCE(professional_field_translation_ar.name, professional_field_translation_en.name) as name'
-                        : 'professional_field_translation_en.name as name',
+                    LocalizedValue::coalescedColumn(
+                        'professional_field_translation_en.name',
+                        'professional_field_translation_ar.name',
+                        'name',
+                    ),
                 ),
                 'professional_field_translation_en.name as name_en',
                 'professional_field_translation_ar.name as name_ar',

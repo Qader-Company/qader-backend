@@ -153,12 +153,42 @@ class ClientTalentMarketplaceFlowTest extends TestCase
 
         $this->getJson($this->selectionUrl())
             ->assertOk()
-            ->assertJsonCount(1, 'data.data')
-            ->assertJsonPath('data.data.0.id', $talent->id)
+            ->assertJsonMissingPath('data.data')
+            ->assertJsonCount(1, 'data.selections')
+            ->assertJsonPath('data.selections.0.id', $talent->id)
             ->assertJsonCount(1, 'data.contract_types')
             ->assertJsonPath('data.contract_types.0.type', 'managed')
+            ->assertJsonPath('data.contract_types.0.name', 'Managed Contract')
             ->assertJsonPath('data.contract_types.0.defaults.work_hours', 8)
-            ->assertJsonPath('data.contract_types.0.fee.percentage', '10.0000');
+            ->assertJsonPath('data.contract_types.0.fee.fixed_amount', null)
+            ->assertJsonPath('data.contract_types.0.fee.fixed_currency', null)
+            ->assertJsonMissingPath('data.contract_types.0.fee.percentage')
+            ->assertJsonMissingPath('data.contract_types.0.description')
+            ->assertJsonMissingPath('data.contract_types.0.benefits')
+            ->assertJsonMissingPath('data.contract_types.0.terms')
+            ->assertJsonMissingPath('data.contract_types.0.fee_overrides');
+
+        $this->getJson($this->selectionUrl(), ['Accept-Language' => 'ar'])
+            ->assertOk()
+            ->assertJsonPath('data.contract_types.0.name', 'عقد مُدار');
+
+        $this->getJson($this->selectionUrl())
+            ->assertOk()
+            ->assertJsonPath('data.contract_types.0.name', 'Managed Contract');
+
+        $this->getJson($this->selectionUrl(), ['X-Locale' => 'ar'])
+            ->assertOk()
+            ->assertJsonPath('data.contract_types.0.name', 'Managed Contract');
+
+        $this->getJson('/api/v1/client/master-data/countries', [
+            'Accept-Language' => 'fr-FR, ar-EG;q=0.9, en;q=0.8',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.0.name', 'مصر');
+
+        $this->getJson('/api/v1/client/master-data/countries')
+            ->assertOk()
+            ->assertJsonPath('data.0.name', 'Egypt');
 
         $this->deleteJson($this->selectionUrl('/'.$talent->id))
             ->assertOk();

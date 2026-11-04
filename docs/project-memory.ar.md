@@ -107,6 +107,8 @@
 
 قاعدة توافق الـAPI: لا نغير Path أو HTTP Method أو نزيل/نعيد تسمية حقل قائم في endpoint مرتبطة بالـFrontend. التطوير يكون بإضافة endpoints أو حقول جديدة، مع إبقاء العقود القديمة مثل `status`, `interview` و`meeting_url` متاحة لتجنب كسر التكامل الحالي.
 
+قاعدة الترجمة في الـAPI: المصدر الوحيد للغة هو `Accept-Language`، وعند غيابه أوعدم احتوائه على لغة مدعومة تعود كل Request إلى `APP_LOCALE` لمنع تسريب لغة الطلب السابق. اللغات المدعومة هي العربية والإنجليزية، مع دعم صيغ مثل `ar-EG` وترتيب الجودة `q`. Responses الخاصة بالـClient وTalent وWebsite ترجع قيمة محلية واحدة، بينما شاشات إدارة المحتوى في Admin ترجع `en` و`ar` معًا. منطق الاختيار والـfallback موحد في `LocalizedValue` و`ResolvesLocalizedResourceValues` ولا يكرر داخل كل Resource.
+
 خطة التنفيذ المرحلية موجودة في [Qader Delivery Roadmap](architecture/07-delivery-roadmap.md)، وقواعد التنفيذ في [Feature Delivery Workflow](architecture/05-feature-delivery-workflow.md).
 
 ## السبرنت الحالي

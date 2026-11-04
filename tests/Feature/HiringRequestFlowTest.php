@@ -135,8 +135,13 @@ class HiringRequestFlowTest extends TestCase
             ->assertJsonPath('data.status', 'pending')
             ->assertJsonPath('data.items.0.offer.notice_period_days', 30)
             ->assertJsonPath('data.items.0.offer.work_hours', 8)
+            ->assertJsonPath('data.items.0.contract_configuration.name', 'Managed Contract')
             ->assertJsonMissingPath('data.items.0.talent.full_name')
             ->json('data');
+
+        $this->getJson($this->clientUrl("/{$submitted['id']}"), ['Accept-Language' => 'ar'])
+            ->assertOk()
+            ->assertJsonPath('data.items.0.contract_configuration.name', 'عقد مُدار');
 
         $this->assertDatabaseMissing('workspace_talent_selections', [
             'workspace_id' => $this->workspace->id,
@@ -174,6 +179,8 @@ class HiringRequestFlowTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.status', 'active')
             ->assertJsonPath('data.items.0.status', 'awaiting_talent_response')
+            ->assertJsonPath('data.items.0.contract_configuration.name.en', 'Managed Contract')
+            ->assertJsonPath('data.items.0.contract_configuration.name.ar', 'عقد مُدار')
             ->assertJsonPath('data.items.0.offer.is_overdue', false)
             ->assertJsonPath('data.available_actions', ['reassign']);
 

@@ -245,7 +245,7 @@ GET   /api/v1/talent/onboarding/application
 }
 ```
 
-رسالة `404` تتغير بين العربية والإنجليزية حسب `X-Locale` أو `Accept-Language`.
+رسالة `404` تتغير بين العربية والإنجليزية حسب `Accept-Language`.
 
 `PATCH /profile` يقبل الأقسام التالية ويحفظ الحقول المرسلة فقط بدون فرض اكتمال الخطوة:
 

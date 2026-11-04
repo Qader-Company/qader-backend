@@ -88,7 +88,7 @@ GET  /api/v1/client/workspaces/{workspace}/hiring-requests/{hiringRequest}
 POST /api/v1/client/workspaces/{workspace}/hiring-requests
 ```
 
-`GET talent-selections` يعيد المواهب المختارة، ومعها `contract_types` الفعالة وFees وBenefits وTerms وWork Defaults والموقع.
+`GET talent-selections` يعيد المواهب المختارة داخل `selections` بدل مفتاح Pagination الافتراضي `data`، ومعها `contract_types` الفعالة. بيانات العقد المتاحة للعميل تقتصر حاليًا على الاسم، والرقم الثابت وعملته، وWork Defaults والموقع؛ ولا تعرض النسبة أوOverrides أوبيانات إعداد الأدمن الإضافية.
 
 في Apidog تظهر المسارات في مجلدات مستقلة:
 

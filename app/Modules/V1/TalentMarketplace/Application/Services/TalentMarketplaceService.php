@@ -154,10 +154,7 @@ class TalentMarketplaceService
 
         $contractTypes = ContractType::query()
             ->where('is_active', true)
-            ->with([
-                'fixedCurrency', 'benefits', 'terms',
-                'feeOverrides.professionalField.translations', 'feeOverrides.fixedCurrency',
-            ])
+            ->with('fixedCurrency')
             ->orderBy('id')
             ->get();
 

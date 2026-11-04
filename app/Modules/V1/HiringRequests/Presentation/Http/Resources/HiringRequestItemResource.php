@@ -6,17 +6,20 @@ use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminPermissionEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferPartyEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
+use App\Support\Http\Resources\ResolvesLocalizedResourceValues;
 use BackedEnum;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class HiringRequestItemResource extends JsonResource
 {
+    use ResolvesLocalizedResourceValues;
+
     public function toArray(Request $request): array
     {
         $talent = $this->talent;
         $user = $talent?->user;
-        $isAdmin = str_contains((string) $request->route()?->uri(), '/admin/');
+        $isAdmin = $this->isAdminRequest($request);
         $offer = $this->latestOffer === null
             ? null
             : (new HiringOfferResource($this->latestOffer))->resolve($request);
@@ -26,7 +29,7 @@ class HiringRequestItemResource extends JsonResource
             'reference' => $this->reference,
             'status' => $this->value($this->status),
             'contract_type' => $this->value($this->contract_type),
-            'contract_configuration' => $this->contract_configuration_snapshot,
+            'contract_configuration' => $this->contractConfiguration($isAdmin),
             'interview_required' => (bool) $this->interview_required,
             'company' => $this->hiringRequest?->workspace === null ? null : [
                 'id' => $this->hiringRequest->workspace->id,
@@ -66,6 +69,29 @@ class HiringRequestItemResource extends JsonResource
     private function value(mixed $value): mixed
     {
         return $value instanceof BackedEnum ? $value->value : $value;
+    }
+
+    private function contractConfiguration(bool $isAdmin): ?array
+    {
+        $configuration = $this->contract_configuration_snapshot;
+        if ($configuration === null || $isAdmin) {
+            return $configuration;
+        }
+
+        $configuration['name'] = $this->localizedTranslation($configuration['name'] ?? null);
+        $configuration['description'] = $this->localizedTranslation($configuration['description'] ?? null);
+        $configuration['benefits'] = array_map(function (array $benefit): array {
+            $benefit['name'] = $this->localizedTranslation($benefit['name'] ?? null);
+
+            return $benefit;
+        }, $configuration['benefits'] ?? []);
+        $configuration['terms'] = array_map(function (array $term): array {
+            $term['content'] = $this->localizedTranslation($term['content'] ?? null);
+
+            return $term;
+        }, $configuration['terms'] ?? []);
+
+        return $configuration;
     }
 
     private function actions(Request $request): array

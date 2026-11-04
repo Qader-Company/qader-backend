@@ -16,25 +16,15 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $this->resolveLocale($request);
-
-        if ($locale !== null) {
-            App::setLocale($locale);
-        }
+        App::setLocale($this->resolveLocale($request) ?? config('app.locale', 'en'));
 
         return $next($request);
     }
 
     private function resolveLocale(Request $request): ?string
     {
-        $headerLocale = $request->header('X-Locale');
-        if (is_string($headerLocale) && in_array($headerLocale, self::SUPPORTED_LOCALES, true)) {
-            return $headerLocale;
-        }
-
-        $acceptLanguage = $request->header('Accept-Language');
-        if (is_string($acceptLanguage) && $acceptLanguage !== '') {
-            $primary = strtolower(substr($acceptLanguage, 0, 2));
+        foreach ($request->getLanguages() as $language) {
+            $primary = strtolower(explode('-', str_replace('_', '-', $language), 2)[0]);
             if (in_array($primary, self::SUPPORTED_LOCALES, true)) {
                 return $primary;
             }
