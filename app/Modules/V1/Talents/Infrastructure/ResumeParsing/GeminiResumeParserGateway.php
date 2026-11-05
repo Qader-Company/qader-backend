@@ -98,7 +98,7 @@ class GeminiResumeParserGateway implements ResumeParserGatewayInterface
     private function prompt(): string
     {
         return <<<'PROMPT'
-Extract only information explicitly present in this resume. Preserve the original language of names and text. Do not infer, translate, score, or invent missing values. Return null for unknown scalar values and empty arrays for unknown lists. Dates must use YYYY-MM-DD when the full date is known; otherwise return null. Return only the JSON object required by the response schema.
+Extract only information explicitly present in this resume. Preserve the original language of names and text. Split the phone into phone_country_code and phone_number when the country code is explicitly present. Do not infer, translate, score, or invent missing values. Return null for unknown scalar values and empty arrays for unknown lists. Dates must use YYYY-MM-DD when the full date is known; otherwise return null. Return only the JSON object required by the response schema.
 PROMPT;
     }
 
@@ -111,22 +111,22 @@ PROMPT;
         return [
             'type' => 'object',
             'properties' => [
-                'candidate_name' => $nullableString,
-                'candidate_email' => $nullableString,
-                'candidate_phone' => $nullableString,
-                'candidate_address' => $nullableString,
-                'candidate_country' => $nullableString,
-                'candidate_city' => $nullableString,
-                'candidate_summary_objective' => $nullableString,
-                'candidate_job_title' => $nullableString,
-                'candidate_linkedin' => $nullableString,
-                'candidate_github' => $nullableString,
-                'candidate_behance' => $nullableString,
-                'candidate_website' => $nullableString,
+                'full_name' => $nullableString,
+                'email' => $nullableString,
+                'phone_country_code' => $nullableString,
+                'phone_number' => $nullableString,
+                'residence_country' => $nullableString,
+                'residence_city' => $nullableString,
+                'professional_summary' => $nullableString,
+                'job_title' => $nullableString,
+                'linkedin_url' => $nullableString,
+                'github_url' => $nullableString,
+                'behance_url' => $nullableString,
+                'portfolio_url' => $nullableString,
                 'years_of_experience' => ['type' => ['integer', 'null']],
                 'skills' => $stringList,
                 'tools' => $stringList,
-                'candidate_spoken_languages' => $stringList,
+                'languages' => $stringList,
                 'positions' => [
                     'type' => 'array',
                     'items' => [
@@ -160,11 +160,11 @@ PROMPT;
                 ],
             ],
             'required' => [
-                'candidate_name', 'candidate_email', 'candidate_phone', 'candidate_address',
-                'candidate_country', 'candidate_city', 'candidate_summary_objective',
-                'candidate_job_title', 'candidate_linkedin', 'candidate_github',
-                'candidate_behance', 'candidate_website', 'years_of_experience', 'skills',
-                'tools', 'candidate_spoken_languages', 'positions', 'projects',
+                'full_name', 'email', 'phone_country_code', 'phone_number',
+                'residence_country', 'residence_city', 'professional_summary',
+                'job_title', 'linkedin_url', 'github_url', 'behance_url',
+                'portfolio_url', 'years_of_experience', 'skills', 'tools',
+                'languages', 'positions', 'projects',
             ],
         ];
     }

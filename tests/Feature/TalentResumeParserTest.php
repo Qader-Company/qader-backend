@@ -94,16 +94,17 @@ class TalentResumeParserTest extends TestCase
     public function test_it_parses_resume_into_qader_autocomplete_suggestions_without_storing_file(): void
     {
         $this->gateway->result = [
-            'candidate_name' => 'Ahmed Wael',
-            'candidate_email' => 'ahmed@example.com',
-            'candidate_phone' => '+20 100 000 0000',
-            'candidate_country' => 'Egypt',
-            'candidate_city' => 'Cairo',
-            'candidate_summary_objective' => 'Backend developer building reliable APIs.',
-            'candidate_linkedin' => 'https://linkedin.com/in/ahmed',
-            'candidate_github' => 'https://github.com/ahmed',
+            'full_name' => 'Ahmed Wael',
+            'email' => 'ahmed@example.com',
+            'phone_country_code' => '+20',
+            'phone_number' => '1000000000',
+            'residence_country' => 'Egypt',
+            'residence_city' => 'Cairo',
+            'professional_summary' => 'Backend developer building reliable APIs.',
+            'linkedin_url' => 'https://linkedin.com/in/ahmed',
+            'github_url' => 'https://github.com/ahmed',
             'years_of_experience' => 5,
-            'candidate_spoken_languages' => ['English'],
+            'languages' => ['English'],
             'tools' => ['Docker'],
             'positions' => [[
                 'position_name' => 'Backend Developer',
@@ -123,14 +124,17 @@ class TalentResumeParserTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.cv.file_name', 'ahmed-cv.pdf')
             ->assertJsonPath('data.suggestions.personal_information.full_name', 'Ahmed Wael')
-            ->assertJsonPath('data.suggestions.personal_information.residence_country.match.name', 'Egypt')
-            ->assertJsonPath('data.suggestions.personal_information.residence_city.match.name', 'Cairo')
-            ->assertJsonPath('data.suggestions.skills_and_experiences.job_title.match.name', 'Backend Developer')
-            ->assertJsonPath('data.suggestions.skills_and_experiences.skills.0.match.name', 'Laravel')
-            ->assertJsonPath('data.suggestions.skills_and_experiences.skills.1.match', null)
-            ->assertJsonPath('data.suggestions.skills_and_experiences.tools.0.match.name', 'Docker')
+            ->assertJsonPath('data.suggestions.personal_information.email', 'ahmed@example.com')
+            ->assertJsonPath('data.suggestions.personal_information.phone_country_code', '+20')
+            ->assertJsonPath('data.suggestions.personal_information.residence_country_id', 1)
+            ->assertJsonPath('data.suggestions.personal_information.residence_city_id', 1)
+            ->assertJsonPath('data.suggestions.personal_information.languages.0.language_id', 1)
+            ->assertJsonPath('data.suggestions.skills_and_experiences.job_title_id', 1)
+            ->assertJsonPath('data.suggestions.skills_and_experiences.skill_ids.0', 1)
+            ->assertJsonPath('data.suggestions.skills_and_experiences.tool_ids.0', 1)
             ->assertJsonPath('data.suggestions.skills_and_experiences.experiences.0.currently_working', true)
-            ->assertJsonPath('data.unmatched.skills.0', 'Event Sourcing');
+            ->assertJsonMissingPath('data.unmatched')
+            ->assertJsonMissingPath('data.warnings');
 
         $this->assertNotNull($this->gateway->receivedPath);
         $this->assertFileDoesNotExist($this->gateway->receivedPath);

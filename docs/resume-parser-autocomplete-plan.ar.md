@@ -160,29 +160,14 @@ cv => required|file|mimes:pdf,doc,docx|max:10240
     "suggestions": {
       "personal_information": {
         "full_name": "Ahmed Wael",
-        "detected_email": "ahmed@example.com",
-        "phone_raw": "+20 100 000 0000",
-        "residence_country": {
-          "raw": "Egypt",
-          "match": {
-            "id": 1,
-            "name": "Egypt"
-          }
-        },
-        "residence_city": {
-          "raw": "Cairo",
-          "match": {
-            "id": 10,
-            "name": "Cairo"
-          }
-        },
+        "email": "ahmed@example.com",
+        "phone_country_code": "+20",
+        "phone_number": "1000000000",
+        "residence_country_id": 1,
+        "residence_city_id": 10,
         "languages": [
           {
-            "raw": "English",
-            "match": {
-              "id": 2,
-              "name": "English"
-            },
+            "language_id": 2,
             "proficiency_level": null
           }
         ]
@@ -190,31 +175,13 @@ cv => required|file|mimes:pdf,doc,docx|max:10240
       "skills_and_experiences": {
         "professional_summary": "Backend developer with ...",
         "years_of_experience": 5,
-        "job_title": {
-          "raw": "Backend Developer",
-          "match": {
-            "id": 12,
-            "name": "Backend Developer"
-          }
-        },
+        "job_title_id": 12,
         "seniority_level": null,
         "linkedin_url": "https://linkedin.com/in/example",
         "github_url": "https://github.com/example",
         "portfolio_url": null,
-        "skills": [
-          {
-            "raw": "Laravel",
-            "match": {
-              "id": 18,
-              "name": "Laravel"
-            }
-          },
-          {
-            "raw": "Event Sourcing",
-            "match": null
-          }
-        ],
-        "tools": [],
+        "skill_ids": [18],
+        "tool_ids": [],
         "experiences": [
           {
             "job_title": "Backend Developer",
@@ -229,14 +196,7 @@ cv => required|file|mimes:pdf,doc,docx|max:10240
         ],
         "projects": []
       }
-    },
-    "unmatched": {
-      "job_titles": [],
-      "skills": ["Event Sourcing"],
-      "tools": [],
-      "languages": []
-    },
-    "warnings": []
+    }
   },
   "message": "Resume parsed successfully. Review the suggested data before saving."
 }
@@ -244,12 +204,13 @@ cv => required|file|mimes:pdf,doc,docx|max:10240
 
 ### 5.1 ملاحظات على البيانات
 
-- `detected_email` للعرض فقط ولا يغير Email الحساب.
-- `phone_raw` لا يقسم تلقائيًا إلى Country Code وNumber إلا بعد إضافة Parser موثوق لأرقام الهاتف أوتأكيد المستخدم.
+- `email` للعرض والـAuto-fill فقط ولا يغير Email الحساب مباشرة.
+- مفاتيح الاقتراحات تطابق مفاتيح Onboarding المستخدمة عند الحفظ مثل `job_title_id` و`skill_ids` و`tool_ids`.
+- يقسم Gemini الهاتف إلى `phone_country_code` و`phone_number` فقط عندما يكون كود الدولة ظاهرًا صراحة في الملف، وتراجع الموهبة القيم قبل الحفظ.
 - لا نخمن `seniority_level` إذا لم يوفر المزود قيمة يمكن تحويلها بثقة إلى Enum الحالية.
 - لا نخمن Professional Field من Job Title دون قاعدة Mapping معتمدة.
-- Master Data المطابقة ترجع كـ`match` تحتوي ID؛ غير المطابق يرجع `match: null` ولا ينشئ سجلًا جديدًا.
-- Frontend يرسل فقط IDs التي اختارتها الموهبة عبر Endpoints الحفظ الحالية.
+- ترجع Master Data المطابقة كـIDs جاهزة للحقول الحالية، وتتجاهل القيم غير المطابقة ولا تنشئ سجلات جديدة.
+- لا ترجع الاستجابة `unmatched` أو`warnings` لأن Frontend لا يستطيع حفظ قيم Master Data غير الموجودة.
 
 ## 6. مطابقة Master Data
 

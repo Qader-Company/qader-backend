@@ -21,7 +21,7 @@ class ResumeAutocompleteMapper
     {
         $country = $this->matchTranslatedModel(
             Country::query()->where('is_active', true)->with('translations')->get(),
-            $this->string($parsed, ['candidate_country', 'country']),
+            $this->string($parsed, ['residence_country', 'candidate_country', 'country']),
         );
         $cityQuery = City::query()->where('is_active', true)->with('translations');
         if ($country !== null) {
@@ -29,12 +29,12 @@ class ResumeAutocompleteMapper
         }
         $city = $this->matchTranslatedModel(
             $cityQuery->get(),
-            $this->string($parsed, ['candidate_city', 'city']),
+            $this->string($parsed, ['residence_city', 'candidate_city', 'city']),
         );
 
         $positionItems = $this->array($parsed, ['positions', 'work_experience', 'experience']);
         $projectItems = $this->array($parsed, ['projects']);
-        $rawJobTitle = $this->string($parsed, ['candidate_job_title', 'job_title'])
+        $rawJobTitle = $this->string($parsed, ['job_title', 'candidate_job_title'])
             ?? $this->string($positionItems[0] ?? [], ['position_name', 'job_title', 'title']);
         $jobTitle = $this->matchNamedModel(
             $this->scopedQuery(JobTitle::query()->where('is_active', true), $talent)->get(),
@@ -48,7 +48,7 @@ class ResumeAutocompleteMapper
                 : [])->all(),
         ]);
         $rawTools = $this->uniqueStrings($this->array($parsed, ['tools', 'candidate_tools', 'technologies']));
-        $rawLanguages = $this->uniqueStrings($this->array($parsed, ['candidate_spoken_languages', 'languages']));
+        $rawLanguages = $this->uniqueStrings($this->array($parsed, ['languages', 'candidate_spoken_languages']));
 
         $skills = $this->matchNamedValues(
             $rawSkills,
@@ -63,57 +63,40 @@ class ResumeAutocompleteMapper
             Language::query()->where('is_active', true)->with('translations')->get(),
         );
 
-        $unmatched = [
-            'job_titles' => $rawJobTitle !== null && $jobTitle === null ? [$rawJobTitle] : [],
-            'skills' => $this->unmatched($skills),
-            'tools' => $this->unmatched($tools),
-            'languages' => $this->unmatched($languages),
-        ];
-
         return [
             'suggestions' => [
                 'personal_information' => [
-                    'full_name' => $this->string($parsed, ['candidate_name', 'name']),
-                    'detected_email' => $this->string($parsed, ['candidate_email', 'email']),
-                    'phone_raw' => $this->string($parsed, ['candidate_phone', 'phone']),
-                    'address_raw' => $this->string($parsed, ['candidate_address', 'address']),
-                    'residence_country' => $this->matchedValue(
-                        $this->string($parsed, ['candidate_country', 'country']),
-                        $country,
-                    ),
-                    'residence_city' => $this->matchedValue(
-                        $this->string($parsed, ['candidate_city', 'city']),
-                        $city,
-                    ),
-                    'languages' => array_map(fn (array $language): array => [
-                        ...$language,
+                    'full_name' => $this->string($parsed, ['full_name', 'candidate_name', 'name']),
+                    'email' => $this->string($parsed, ['email', 'candidate_email']),
+                    'phone_country_code' => $this->string($parsed, ['phone_country_code']),
+                    'phone_number' => $this->string($parsed, ['phone_number', 'candidate_phone', 'phone']),
+                    'residence_country_id' => $country?->getKey(),
+                    'residence_city_id' => $city?->getKey(),
+                    'languages' => array_values(array_filter(array_map(fn (array $language): ?array => $language['match'] === null ? null : [
+                        'language_id' => $language['match']['id'],
                         'proficiency_level' => null,
-                    ], $languages),
+                    ], $languages))),
                 ],
                 'skills_and_experiences' => [
                     'professional_summary' => $this->string($parsed, [
+                        'professional_summary',
                         'candidate_summary_objective',
                         'brief_summary',
-                        'professional_summary',
                         'summary',
                     ]),
                     'years_of_experience' => $this->integer($parsed, ['years_of_experience']),
-                    'job_title' => $this->matchedValue($rawJobTitle, $jobTitle),
+                    'job_title_id' => $jobTitle?->getKey(),
                     'seniority_level' => null,
-                    'linkedin_url' => $this->string($parsed, ['candidate_linkedin', 'linkedin']),
-                    'github_url' => $this->string($parsed, ['candidate_github', 'github']),
-                    'behance_url' => $this->string($parsed, ['candidate_behance', 'behance']),
-                    'portfolio_url' => $this->string($parsed, ['candidate_website', 'website', 'portfolio_url']),
-                    'skills' => $skills,
-                    'tools' => $tools,
+                    'linkedin_url' => $this->string($parsed, ['linkedin_url', 'candidate_linkedin', 'linkedin']),
+                    'github_url' => $this->string($parsed, ['github_url', 'candidate_github', 'github']),
+                    'behance_url' => $this->string($parsed, ['behance_url', 'candidate_behance', 'behance']),
+                    'portfolio_url' => $this->string($parsed, ['portfolio_url', 'candidate_website', 'website']),
+                    'skill_ids' => $this->matchedIds($skills),
+                    'tool_ids' => $this->matchedIds($tools),
                     'experiences' => $this->experiences($positionItems),
                     'projects' => $this->projects($projectItems),
                 ],
             ],
-            'unmatched' => $unmatched,
-            'warnings' => array_sum(array_map('count', $unmatched)) > 0
-                ? [__('talents.resume_unmatched_master_data')]
-                : [],
         ];
     }
 
@@ -227,12 +210,13 @@ class ResumeAutocompleteMapper
         ];
     }
 
-    /** @return array<int, string> */
-    private function unmatched(array $values): array
+    /** @return array<int, int> */
+    private function matchedIds(array $values): array
     {
         return collect($values)
-            ->filter(fn (array $value): bool => $value['match'] === null)
-            ->pluck('raw')
+            ->pluck('match.id')
+            ->filter(fn (mixed $id): bool => $id !== null)
+            ->map(fn (mixed $id): int => (int) $id)
             ->values()
             ->all();
     }

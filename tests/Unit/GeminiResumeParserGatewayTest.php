@@ -55,7 +55,7 @@ class GeminiResumeParserGatewayTest extends TestCase
 
         $result = app(GeminiResumeParserGateway::class)->parse($this->resumePath);
 
-        $this->assertSame('Ahmed Wael', $result['candidate_name']);
+        $this->assertSame('Ahmed Wael', $result['full_name']);
         $this->assertSame(['Laravel'], $result['skills']);
         $this->assertSame('Backend Developer', $result['positions'][0]['position_name']);
 
@@ -116,22 +116,22 @@ class GeminiResumeParserGatewayTest extends TestCase
     private function parsedResume(): array
     {
         return [
-            'candidate_name' => 'Ahmed Wael',
-            'candidate_email' => 'ahmed@example.com',
-            'candidate_phone' => null,
-            'candidate_address' => null,
-            'candidate_country' => null,
-            'candidate_city' => null,
-            'candidate_summary_objective' => null,
-            'candidate_job_title' => 'Backend Developer',
-            'candidate_linkedin' => null,
-            'candidate_github' => null,
-            'candidate_behance' => null,
-            'candidate_website' => null,
+            'full_name' => 'Ahmed Wael',
+            'email' => 'ahmed@example.com',
+            'phone_country_code' => null,
+            'phone_number' => null,
+            'residence_country' => null,
+            'residence_city' => null,
+            'professional_summary' => null,
+            'job_title' => 'Backend Developer',
+            'linkedin_url' => null,
+            'github_url' => null,
+            'behance_url' => null,
+            'portfolio_url' => null,
             'years_of_experience' => 5,
             'skills' => ['Laravel'],
             'tools' => ['Docker'],
-            'candidate_spoken_languages' => ['Arabic'],
+            'languages' => ['Arabic'],
             'positions' => [[
                 'position_name' => 'Backend Developer',
                 'company_name' => 'Qader',
