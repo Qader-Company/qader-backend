@@ -12,8 +12,11 @@ class ListRolesUseCase
         private readonly RoleRepositoryInterface $roles
     ) {}
 
-    public function execute(PortalTypeEnum $portal): Collection
+    public function execute(
+        PortalTypeEnum $portal,
+        array $filters = []
+    ): Collection
     {
-        return $this->roles->list($portal);
+        return $this->roles->list($portal, $filters);
     }
 }

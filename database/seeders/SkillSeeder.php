@@ -26,27 +26,39 @@ class SkillSeeder extends Seeder
                 'name' => 'Negotiation',
                 'professional_fields' => [
                     'Sales',
-                    'Customer Service & Call Center',
+                    'Customer Service',
                 ],
             ],
             [
                 'name' => 'Customer Support',
                 'professional_fields' => [
-                    'Customer Service & Call Center',
+                    'Customer Service',
                 ],
             ],
             [
                 'name' => 'Call Handling',
                 'professional_fields' => [
-                    'Customer Service & Call Center',
+                    'Customer Service',
                 ],
             ],
             [
                 'name' => 'Complaint Resolution',
                 'professional_fields' => [
-                    'Customer Service & Call Center',
+                    'Customer Service',
                 ],
             ],
+            ['name' => 'User Research', 'professional_fields' => ['Design']],
+            ['name' => 'Wireframing', 'professional_fields' => ['Design']],
+            ['name' => 'Visual Design', 'professional_fields' => ['Design']],
+            ['name' => 'Recruitment', 'professional_fields' => ['Human Resources']],
+            ['name' => 'Employee Relations', 'professional_fields' => ['Human Resources']],
+            ['name' => 'Performance Management', 'professional_fields' => ['Human Resources']],
+            ['name' => 'Financial Reporting', 'professional_fields' => ['Finance & Accounting']],
+            ['name' => 'Budgeting', 'professional_fields' => ['Finance & Accounting']],
+            ['name' => 'Bookkeeping', 'professional_fields' => ['Finance & Accounting']],
+            ['name' => 'Process Improvement', 'professional_fields' => ['Operations']],
+            ['name' => 'Inventory Management', 'professional_fields' => ['Operations']],
+            ['name' => 'Logistics Planning', 'professional_fields' => ['Operations']],
         ];
 
         $professionalFieldIds = DB::table('professional_fields')

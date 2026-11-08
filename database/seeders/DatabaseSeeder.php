@@ -11,9 +11,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
+        // The maintenance API runs Artisan through the web process. Running the
+        // child seeders silently avoids Termwind console rendering on hosts
+        // where the mbstring extension is unavailable.
+        $this->callSilent([
             PermissionSeeder::class,
-            PlatformOwnerSeeder::class,
+            AdminRoleSeeder::class,
+            DemoAccountSeeder::class,
             CountrySeeder::class,
             CitySeeder::class,
             LanguageSeeder::class,
@@ -23,6 +27,9 @@ class DatabaseSeeder extends Seeder
             SkillSeeder::class,
             ToolSeeder::class,
             CurrencySeeder::class,
+            IndustrySeeder::class,
+            ContractTypeSeeder::class,
+            TalentReviewFaqSeeder::class,
         ]);
     }
 }

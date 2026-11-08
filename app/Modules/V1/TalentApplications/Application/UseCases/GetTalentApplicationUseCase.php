@@ -15,6 +15,6 @@ class GetTalentApplicationUseCase
     public function execute(int $talentId): TalentApplication
     {
         return $this->applications->findByTalentId($talentId)
-            ?? throw new NotFoundHttpException(__('api.not_found'));
+            ?? throw new NotFoundHttpException(__('talents.application.not_submitted'));
     }
 }

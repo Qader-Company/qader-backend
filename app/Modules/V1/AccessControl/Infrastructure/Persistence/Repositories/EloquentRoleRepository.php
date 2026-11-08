@@ -11,25 +11,51 @@ use Illuminate\Support\Facades\DB;
 
 class EloquentRoleRepository implements RoleRepositoryInterface
 {
-    public function list(PortalTypeEnum $portal): Collection
+    public function list(PortalTypeEnum $portal, array $filters = []): Collection
     {
-        $roles = DB::table('roles')
+        $query = DB::table('roles')
             ->where('portal', $portal->value)
-            ->where('name', '!=', 'owner')
+            ->when(
+                $filters['search'] ?? null,
+                fn($query, string $search) => $query->where(
+                    fn($query) => $query
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhere('name_en', 'like', "%{$search}%")
+                        ->orWhere('name_ar', 'like', "%{$search}%")
+                )
+            )
+            ->when(
+                array_key_exists('is_active', $filters),
+                fn($query) => $query->where(
+                    'is_active',
+                    $filters['is_active']
+                )
+            )
             ->orderBy('name')
             ->get([
                 'id',
                 'name',
+                'name_en',
+                'name_ar',
                 'portal',
+                'is_active',
             ]);
+
+        $roles = $query;
+        $this->attachUserCounts($roles);
 
         return $this->attachPermissions($roles, $portal);
     }
 
-    public function create(
-        array $attributes,
-        array $permissions
+    public function findOrFail(
+        int $roleId,
+        PortalTypeEnum $portal
     ): object {
+        return $this->find($roleId, $portal);
+    }
+
+    public function create(array $attributes, ?array $permissions): object
+    {
         $role = Role::query()->create($attributes);
         $role->syncPermissions($permissions);
 
@@ -43,14 +69,28 @@ class EloquentRoleRepository implements RoleRepositoryInterface
         int $roleId,
         PortalTypeEnum $portal,
         array $attributes,
-        array $permissions
+        ?array $permissions
     ): object {
         $role = $this->findModelOrFail($roleId, $portal);
 
         $role->update($attributes);
-        $role->syncPermissions($permissions);
+        if ($permissions !== null) {
+            $role->syncPermissions($permissions);
+        }
 
-        return $this->findOrFail($roleId, $portal);
+        return $this->find($roleId, $portal);
+    }
+
+    public function updateStatus(
+        int $roleId,
+        PortalTypeEnum $portal,
+        bool $isActive
+    ): object {
+        $this->findModelOrFail($roleId, $portal)->update([
+            'is_active' => $isActive,
+        ]);
+
+        return $this->find($roleId, $portal);
     }
 
     public function delete(
@@ -60,19 +100,18 @@ class EloquentRoleRepository implements RoleRepositoryInterface
         $this->findModelOrFail($roleId, $portal)->delete();
     }
 
-    public function hasName(
+    public function isAssigned(
         int $roleId,
-        PortalTypeEnum $portal,
-        string $name
+        PortalTypeEnum $portal
     ): bool {
-        return DB::table('roles')
-            ->where('id', $roleId)
-            ->where('portal', $portal->value)
-            ->where('name', $name)
+        $this->findModelOrFail($roleId, $portal);
+
+        return DB::table('model_has_roles')
+            ->where('role_id', $roleId)
             ->exists();
     }
 
-    private function findOrFail(
+    private function find(
         int $roleId,
         PortalTypeEnum $portal
     ): object {
@@ -82,7 +121,10 @@ class EloquentRoleRepository implements RoleRepositoryInterface
             ->first([
                 'id',
                 'name',
+                'name_en',
+                'name_ar',
                 'portal',
+                'is_active',
             ]);
 
         if ($role === null) {
@@ -92,10 +134,10 @@ class EloquentRoleRepository implements RoleRepositoryInterface
             );
         }
 
-        return $this->attachPermissions(
-            collect([$role]),
-            $portal
-        )->first();
+        $roles = collect([$role]);
+        $this->attachUserCounts($roles);
+
+        return $this->attachPermissions($roles, $portal)->first();
     }
 
     private function findModelOrFail(
@@ -143,5 +185,18 @@ class EloquentRoleRepository implements RoleRepositoryInterface
                     ->values();
             }
         );
+    }
+
+    private function attachUserCounts(Collection $roles): void
+    {
+        $counts = DB::table('model_has_roles')
+            ->whereIn('role_id', $roles->pluck('id'))
+            ->selectRaw('role_id, COUNT(*) as users_count')
+            ->groupBy('role_id')
+            ->pluck('users_count', 'role_id');
+
+        $roles->each(function (object $role) use ($counts): void {
+            $role->users_count = (int) ($counts[$role->id] ?? 0);
+        });
     }
 }

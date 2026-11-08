@@ -7,6 +7,7 @@ use App\Modules\V1\Authentication\Domain\Models\SocialAccount;
 use App\Modules\V1\Clients\Domain\Models\Client;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Modules\V1\Talents\Domain\Models\Talent;
+use App\Modules\V1\Users\Domain\Models\UserDevice;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -30,6 +31,7 @@ use Spatie\Permission\Traits\HasRoles;
     'avatar',
     'is_active',
     'last_login_at',
+    'must_change_password',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -57,6 +59,11 @@ class User extends Authenticatable
         return $this->hasMany(SocialAccount::class);
     }
 
+    public function userDevices(): HasMany
+    {
+        return $this->hasMany(UserDevice::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -69,6 +76,7 @@ class User extends Authenticatable
             'phone_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
             'password' => 'hashed',
             'type' => PortalTypeEnum::class,
         ];

@@ -1,8 +1,15 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\MaintenanceCommandController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::post('/maintenance/{command}', MaintenanceCommandController::class)
+    ->whereIn('command', [
+        'migrate',
+        'migrate-fresh',
+        'rollback',
+        'seed',
+        'optimize-clear',
+        'create-api-key',
+        'queue-work',
+    ]);

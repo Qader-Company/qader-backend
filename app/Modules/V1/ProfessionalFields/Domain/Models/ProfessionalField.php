@@ -16,7 +16,7 @@ class ProfessionalField extends Model implements TranslatableContract
 {
     use Filterable, Translatable;
 
-    public array $translatedAttributes = ['name'];
+    public array $translatedAttributes = ['name', 'description'];
 
     protected $fillable = ['is_active'];
 
@@ -75,7 +75,7 @@ class ProfessionalField extends Model implements TranslatableContract
         return $this->belongsToMany(
             ProfessionalFormField::class,
             'professional_field_form_field',
-        )->withPivot('is_required')->withTimestamps();
+        )->withTimestamps();
     }
 
     private function generatedSlug(): string

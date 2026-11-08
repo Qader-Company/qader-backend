@@ -29,7 +29,7 @@ Example route group registration:
 ],
 ```
 
-Registered routes pass through `api` and `locale`. Internal routes also use `api.key` by default. Public token-authentication routes deliberately opt out: an API key placed in a browser or native application cannot be treated as a secret. See [09 — Token-Based Authentication](09-web-and-mobile-auth.md).
+Registered routes pass through `api`, `locale`, and `api.key`. Every current API request must include the active key in the `X-Authorization` header. Protected portal endpoints additionally require the appropriate Sanctum token and abilities. See [09 — Token-Based Authentication](09-web-and-mobile-auth.md).
 
 ## Authentication
 

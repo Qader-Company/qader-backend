@@ -54,15 +54,27 @@ class JobTitleSeeder extends Seeder
             [
                 'name' => 'Customer Service Representative',
                 'professional_fields' => [
-                    'Customer Service & Call Center',
+                    'Customer Service',
                 ],
             ],
             [
                 'name' => 'Call Center Agent',
                 'professional_fields' => [
-                    'Customer Service & Call Center',
+                    'Customer Service',
                 ],
             ],
+            ['name' => 'UI/UX Designer', 'professional_fields' => ['Design']],
+            ['name' => 'Graphic Designer', 'professional_fields' => ['Design']],
+            ['name' => 'Product Designer', 'professional_fields' => ['Design']],
+            ['name' => 'HR Specialist', 'professional_fields' => ['Human Resources']],
+            ['name' => 'Talent Acquisition Specialist', 'professional_fields' => ['Human Resources']],
+            ['name' => 'People Operations Specialist', 'professional_fields' => ['Human Resources']],
+            ['name' => 'Accountant', 'professional_fields' => ['Finance & Accounting']],
+            ['name' => 'Financial Analyst', 'professional_fields' => ['Finance & Accounting']],
+            ['name' => 'Treasury Specialist', 'professional_fields' => ['Finance & Accounting']],
+            ['name' => 'Operations Specialist', 'professional_fields' => ['Operations']],
+            ['name' => 'Logistics Coordinator', 'professional_fields' => ['Operations']],
+            ['name' => 'Supply Chain Specialist', 'professional_fields' => ['Operations']],
         ];
 
         $professionalFieldIds = DB::table('professional_fields')

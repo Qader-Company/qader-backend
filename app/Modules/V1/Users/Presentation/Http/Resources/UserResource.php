@@ -24,7 +24,7 @@ class UserResource extends JsonResource
             'is_active' => (bool) $this->is_active,
             'last_login_at' => $this->last_login_at,
             'roles' => $access['roles'],
-            'unassigned_permissions' => $access['unassigned_permissions'],
+            'permissions' => $access['permissions'],
         ];
     }
 }

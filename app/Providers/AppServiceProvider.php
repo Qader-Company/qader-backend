@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Knuckles\Scribe\ScribeServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -13,6 +14,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        if ($this->app->environment('local') && class_exists(ScribeServiceProvider::class)) {
+            $this->app->register(LocalApiDocumentationServiceProvider::class);
+        }
+
         foreach (config('modules.providers', []) as $provider) {
             $this->app->register($provider);
         }
@@ -36,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
                 $prefix = $route['prefix'] ?? '';
                 $middlewares = array_merge(['api', 'locale'], $route['middlewares'] ?? []);
 
-                if ($route['api_key'] ?? true) {
+                if ($route['api_key'] ?? false) {
                     $middlewares[] = 'api.key';
                 }
 

@@ -1,0 +1,293 @@
+<?php
+
+namespace App\Support\ApiDocumentation;
+
+use Illuminate\Routing\Route;
+use Illuminate\Support\Str;
+
+class EndpointNames
+{
+    public static function for(Route $route): string
+    {
+        $parts = array_slice(explode('/', $route->uri()), 2);
+        $method = $route->methods()[0];
+        $isPublicJobs = ($parts[0] ?? null) === 'public' && ($parts[1] ?? null) === 'jobs';
+
+        if ($parts[0] === 'auth') {
+            return match ($route->getActionMethod()) {
+                'register' => 'Register',
+                'login' => 'Login',
+                'socialLogin' => 'Social Login',
+                'logout' => 'Logout',
+                'me' => 'Get Current User',
+                'refresh' => 'Refresh Token',
+                'sendOtp' => 'Send OTP',
+                'verifyEmail' => 'Verify Email',
+                'verifyPasswordReset' => 'Verify Password Reset OTP',
+                'resetPassword' => 'Reset Password',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        array_shift($parts); // Portal.
+        $module = $parts[0];
+
+        if ($module === 'profile') {
+            if (($parts[1] ?? '') === 'media') {
+                return 'Download Profile Media';
+            }
+
+            return $method === 'GET' ? 'Get Profile' : 'Update Profile';
+        }
+
+        if ($module === 'onboarding') {
+            return match ($parts[1] ?? '') {
+                '' => 'Get Onboarding Progress',
+                'form-fields' => 'Get Onboarding Form Fields',
+                'resume' => 'Parse Resume for Autocomplete',
+                'professional-field' => 'Select Professional Field',
+                'application' => 'Get Application',
+                default => 'Save '.Str::headline($parts[1]),
+            };
+        }
+
+        if ($module === 'application') {
+            return match ($route->getActionMethod()) {
+                'show' => 'Get Talent Application Status',
+                'selectInterviewSlot' => 'Confirm Interview Slot',
+                'rejectInterviewSlots' => 'Reject All Interview Slots',
+                'cancelInterview' => 'Cancel Interview and Request New Slots',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'talent-applications') {
+            return match ($route->getActionMethod()) {
+                'scopes' => 'List Talent Application Scopes',
+                'sortOptions' => 'List Talent Application Sort Options',
+                'statuses' => 'List Talent Application Statuses',
+                'evaluationTipPriorities' => 'List Evaluation Tip Priorities',
+                'reapplyPolicies' => 'List Reapply Policies',
+                'interviewTypes' => 'List Interview Types',
+                'interviewModes' => 'List Interview Modes',
+                'interviewStatuses' => 'List Interview Statuses',
+                'interviewSlotStatuses' => 'List Interview Slot Statuses',
+                'index' => 'List Talent Applications',
+                'reviewers' => 'List Available Reviewers',
+                'show' => 'Get Talent Application',
+                'downloadCv' => 'Download Submitted CV',
+                'reviewerHistory' => 'Get Reviewer Assignment History',
+                'activity' => 'Get Talent Application Activity',
+                'assignReviewer' => 'Assign Talent Application Reviewer',
+                'startReview' => 'Start Talent Application Review',
+                'saveEvaluation' => 'Save Talent Evaluation',
+                'reject' => 'Reject Talent Application',
+                'accept' => 'Accept Talent Application',
+                'scheduleInterview' => 'Schedule Talent Interview',
+                'replaceInterviewSlots' => 'Offer Replacement Interview Slots',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'interviews') {
+            return match ($route->getActionMethod()) {
+                'index' => 'List Interviews',
+                'show' => 'Get Interview Details',
+                'start' => 'Start Interview',
+                'complete' => 'Complete Interview',
+                'saveEvaluation' => 'Save Interview Evaluation',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'talents') {
+            return match ($route->getActionMethod()) {
+                'index' => 'List Talents',
+                'show' => 'Get Talent Details',
+                'addToBlacklist' => 'Add Talent to Blacklist',
+                'removeFromBlacklist' => 'Remove Talent from Blacklist',
+                'editReapply' => 'Edit Talent Reapply Period',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'talent-review-faqs') {
+            return match ($route->getActionMethod()) {
+                'screenStates' => 'List Talent Review FAQ Screen States',
+                'index' => 'List Talent Review FAQs',
+                'show' => 'Get Talent Review FAQ',
+                'store' => 'Create Talent Review FAQ',
+                'update' => 'Update Talent Review FAQ',
+                'destroy' => 'Delete Talent Review FAQ',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'workspaces') {
+            if (str_contains($route->uri(), '/hiring-requests') || str_contains($route->uri(), '/hiring-request-items') || str_contains($route->uri(), '/hiring-interviews')) {
+                return match ($route->getActionMethod()) {
+                    'index' => 'List Hiring Requests',
+                    'store' => 'Confirm and Submit Hiring Request',
+                    'show' => 'Get Hiring Request',
+                    'interview' => 'Get Hiring Interview',
+                    'acceptInterviewSchedule' => 'Accept Hiring Interview Time',
+                    'requestInterviewScheduleChange' => 'Request a New Hiring Interview Time',
+                    'apologizeForInterview' => 'Apologize for Hiring Interview',
+                    'decision' => 'Submit Hiring Decision',
+                    'withdrawDecision' => 'Cancel Hiring Decision',
+                    'hold' => 'Hold Hiring Item',
+                    'resume' => 'Resume Hiring Item',
+                    'cancel' => 'Cancel Hiring Item',
+                    default => Str::headline($route->getActionMethod()),
+                };
+            }
+
+            return match ($route->getActionMethod()) {
+                '__invoke' => 'List Workspace Options',
+                'index' => match (true) {
+                    str_contains($route->uri(), '/talent-marketplace') => 'Explore Talent Marketplace',
+                    str_contains($route->uri(), '/talent-selections') => 'List Selected Talents',
+                    str_contains($route->uri(), '/members') => 'List Workspace Members',
+                    str_contains($route->uri(), '/roles') => 'List Workspace Roles',
+                    default => 'List Workspaces',
+                },
+                'store' => match (true) {
+                    str_contains($route->uri(), '/talent-selections') => 'Add Talent to Squad',
+                    str_contains($route->uri(), '/members') => 'Create Workspace Member',
+                    str_contains($route->uri(), '/roles') => 'Create Workspace Role',
+                    default => 'Create Workspace',
+                },
+                'show' => match (true) {
+                    str_contains($route->uri(), '/talent-marketplace/') => 'View Talent Profile',
+                    str_contains($route->uri(), '/members/') => 'Get Workspace Member',
+                    str_contains($route->uri(), '/roles/') => 'Get Workspace Role',
+                    default => 'Get Workspace',
+                },
+                'update' => match (true) {
+                    str_contains($route->uri(), '/members/') => 'Update Workspace Member',
+                    str_contains($route->uri(), '/roles/') => 'Update Workspace Role',
+                    default => 'Update Workspace',
+                },
+                'permissions' => 'List Workspace Permissions', 'status' => 'Update Workspace Role Status',
+                'filters' => 'List Talent Marketplace Filters',
+                'dashboard' => 'Get Workspace Dashboard',
+                'destroy' => match (true) {
+                    str_contains($route->uri(), '/talent-selections/') => 'Remove Talent from Squad',
+                    str_contains($route->uri(), '/members/') => 'Remove Workspace Member',
+                    default => 'Delete Workspace Role',
+                },
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'hiring-requests') {
+            return match ($route->getActionMethod()) {
+                '__invoke' => 'List Hiring Request Options',
+                'index' => 'List Hiring Requests',
+                'assignees' => 'List Hiring Request Assignees',
+                'show' => 'Get Hiring Request',
+                'assign' => 'Assign Hiring Request',
+                'reassign' => 'Reassign Hiring Request',
+                'start' => 'Start Hiring Request',
+                'sendOffer' => 'Send Revised Offer',
+                'respondOnBehalf' => 'Respond to Offer on Behalf',
+                'proposeInterview' => 'Schedule Hiring Interview',
+                'confirmInterview' => 'Confirm Hiring Interview',
+                'startInterview' => 'Start Hiring Interview',
+                'completeInterview' => 'Complete Hiring Interview',
+                'decisionOnBehalf' => 'Record Hiring Decision on Behalf',
+                'withdrawDecisionOnBehalf' => 'Cancel Hiring Decision on Behalf',
+                'hold' => 'Hold Hiring Item',
+                'resume' => 'Resume Hiring Item',
+                'cancel' => 'Cancel Hiring Item',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'contract-types') {
+            return match ($route->getActionMethod()) {
+                'index' => 'List Contract Types',
+                'show' => 'Get Contract Type Configuration',
+                'update' => 'Update Contract Type Configuration',
+                'status' => 'Update Contract Type Status',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if (in_array($module, ['hiring-offers', 'hiring-interviews', 'hiring-request-items'], true)) {
+            return match ($route->getActionMethod()) {
+                'options' => 'List Hiring Offer Options',
+                'index' => 'List Hiring Offers',
+                'show' => 'Get Hiring Offer',
+                'accept' => 'Accept Hiring Offer',
+                'reject' => 'Reject Hiring Offer',
+                'counter' => 'Send Counter Offer',
+                'interview' => 'Get Hiring Interview',
+                'acceptInterviewSchedule' => 'Accept Hiring Interview Time',
+                'requestInterviewScheduleChange' => 'Request a New Hiring Interview Time',
+                'apologizeForInterview' => 'Apologize for Hiring Interview',
+                'decision' => 'Submit Hiring Decision',
+                'withdrawDecision' => 'Cancel Hiring Decision',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'access-control' && str_contains($route->uri(), '/client/access-control/workspaces/')) {
+            return match ($route->getActionMethod()) {
+                'permissions' => 'List Workspace Permissions',
+                'index' => 'List Workspace Roles',
+                'store' => 'Create Workspace Role',
+                'show' => 'Get Workspace Role',
+                'update' => 'Update Workspace Role',
+                'status' => 'Update Workspace Role Status',
+                'destroy' => 'Delete Workspace Role',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'job-forms' || $isPublicJobs) {
+            $isSubmissionRoute = str_contains($route->uri(), '/submissions');
+
+            return match ($route->getActionMethod()) {
+                'publishingStatuses' => 'List Job Form Publishing Statuses',
+                'submissionStatuses' => 'List Job Form Submission Statuses',
+                'workTypes' => 'List Job Work Types',
+                'workModes' => 'List Job Work Modes',
+                'experienceRanges' => 'List Job Experience Ranges',
+                'filters' => 'List Public Job Filters',
+                'index' => $isPublicJobs
+                    ? 'Explore Open Positions'
+                    : ($isSubmissionRoute ? 'List Job Form Submissions' : 'List Job Forms'),
+                'store' => 'Create Job Form',
+                'show' => $isPublicJobs
+                    ? 'Get Public Job Details'
+                    : ($isSubmissionRoute ? 'Get Job Form Submission' : 'Get Job Form'),
+                'update' => 'Update Job Form', 'publish' => 'Publish Job Form', 'activation' => 'Update Job Form Activation',
+                'applicationForm' => 'Get Public Job Application Form', 'submit' => 'Submit Public Job Application',
+                'export' => 'Export Job Form Submissions', 'downloadCv' => 'Download Applicant CV', 'startHiring' => 'Start Hiring Process',
+                'destroy' => str_contains($route->uri(), 'submissions') ? 'Delete Job Form Submission' : 'Delete Job Form',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'fields' && ($parts[1] ?? '') === 'form-fields') {
+            return 'Get Professional Field Form Configuration';
+        }
+
+        $resource = in_array($module, ['master-data', 'access-control'], true) ? $parts[1] : $module;
+        $resource = $resource === 'fields' ? 'professional-fields' : $resource;
+        $singular = Str::headline(Str::singular($resource));
+
+        if (end($parts) === 'status') {
+            return 'Update '.$singular.' Status';
+        }
+
+        return match ($method) {
+            'GET' => str_contains($route->uri(), '{') ? 'Get '.$singular : 'List '.Str::headline($resource),
+            'POST' => 'Create '.$singular,
+            'PUT', 'PATCH' => 'Update '.$singular,
+            'DELETE' => 'Delete '.$singular,
+            default => Str::headline($route->getActionMethod()),
+        };
+    }
+}

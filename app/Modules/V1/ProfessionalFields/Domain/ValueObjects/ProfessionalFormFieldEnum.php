@@ -22,6 +22,7 @@ enum ProfessionalFormFieldEnum: string
     case SENIORITY_LEVEL = 'seniority_level';
     case YEARS_OF_EXPERIENCE = 'years_of_experience';
     case SKILLS = 'skill_ids';
+    case INDUSTRIES = 'industry_ids';
     case TOOLS = 'tool_ids';
     case LINKEDIN_URL = 'linkedin_url';
     case GITHUB_URL = 'github_url';
@@ -58,7 +59,6 @@ enum ProfessionalFormFieldEnum: string
             self::PROFESSIONAL_FIELD,
             self::FULL_NAME,
             self::EMAIL,
-            self::PROFESSIONAL_SUMMARY,
             self::PHONE_NUMBER,
             self::WHATSAPP_NUMBER,
             self::DATE_OF_BIRTH,
@@ -67,12 +67,15 @@ enum ProfessionalFormFieldEnum: string
             self::NATIONALITY_COUNTRY,
             self::RESIDENCE_COUNTRY,
             self::RESIDENCE_CITY,
-            self::LANGUAGES => self::PERSONAL_INFORMATION,
+            self::LANGUAGES,
+            self::CV => self::PERSONAL_INFORMATION,
 
+            self::PROFESSIONAL_SUMMARY,
             self::JOB_TITLE,
             self::SENIORITY_LEVEL,
             self::YEARS_OF_EXPERIENCE,
             self::SKILLS,
+            self::INDUSTRIES,
             self::TOOLS,
             self::LINKEDIN_URL,
             self::GITHUB_URL,
@@ -86,20 +89,8 @@ enum ProfessionalFormFieldEnum: string
             self::WILLING_TO_RELOCATE,
             self::NOTICE_PERIOD,
             self::CURRENT_SALARY,
-            self::EXPECTED_SALARY,
-            self::CV => self::WORK_PREFERENCES,
+            self::EXPECTED_SALARY => self::WORK_PREFERENCES,
         };
-    }
-
-    public function isDefault(): bool
-    {
-        return ! in_array($this, [
-            self::TOOLS,
-            self::GITHUB_URL,
-            self::BEHANCE_URL,
-            self::PORTFOLIO_URL,
-            self::PROJECTS,
-        ], true);
     }
 
     public function isRequiredByDefault(): bool
@@ -115,6 +106,7 @@ enum ProfessionalFormFieldEnum: string
             self::SENIORITY_LEVEL,
             self::YEARS_OF_EXPERIENCE,
             self::SKILLS,
+            self::INDUSTRIES,
             self::LINKEDIN_URL,
             self::WORK_TYPES,
             self::WORK_MODES,
@@ -175,6 +167,7 @@ enum ProfessionalFormFieldEnum: string
             self::RESIDENCE_CITY => ['residence_city'],
             self::JOB_TITLE => ['job_title'],
             self::SKILLS => ['skills'],
+            self::INDUSTRIES => ['industries'],
             self::TOOLS => ['tools'],
             self::CURRENT_SALARY => [
                 'current_salary',

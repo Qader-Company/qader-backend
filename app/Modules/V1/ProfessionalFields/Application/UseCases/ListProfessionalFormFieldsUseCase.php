@@ -17,6 +17,9 @@ class ListProfessionalFormFieldsUseCase
 
     public function forApplication(int $professionalFieldId): array
     {
-        return $this->formFields->configuration($professionalFieldId);
+        return collect($this->formFields->configuration($professionalFieldId))
+            ->flatMap(fn (array $step): array => $step['visible_fields'])
+            ->values()
+            ->all();
     }
 }

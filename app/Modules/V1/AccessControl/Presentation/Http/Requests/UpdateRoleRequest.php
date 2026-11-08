@@ -3,7 +3,7 @@
 namespace App\Modules\V1\AccessControl\Presentation\Http\Requests;
 
 use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminPermissionEnum;
-use App\Modules\V1\AccessControl\Presentation\Http\Rules\NotOwnerRoleName;
+use App\Modules\V1\AccessControl\Presentation\Http\Rules\NotSuperAdminRoleName;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -18,16 +18,18 @@ class UpdateRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => [
-                'required',
+            'name_en' => [
+                'sometimes',
                 'string',
-                'max:100',
-                new NotOwnerRoleName,
-                Rule::unique('roles', 'name')
+                'max:255',
+                new NotSuperAdminRoleName,
+                Rule::unique('roles', 'name_en')
                     ->ignore($this->route('role'))
                     ->where('portal', PortalTypeEnum::ADMIN->value),
             ],
-            'permissions' => ['required', 'array', 'min:1'],
+            'name_ar' => ['sometimes', 'string', 'max:255'],
+            'is_active' => ['sometimes', 'boolean'],
+            'permissions' => ['sometimes', 'array', 'min:1'],
             'permissions.*' => [
                 'required',
                 'string',
@@ -35,5 +37,12 @@ class UpdateRoleRequest extends FormRequest
                 Rule::in(AdminPermissionEnum::values()),
             ],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('is_active')) {
+            $this->merge(['is_active' => $this->boolean('is_active')]);
+        }
     }
 }

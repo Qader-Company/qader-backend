@@ -24,6 +24,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
             $table->string('locale')->index();
             $table->string('name');
+            $table->text('description')->nullable();
             $table->unique(
                 ['professional_field_id', 'locale'],
                 'professional_field_locale_unique',

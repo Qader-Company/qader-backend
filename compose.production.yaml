@@ -1,0 +1,11 @@
+services:
+  app:
+    image: ghcr.io/qader-company/qader-backend-app:${IMAGE_TAG:-main}
+  queue:
+    image: ghcr.io/qader-company/qader-backend-app:${IMAGE_TAG:-main}
+  scheduler:
+    image: ghcr.io/qader-company/qader-backend-app:${IMAGE_TAG:-main}
+  nginx:
+    image: ghcr.io/qader-company/qader-backend-nginx:${IMAGE_TAG:-main}
+    ports:
+      - "127.0.0.1:9101:80"

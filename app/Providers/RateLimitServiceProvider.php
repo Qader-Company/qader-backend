@@ -86,6 +86,22 @@ class RateLimitServiceProvider extends ServiceProvider
                 $config['max_attempts']
             )->by((string) ($request->user()?->id ?? $request->ip()));
         });
+
+        RateLimiter::for('public-job-submissions', function (Request $request) {
+            return [
+                Limit::perMinute(5)->by('job:'.$request->route('job')?->getKey().'|'.$request->ip()),
+                Limit::perHour(30)->by('jobs|'.$request->ip()),
+            ];
+        });
+
+        RateLimiter::for('talent-resume-parse', function (Request $request) {
+            $config = config('rate-limiting.resume_parse');
+
+            return Limit::perMinutes(
+                $config['decay_minutes'],
+                $config['max_attempts'],
+            )->by((string) ($request->user()?->id ?? $request->ip()));
+        });
     }
 
     private function loginKey(Request $request): string

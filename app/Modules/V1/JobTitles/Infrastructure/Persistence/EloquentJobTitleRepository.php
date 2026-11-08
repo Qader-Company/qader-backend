@@ -5,6 +5,7 @@ namespace App\Modules\V1\JobTitles\Infrastructure\Persistence;
 use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
 use App\Modules\V1\JobTitles\Domain\Repositories\JobTitleRepositoryInterface;
 use App\Modules\V1\JobTitles\Infrastructure\Filters\JobTitleFilter;
+use App\Support\Localization\LocalizedValue;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Arr;
@@ -173,20 +174,32 @@ class EloquentJobTitleRepository implements JobTitleRepositoryInterface
                 ),
             )
             ->orderBy(
-                app()->getLocale() === 'ar'
-                    ? 'professional_field_translation_ar.name'
-                    : 'professional_field_translation_en.name',
+                LocalizedValue::preferredColumn(
+                    'professional_field_translation_en.name',
+                    'professional_field_translation_ar.name',
+                ),
             )
             ->select([
                 self::PIVOT_TABLE.'.'.self::PIVOT_FOREIGN_KEY.' as record_id',
                 'professional_fields.id',
                 DB::raw(
-                    app()->getLocale() === 'ar'
-                        ? 'COALESCE(professional_field_translation_ar.name, professional_field_translation_en.name) as name'
-                        : 'professional_field_translation_en.name as name',
+                    LocalizedValue::coalescedColumn(
+                        'professional_field_translation_en.name',
+                        'professional_field_translation_ar.name',
+                        'name',
+                    ),
+                ),
+                DB::raw(
+                    LocalizedValue::coalescedColumn(
+                        'professional_field_translation_en.description',
+                        'professional_field_translation_ar.description',
+                        'description',
+                    ),
                 ),
                 'professional_field_translation_en.name as name_en',
                 'professional_field_translation_ar.name as name_ar',
+                'professional_field_translation_en.description as description_en',
+                'professional_field_translation_ar.description as description_ar',
                 'professional_fields.slug',
                 'professional_fields.is_active',
             ])

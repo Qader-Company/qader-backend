@@ -3,6 +3,7 @@
 namespace App\Modules\V1\Admins\Presentation\Http\Requests;
 
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
+use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminRoleEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -24,6 +25,7 @@ class UpdateAdminRequest extends FormRequest
         return [
             'first_name' => ['sometimes', 'string', 'max:100'],
             'last_name' => ['sometimes', 'string', 'max:100'],
+            'display_name_ar' => ['sometimes', 'string', 'max:255'],
             'email' => [
                 'sometimes',
                 'email',
@@ -44,6 +46,8 @@ class UpdateAdminRequest extends FormRequest
                 'mimes:jpg,jpeg,png,webp',
                 'max:2048',
             ],
+            'phone_country_code' => ['sometimes', 'nullable', 'string', 'max:5'],
+            'phone_number' => ['sometimes', 'nullable', 'string', 'max:20'],
             'role_ids' => ['sometimes', 'array', 'min:1'],
             'role_ids.*' => [
                 'required',
@@ -53,7 +57,8 @@ class UpdateAdminRequest extends FormRequest
                     ->where(function ($query): void {
                         $query
                             ->where('portal', PortalTypeEnum::ADMIN->value)
-                            ->where('name', '!=', 'owner');
+                            ->where('name', '!=', AdminRoleEnum::SUPER_ADMIN->value)
+                            ->where('is_active', true);
                     }),
             ],
         ];

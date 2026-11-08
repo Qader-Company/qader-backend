@@ -99,7 +99,6 @@ class TalentProfileProgressService
                     $talent->user->first_name.' '.$talent->user->last_name,
                 ),
                 'email' => $talent->user->email,
-                'professional_summary' => $talent->professional_summary,
                 'phone_country_code' => $talent->phone_country_code,
                 'phone_number' => $talent->phone_number,
                 'whatsapp_country_code' => $talent->whatsapp_country_code,
@@ -118,8 +117,10 @@ class TalentProfileProgressService
                     ])
                     ->values()
                     ->all(),
+                'cv' => $this->media($talent->getFirstMedia('cv')),
             ],
             OnboardingStepEnum::SKILLS_AND_EXPERIENCES->value => [
+                'professional_summary' => $talent->professional_summary,
                 'job_title' => $this->lookup($talent->jobTitle),
                 'seniority_level' => $this->value($talent->seniority_level),
                 'years_of_experience' => $talent->years_of_experience,
@@ -127,6 +128,14 @@ class TalentProfileProgressService
                     ->map(fn ($skill) => [
                         'id' => $skill->id,
                         'name' => $skill->name,
+                    ])
+                    ->values()
+                    ->all(),
+                'industries' => $talent->industries
+                    ->map(fn ($industry) => [
+                        'id' => $industry->id,
+                        'slug' => $industry->slug,
+                        'name' => $this->localizedName($industry),
                     ])
                     ->values()
                     ->all(),
@@ -189,7 +198,6 @@ class TalentProfileProgressService
                 'expected_salary_min' => $talent->expected_salary_min,
                 'expected_salary_max' => $talent->expected_salary_max,
                 'expected_currency' => $this->lookup($talent->expectedCurrency),
-                'cv' => $this->media($talent->getFirstMedia('cv')),
             ],
         ];
     }
@@ -260,6 +268,7 @@ class TalentProfileProgressService
                     selectedIds: $talent->skills->pluck('id')->all(),
                     professionalFieldId: $talent->professional_field_id,
                 ),
+            ProfessionalFormFieldEnum::INDUSTRIES => $talent->industries->isEmpty(),
             ProfessionalFormFieldEnum::TOOLS => $talent->tools->isEmpty()
                 || $this->hasSelectionsOutsideProfessionalField(
                     pivotTable: 'professional_field_tool',
@@ -378,7 +387,7 @@ class TalentProfileProgressService
             'file_name' => $media->file_name,
             'mime_type' => $media->mime_type,
             'size' => $media->size,
-            'url' => $media->getUrl(),
+            'download_url' => route('talent.profile.media.download', ['media' => $media->id]),
         ];
     }
 }

@@ -67,11 +67,22 @@ class EloquentProfessionalFieldRepository implements ProfessionalFieldRepository
     private function withTranslations(array $attributes): array
     {
         $name = $attributes['name'] ?? null;
+        $description = $attributes['description'] ?? null;
         unset($attributes['name']);
+        unset($attributes['description']);
 
         if (is_array($name)) {
-            $attributes['en'] = ['name' => $name['en']];
-            $attributes['ar'] = ['name' => $name['ar']];
+            $attributes['en'] = [
+                'name' => $name['en'],
+                'description' => $description['en'] ?? null,
+            ];
+            $attributes['ar'] = [
+                'name' => $name['ar'],
+                'description' => $description['ar'] ?? null,
+            ];
+        } elseif (is_array($description)) {
+            $attributes['en'] = ['description' => $description['en']];
+            $attributes['ar'] = ['description' => $description['ar']];
         }
 
         return $attributes;

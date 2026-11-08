@@ -4,6 +4,7 @@ namespace App\Modules\V1\Authentication\Presentation\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class LoginRequest extends FormRequest
 {
@@ -26,6 +27,12 @@ class LoginRequest extends FormRequest
             (new EmailValidationRequest)->rules(),
             [
                 'password' => ['required', 'string', 'min:8'],
+                'fcm_token' => ['nullable', 'string', 'max:4096'],
+                'platform' => [
+                    'nullable',
+                    'required_with:fcm_token',
+                    Rule::in(['web', 'ios', 'android']),
+                ],
             ]
         );
     }

@@ -4,6 +4,7 @@ namespace App\Modules\V1\Authentication\Presentation\Http\Controllers;
 
 use App\Facades\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Modules\V1\Authentication\Application\Services\UserDeviceRegistrar;
 use App\Modules\V1\Authentication\Application\UseCases\LogInUseCase;
 use App\Modules\V1\Authentication\Application\UseCases\RegisterUseCase;
 use App\Modules\V1\Authentication\Application\UseCases\SendOtpUseCase;
@@ -21,6 +22,7 @@ use App\Modules\V1\Authentication\Presentation\Http\Requests\RegisterRequest;
 use App\Modules\V1\Authentication\Presentation\Http\Requests\ResetPasswordRequest;
 use App\Modules\V1\Authentication\Presentation\Http\Requests\SocialLoginRequest;
 use App\Modules\V1\Authentication\Presentation\Http\Requests\VerifyResetPasswordOTPRequest;
+use App\Modules\V1\Users\Application\Services\UserActivationChecker;
 use App\Modules\V1\Users\Application\Services\UserResourceResolver;
 use App\Modules\V1\Users\Domain\Repositories\UserRepositoryInterface;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
@@ -30,6 +32,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class TokenAuthController extends Controller
 {
@@ -63,7 +66,8 @@ class TokenAuthController extends Controller
         LoginRequest $request,
         string $type,
         LogInUseCase $login,
-        TokenIssuer $tokens
+        TokenIssuer $tokens,
+        UserDeviceRegistrar $devices
     ): JsonResponse {
         $portal = $this->portal($type);
         $result = $login->execute(
@@ -73,6 +77,21 @@ class TokenAuthController extends Controller
         $response = [
             'user' => UserResourceResolver::resolve($result['user']),
         ];
+
+        if ($result['requires_password_change']) {
+            $response['requires_password_change'] = true;
+            $response['reset_password_token'] = $tokens->create(
+                $result['user'],
+                $portal,
+                TokenTypeEnum::RESET_PASSWORD_TOKEN
+            );
+
+            return ApiResponse::apiFormat(
+                ['data' => $response],
+                __('auth.password_change_required'),
+                Response::HTTP_FORBIDDEN
+            );
+        }
 
         if ($result['requires_email_verification']) {
             $response['verification_token'] = $tokens->create(
@@ -88,9 +107,15 @@ class TokenAuthController extends Controller
             );
         }
 
+        $device = $devices->register(
+            $result['user'],
+            $request->validated('fcm_token'),
+            $request->validated('platform')
+        );
         $tokenPair = $tokens->refreshToken(
             $result['user'],
-            $portal
+            $portal,
+            $device
         );
 
         return ApiResponse::success(
@@ -104,7 +129,8 @@ class TokenAuthController extends Controller
         string $type,
         string $provider,
         SocialLoginUseCase $socialLogin,
-        TokenIssuer $tokens
+        TokenIssuer $tokens,
+        UserDeviceRegistrar $devices
     ): JsonResponse {
         $portal = $this->portal($type);
         $socialProvider = SocialProviderEnum::tryFrom($provider);
@@ -115,11 +141,34 @@ class TokenAuthController extends Controller
             $socialProvider,
             $portal,
             $request->validated('token'),
-            $request->safe()->except('token')
+            $request->safe()->except('token', 'fcm_token', 'platform')
+        );
+
+        if ($result['user']->must_change_password) {
+            return ApiResponse::apiFormat(
+                ['data' => [
+                    'user' => UserResourceResolver::resolve($result['user']),
+                    'requires_password_change' => true,
+                    'reset_password_token' => $tokens->create(
+                        $result['user'],
+                        $portal,
+                        TokenTypeEnum::RESET_PASSWORD_TOKEN
+                    ),
+                ]],
+                __('auth.password_change_required'),
+                Response::HTTP_FORBIDDEN
+            );
+        }
+
+        $device = $devices->register(
+            $result['user'],
+            $request->validated('fcm_token'),
+            $request->validated('platform')
         );
         $tokenPair = $tokens->refreshToken(
             $result['user'],
-            $portal
+            $portal,
+            $device
         );
 
         return ApiResponse::success(
@@ -170,6 +219,11 @@ class TokenAuthController extends Controller
         $user = $request->user();
 
         $this->ensurePortal($user?->type, $portal);
+        $this->ensureActive($user);
+
+        if (! $user->tokenCan($portal->value)) {
+            throw new AccessDeniedHttpException(__('auth.unauthorized'));
+        }
 
         $tokenPair = $tokens->refreshToken($user, $portal);
 
@@ -179,9 +233,24 @@ class TokenAuthController extends Controller
         );
     }
 
-    public function logout(Request $request): JsonResponse
+    public function me(Request $request): JsonResponse
     {
-        $request->user()?->currentAccessToken()?->delete();
+        $user = $request->user();
+        $portal = $this->portal($user->type->value);
+        $this->ensureActive($user);
+
+        if (! $user->tokenCan($portal->value)) {
+            throw new AccessDeniedHttpException(__('auth.unauthorized'));
+        }
+
+        return ApiResponse::success([
+            'user' => UserResourceResolver::resolve($user),
+        ]);
+    }
+
+    public function logout(Request $request, TokenIssuer $tokens): JsonResponse
+    {
+        $tokens->revokeCurrentFamily($request->user());
 
         return ApiResponse::message(__('auth.loggedOut'));
     }
@@ -241,8 +310,10 @@ class TokenAuthController extends Controller
         DB::transaction(function () use ($request, $user, $users): void {
             $users->update($user, [
                 'password' => $request->validated('password'),
+                'must_change_password' => false,
             ]);
             $user->tokens()->delete();
+            $user->userDevices()->delete();
         });
 
         return ApiResponse::message(__('auth.password_reset_success'));
@@ -263,6 +334,13 @@ class TokenAuthController extends Controller
 
         if ($value !== $portal->value) {
             throw new AccessDeniedHttpException(__('auth.unauthorized'));
+        }
+    }
+
+    private function ensureActive(mixed $user): void
+    {
+        if (! $user || ! UserActivationChecker::isActive($user)) {
+            throw new UnauthorizedHttpException('', __('auth.unauthorized'));
         }
     }
 }

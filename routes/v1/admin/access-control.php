@@ -13,10 +13,18 @@ Route::middleware(['auth:sanctum', 'abilities:access,admin'])
         Route::get('roles', 'roles')
             ->middleware(AdminPermissionEnum::ACCESS_CONTROL_VIEW->middleware());
 
+        Route::get('roles/{role}', 'showRole')
+            ->whereNumber('role')
+            ->middleware(AdminPermissionEnum::ACCESS_CONTROL_VIEW->middleware());
+
         Route::post('roles', 'storeRole')
             ->middleware(AdminPermissionEnum::ACCESS_CONTROL_MANAGE_ROLES->middleware());
 
         Route::match(['put', 'patch'], 'roles/{role}', 'updateRole')
+            ->whereNumber('role')
+            ->middleware(AdminPermissionEnum::ACCESS_CONTROL_MANAGE_ROLES->middleware());
+
+        Route::patch('roles/{role}/status', 'updateRoleStatus')
             ->whereNumber('role')
             ->middleware(AdminPermissionEnum::ACCESS_CONTROL_MANAGE_ROLES->middleware());
 

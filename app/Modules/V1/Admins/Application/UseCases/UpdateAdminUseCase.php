@@ -19,8 +19,8 @@ class UpdateAdminUseCase
 
     public function execute(int $adminId, array $attributes): object
     {
-        if ($this->admins->hasOwnerRole($adminId)) {
-            throw new DomainException(__('admins.owner_cannot_be_modified'));
+        if ($this->admins->hasSuperAdminRole($adminId)) {
+            throw new DomainException(__('admins.super_admin_cannot_be_modified'));
         }
 
         $roleIds = array_key_exists('role_ids', $attributes)

@@ -11,9 +11,6 @@ return new class extends Migration
         Schema::create('professional_form_fields', function (Blueprint $table): void {
             $table->id();
             $table->string('key')->unique();
-            $table->string('step')->index();
-            $table->boolean('is_default')->default(false);
-            $table->boolean('is_required_by_default')->default(false);
             $table->timestamps();
         });
 
@@ -26,7 +23,6 @@ return new class extends Migration
                 ->foreignId('professional_form_field_id')
                 ->constrained('professional_form_fields')
                 ->cascadeOnDelete();
-            $table->boolean('is_required')->default(false);
             $table->timestamps();
 
             $table->primary(

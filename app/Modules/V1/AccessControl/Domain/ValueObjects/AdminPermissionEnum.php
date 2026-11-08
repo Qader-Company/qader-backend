@@ -40,6 +40,41 @@ enum AdminPermissionEnum: string implements PermissionDefinition
     case CURRENCIES_VIEW = 'admin.currencies.view';
     case CURRENCIES_MANAGE = 'admin.currencies.manage';
 
+    case INDUSTRIES_VIEW = 'admin.industries.view';
+    case INDUSTRIES_MANAGE = 'admin.industries.manage';
+
+    case TALENT_APPLICATIONS_VIEW = 'admin.talent-applications.view';
+    case TALENT_APPLICATIONS_ASSIGN_REVIEWER = 'admin.talent-applications.assign-reviewer';
+    case TALENT_APPLICATIONS_REVIEW = 'admin.talent-applications.review';
+    case TALENT_APPLICATIONS_DECIDE = 'admin.talent-applications.decide';
+
+    case INTERVIEWS_VIEW = 'admin.interviews.view';
+    case INTERVIEWS_MANAGE = 'admin.interviews.manage';
+    case INTERVIEWS_EVALUATE = 'admin.interviews.evaluate';
+    case INTERVIEWS_DECIDE = 'admin.interviews.decide';
+
+    case TALENTS_VIEW = 'admin.talents.view';
+    case TALENTS_MANAGE_BLACKLIST = 'admin.talents.manage-blacklist';
+    case TALENTS_MANAGE_REAPPLY = 'admin.talents.manage-reapply';
+
+    case TALENT_REVIEW_FAQS_VIEW = 'admin.talent-review-faqs.view';
+    case TALENT_REVIEW_FAQS_MANAGE = 'admin.talent-review-faqs.manage';
+
+    case JOB_FORMS_VIEW = 'admin.job-forms.view';
+    case JOB_FORMS_MANAGE = 'admin.job-forms.manage';
+    case JOB_FORM_SUBMISSIONS_VIEW = 'admin.job-form-submissions.view';
+    case JOB_FORM_SUBMISSIONS_DELETE = 'admin.job-form-submissions.delete';
+    case JOB_FORM_SUBMISSIONS_START_HIRING = 'admin.job-form-submissions.start-hiring';
+
+    case HIRING_REQUESTS_VIEW = 'admin.hiring-requests.view';
+    case HIRING_REQUESTS_ASSIGN = 'admin.hiring-requests.assign';
+    case HIRING_REQUESTS_HANDLE = 'admin.hiring-requests.handle';
+    case HIRING_REQUESTS_RESPOND_ON_BEHALF = 'admin.hiring-requests.respond-on-behalf';
+
+    case CONTRACT_TYPES_VIEW = 'admin.contract-types.view';
+    case CONTRACT_TYPES_UPDATE = 'admin.contract-types.update';
+    case CONTRACT_TYPES_TOGGLE_STATUS = 'admin.contract-types.toggle-status';
+
     public function portal(): PortalTypeEnum
     {
         return PortalTypeEnum::ADMIN;

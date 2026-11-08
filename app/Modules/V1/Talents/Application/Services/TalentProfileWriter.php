@@ -50,7 +50,6 @@ class TalentProfileWriter
 
         $attributes = Arr::only($data, [
             'professional_field_id',
-            'professional_summary',
             'phone_country_code',
             'phone_number',
             'whatsapp_country_code',
@@ -93,24 +92,21 @@ class TalentProfileWriter
 
             $talent->languages()->sync($languages);
         }
+
+        if (isset($data['cv'])) {
+            $talent->addMedia($data['cv'])->toMediaCollection('cv', 'local');
+        }
     }
 
     private function updateUserInformation(Talent $talent, array $data): void
     {
-        $attributes = Arr::only($data, ['email']);
+        $attributes = [];
 
         if (array_key_exists('full_name', $data)) {
             [$firstName, $lastName] = $this->splitFullName($data['full_name']);
 
             $attributes['first_name'] = $firstName;
             $attributes['last_name'] = $lastName;
-        }
-
-        if (
-            array_key_exists('email', $attributes)
-            && $attributes['email'] !== $talent->user->email
-        ) {
-            $attributes['email_verified_at'] = null;
         }
 
         if ($attributes === []) {
@@ -133,6 +129,7 @@ class TalentProfileWriter
     private function saveProfessionalInformation(Talent $talent, array $data): void
     {
         $attributes = Arr::only($data, [
+            'professional_summary',
             'job_title_id',
             'seniority_level',
             'years_of_experience',
@@ -141,6 +138,10 @@ class TalentProfileWriter
 
         if (array_key_exists('skill_ids', $data)) {
             $talent->skills()->sync($data['skill_ids']);
+        }
+
+        if (array_key_exists('industry_ids', $data)) {
+            $talent->industries()->sync($data['industry_ids']);
         }
 
         if (array_key_exists('tool_ids', $data)) {
@@ -180,12 +181,6 @@ class TalentProfileWriter
         }
         if (array_key_exists('work_modes', $data)) {
             $this->replaceValues($talent, 'workModes', 'work_mode', $data['work_modes']);
-        }
-
-        if (isset($data['cv'])) {
-            $talent
-                ->addMedia($data['cv'])
-                ->toMediaCollection('cv');
         }
 
         $talent->refresh();
@@ -380,7 +375,7 @@ class TalentProfileWriter
         foreach ($newImages as $image) {
             $project
                 ->addMedia($image)
-                ->toMediaCollection('images');
+                ->toMediaCollection('images', 'local');
         }
     }
 

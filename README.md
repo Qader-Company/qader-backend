@@ -1,58 +1,155 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <img src="docs/assets/qader-logo.svg" width="180" alt="Qader logo">
 </p>
 
-## About Laravel
+<h1 align="center">Qader Backend</h1>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Laravel API for the Qader talent and hiring platform. It serves four consumers:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- `talent`: registration, onboarding, evaluation, interviews, and hiring.
+- `client`: workspaces, teams, talent discovery, and hiring requests.
+- `admin`: master data, access control, reviews, and platform operations.
+- `website`: public pages, published jobs, and external application forms.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Stack
 
-## Learning Laravel
+PHP 8.3, Laravel 13, MySQL 8.4, Redis 7, Sanctum, Scribe, PHPUnit, and Docker Compose.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+The codebase follows a modular layered structure under `app/Modules/V1`:
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```text
+<Module>/
+├── Application
+├── Domain
+├── Infrastructure
+└── Presentation
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Local setup
 
-## Contributing
+Docker is the supported local runtime; PHP and Composer are not required on the host.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+cp .env.example .env
+```
 
-## Code of Conduct
+Set at least:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```dotenv
+APP_NAME=Qader
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost:8000
 
-## Security Vulnerabilities
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=qader
+DB_USERNAME=qader
+DB_PASSWORD=CHANGE_ME
+MYSQL_ROOT_PASSWORD=CHANGE_ME_TOO
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Build the images, generate the application key, and start the stack:
 
-## License
+```bash
+docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml build app nginx
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml run --rm --no-deps app php artisan key:generate
+
+docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml up -d
+```
+
+Prepare the database:
+
+```bash
+docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml exec app php artisan migrate --seed
+```
+
+The API is available at `http://localhost:8000`; verify it with:
+
+```bash
+curl http://localhost:8000/up
+```
+
+Do not run `docker compose down -v` unless deleting the local database and volumes is intentional.
+
+## Demo accounts
+
+| Portal | Email | Password |
+| --- | --- | --- |
+| Talent | `talent@qader.test` | `Password123!` |
+| Client | `client@qader.test` | `Password123!` |
+| Admin | `admin@qader.test` | `Password123!` |
+
+Create or update the platform super admin and generate an API key:
+
+```bash
+docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml exec app php artisan qader:bootstrap-access admin@example.com
+```
+
+## API headers
+
+```http
+Accept: application/json
+Accept-Language: en
+X-Authorization: <api-key>
+Authorization: Bearer <token>
+```
+
+`Authorization` is required only for authenticated endpoints. The API language is controlled only by `Accept-Language` and supports `en`, `ar`, and regional forms such as `ar-EG`.
+
+## API documentation
+
+Regenerate Scribe after changing routes, Form Requests, or examples:
+
+```bash
+docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml exec app php artisan optimize:clear
+docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml exec app php artisan scribe:generate
+```
+
+| Document | URL |
+| --- | --- |
+| Scribe UI | `http://localhost:8000/docs` |
+| Postman | `http://localhost:8000/docs.postman` |
+| Talent OpenAPI | `http://localhost:8000/docs/talent.openapi` |
+| Client OpenAPI | `http://localhost:8000/docs/client.openapi` |
+| Admin OpenAPI | `http://localhost:8000/docs/admin.openapi` |
+| Website OpenAPI | `http://localhost:8000/docs/website.openapi` |
+
+Use the four separate OpenAPI URLs as Apidog data sources. See [Scribe and Apidog setup](docs/scribe-local.ar.md).
+
+## Development commands
+
+```bash
+# Tests use SQLite in memory, not the local MySQL database.
+docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml exec app php artisan test
+
+# Code style check.
+docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml exec app ./vendor/bin/pint --test
+
+# Logs.
+docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml logs -f app queue scheduler nginx
+```
+
+## Optional integrations
+
+Environment placeholders are available for:
+
+- Firebase Cloud Messaging: `FIREBASE_CREDENTIALS`
+- Google Calendar and Meet: `GOOGLE_CALENDAR_*`
+- Gemini resume parsing: `GEMINI_*`
+- Email delivery: `MAIL_*`
+
+Service-account files belong in `storage/app/private/` and must not be committed.
+
+## Documentation
+
+- [Project memory and current decisions](docs/project-memory.ar.md)
+- [Architecture index](docs/architecture/README.md)
+- [API enum reference](docs/api-enums-reference.ar.md)
+- [Database schema review](docs/database-schema-review.ar.md)
+- [Database diagram](docs/database-schema-diagram.html)
+- [Sprint plans and handoffs](docs/sprints/)
+- [Deployment guide](README-DEPLOY.md)
+
+Never commit `.env`, API keys, service-account files, or production credentials.

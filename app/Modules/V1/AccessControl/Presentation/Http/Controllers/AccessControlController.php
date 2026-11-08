@@ -6,11 +6,15 @@ use App\Facades\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Modules\V1\AccessControl\Application\UseCases\CreateRoleUseCase;
 use App\Modules\V1\AccessControl\Application\UseCases\DeleteRoleUseCase;
+use App\Modules\V1\AccessControl\Application\UseCases\GetRoleUseCase;
 use App\Modules\V1\AccessControl\Application\UseCases\ListPermissionsUseCase;
 use App\Modules\V1\AccessControl\Application\UseCases\ListRolesUseCase;
 use App\Modules\V1\AccessControl\Application\UseCases\UpdateRoleUseCase;
+use App\Modules\V1\AccessControl\Application\UseCases\UpdateRoleStatusUseCase;
+use App\Modules\V1\AccessControl\Presentation\Http\Requests\ListRolesRequest;
 use App\Modules\V1\AccessControl\Presentation\Http\Requests\StoreRoleRequest;
 use App\Modules\V1\AccessControl\Presentation\Http\Requests\UpdateRoleRequest;
+use App\Modules\V1\AccessControl\Presentation\Http\Requests\UpdateRoleStatusRequest;
 use App\Modules\V1\AccessControl\Presentation\Http\Resources\PermissionGroupResource;
 use App\Modules\V1\AccessControl\Presentation\Http\Resources\RoleResource;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
@@ -29,13 +33,26 @@ class AccessControlController extends Controller
         );
     }
 
-    public function roles(ListRolesUseCase $listRoles): JsonResponse
+    public function roles(
+        ListRolesRequest $request,
+        ListRolesUseCase $listRoles
+    ): JsonResponse
     {
-        $roles = $listRoles->execute(PortalTypeEnum::ADMIN);
+        $roles = $listRoles->execute(
+            PortalTypeEnum::ADMIN,
+            $request->validated()
+        );
 
         return ApiResponse::success(
             RoleResource::collection($roles)
         );
+    }
+
+    public function showRole(int $role, GetRoleUseCase $getRole): JsonResponse
+    {
+        return ApiResponse::success(new RoleResource(
+            $getRole->execute($role, PortalTypeEnum::ADMIN)
+        ));
     }
 
     public function storeRole(StoreRoleRequest $request, CreateRoleUseCase $createRole): JsonResponse
@@ -71,5 +88,19 @@ class AccessControlController extends Controller
         );
 
         return ApiResponse::deleted();
+    }
+
+    public function updateRoleStatus(
+        UpdateRoleStatusRequest $request,
+        int $role,
+        UpdateRoleStatusUseCase $updateRoleStatus
+    ): JsonResponse {
+        $roleData = $updateRoleStatus->execute(
+            $role,
+            PortalTypeEnum::ADMIN,
+            $request->boolean('is_active')
+        );
+
+        return ApiResponse::updated(new RoleResource($roleData));
     }
 }

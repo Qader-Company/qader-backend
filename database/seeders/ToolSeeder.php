@@ -23,7 +23,7 @@ class ToolSeeder extends Seeder
                 'name' => 'Salesforce',
                 'professional_fields' => [
                     'Sales',
-                    'Customer Service & Call Center',
+                    'Customer Service',
                 ],
             ],
             [
@@ -34,21 +34,32 @@ class ToolSeeder extends Seeder
             [
                 'name' => 'Zendesk',
                 'professional_fields' => [
-                    'Customer Service & Call Center',
+                    'Customer Service',
                 ],
             ],
             [
                 'name' => 'Freshdesk',
                 'professional_fields' => [
-                    'Customer Service & Call Center',
+                    'Customer Service',
                 ],
             ],
             [
                 'name' => 'Intercom',
                 'professional_fields' => [
-                    'Customer Service & Call Center',
+                    'Customer Service',
                 ],
             ],
+            ['name' => 'Figma', 'professional_fields' => ['Design']],
+            ['name' => 'Adobe Photoshop', 'professional_fields' => ['Design']],
+            ['name' => 'Adobe Illustrator', 'professional_fields' => ['Design']],
+            ['name' => 'BambooHR', 'professional_fields' => ['Human Resources']],
+            ['name' => 'Workday', 'professional_fields' => ['Human Resources']],
+            ['name' => 'LinkedIn Recruiter', 'professional_fields' => ['Human Resources']],
+            ['name' => 'Microsoft Excel', 'professional_fields' => ['Finance & Accounting', 'Operations']],
+            ['name' => 'QuickBooks', 'professional_fields' => ['Finance & Accounting']],
+            ['name' => 'SAP', 'professional_fields' => ['Finance & Accounting', 'Operations']],
+            ['name' => 'Odoo', 'professional_fields' => ['Operations']],
+            ['name' => 'Microsoft Project', 'professional_fields' => ['Operations']],
         ];
 
         $professionalFieldIds = DB::table('professional_fields')

@@ -5,6 +5,7 @@ namespace App\Modules\V1\Talents\Infrastructure\Persistence\Repositories;
 use App\Modules\V1\Cities\Domain\Models\City;
 use App\Modules\V1\Countries\Domain\Models\Country;
 use App\Modules\V1\Currencies\Domain\Models\Currency;
+use App\Modules\V1\Industries\Domain\Models\Industry;
 use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
 use App\Modules\V1\Languages\Domain\Models\Language;
 use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
@@ -146,6 +147,7 @@ class EloquentTalentRepository implements TalentRepositoryInterface
         $talent->setRelation('expectedCurrency', $this->relatedModel(Currency::class, $row, 'expected_currency'));
         $talent->setRelation('languages', $this->languages($talent->id));
         $talent->setRelation('skills', $this->skills($talent->id));
+        $talent->setRelation('industries', $this->industries($talent->id));
         $talent->setRelation('tools', $this->tools($talent->id));
         $talent->setRelation(
             'experiences',
@@ -247,6 +249,30 @@ class EloquentTalentRepository implements TalentRepositoryInterface
             ->orderBy('skills.name')
             ->get()
             ->map(fn (object $row): Skill => $this->model(Skill::class, $row));
+    }
+
+    private function industries(int $talentId): Collection
+    {
+        $locale = app()->getLocale();
+
+        return DB::table('talent_industries')
+            ->join('industries', 'industries.id', '=', 'talent_industries.industry_id')
+            ->leftJoin(
+                'industry_translations',
+                function (JoinClause $join) use ($locale): void {
+                    $join
+                        ->on('industry_translations.industry_id', '=', 'industries.id')
+                        ->where('industry_translations.locale', $locale);
+                },
+            )
+            ->where('talent_industries.talent_id', $talentId)
+            ->select([
+                'industries.*',
+                'industry_translations.name as localized_name',
+            ])
+            ->orderBy('industry_translations.name')
+            ->get()
+            ->map(fn (object $row): Industry => $this->model(Industry::class, $row));
     }
 
     private function tools(int $talentId): Collection

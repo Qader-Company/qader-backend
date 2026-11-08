@@ -38,4 +38,9 @@ return [
         'decay_minutes' => (int) env('RATE_LIMIT_LOGOUT_DECAY', 1),
     ],
 
+    'resume_parse' => [
+        'max_attempts' => (int) env('RATE_LIMIT_RESUME_PARSE', 3),
+        'decay_minutes' => (int) env('RATE_LIMIT_RESUME_PARSE_DECAY', 1),
+    ],
+
 ];
