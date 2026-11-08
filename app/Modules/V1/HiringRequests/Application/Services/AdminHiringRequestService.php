@@ -115,7 +115,7 @@ class AdminHiringRequestService
             ]);
 
             foreach ($request->items as $item) {
-                $item->update(['status' => HiringRequestItemStatusEnum::AWAITING_TALENT_RESPONSE]);
+                $item->update(['status' => HiringRequestItemStatusEnum::OFFER]);
                 $offer = $item->latestOffer;
                 if ($offer === null || $offer->sent_at !== null) {
                     continue;

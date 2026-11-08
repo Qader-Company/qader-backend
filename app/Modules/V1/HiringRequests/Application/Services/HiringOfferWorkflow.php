@@ -96,7 +96,7 @@ class HiringOfferWorkflow
                 'sent_at' => now(),
                 'response_due_at' => null,
             ]);
-            $item->update(['status' => HiringRequestItemStatusEnum::NEGOTIATING]);
+            $item->update(['status' => HiringRequestItemStatusEnum::OFFER]);
             $this->events->record($item, $user, 'offer_countered', [
                 'previous_offer_id' => $offer->id,
                 'offer_id' => $counter->id,
@@ -129,7 +129,7 @@ class HiringOfferWorkflow
                 'sent_at' => $sentAt,
                 'response_due_at' => $sentAt->copy()->addHours($this->settings->offerResponseHours()),
             ]);
-            $item->update(['status' => HiringRequestItemStatusEnum::AWAITING_TALENT_RESPONSE]);
+            $item->update(['status' => HiringRequestItemStatusEnum::OFFER]);
             $this->events->record($item, $user, 'offer_sent', [
                 'offer_id' => $offer->id,
                 'proposed_by' => HiringOfferPartyEnum::CLIENT->value,
@@ -193,8 +193,8 @@ class HiringOfferWorkflow
             return;
         }
         $item->update(['status' => $item->interview_required
-            ? HiringRequestItemStatusEnum::AWAITING_INTERVIEW_SLOTS
-            : HiringRequestItemStatusEnum::READY_TO_PROCEED]);
+            ? HiringRequestItemStatusEnum::INTERVIEW
+            : HiringRequestItemStatusEnum::ACCEPTED]);
     }
 
     private function ensureTalentCanRespond(HiringRequestItem $item, HiringOffer $offer): void
@@ -205,7 +205,7 @@ class HiringOfferWorkflow
             $offer->status !== HiringOfferStatusEnum::PENDING
             || $offer->sent_at === null
             || $offer->proposed_by !== HiringOfferPartyEnum::CLIENT
-            || ! in_array($item->status, [HiringRequestItemStatusEnum::AWAITING_TALENT_RESPONSE, HiringRequestItemStatusEnum::NEGOTIATING], true)
+            || $item->status !== HiringRequestItemStatusEnum::OFFER
         ) {
             throw new ConflictHttpException(__('hiring.offer_not_actionable'));
         }

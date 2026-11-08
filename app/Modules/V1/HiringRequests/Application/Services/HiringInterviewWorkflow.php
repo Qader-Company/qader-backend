@@ -36,7 +36,8 @@ class HiringInterviewWorkflow
     {
         return DB::transaction(function () use ($admin, $user, $itemId, $startsAt): HiringInterview {
             $item = $this->adminItem($admin, $itemId);
-            if (! in_array($item->status, [HiringRequestItemStatusEnum::AWAITING_INTERVIEW_SLOTS, HiringRequestItemStatusEnum::INTERVIEW_SCHEDULED], true)) {
+            if ($item->status !== HiringRequestItemStatusEnum::INTERVIEW
+                || in_array($item->interview?->status, [HiringInterviewStatusEnum::IN_PROGRESS, HiringInterviewStatusEnum::COMPLETED], true)) {
                 throw new ConflictHttpException(__('hiring.interview_proposal_not_allowed'));
             }
             $start = Carbon::parse($startsAt);
@@ -73,7 +74,7 @@ class HiringInterviewWorkflow
             $interview = $interview === null
                 ? $item->interview()->create($values)
                 : tap($interview)->update($values);
-            $item->update(['status' => HiringRequestItemStatusEnum::AWAITING_INTERVIEW_SLOTS]);
+            $item->update(['status' => HiringRequestItemStatusEnum::INTERVIEW]);
             $this->events->record($item, $user, $previous === null ? 'interview_proposed' : 'interview_rescheduled', [
                 'interview_id' => $interview->id,
                 'previous' => $previous,
@@ -145,7 +146,7 @@ class HiringInterviewWorkflow
                 'google_calendar_event_id' => $eventId,
                 'meeting_url' => $meetingUrl,
             ]);
-            $item->update(['status' => HiringRequestItemStatusEnum::INTERVIEW_SCHEDULED]);
+            $item->update(['status' => HiringRequestItemStatusEnum::INTERVIEW]);
             $this->events->record($item, $user, 'interview_confirmed', [
                 'interview_id' => $interview->id,
                 'starts_at' => $interview->starts_at,
@@ -226,7 +227,7 @@ class HiringInterviewWorkflow
     public function cancelForItem(HiringRequestItem $item, ?User $actor, string $action): void
     {
         $interview = $item->interview()->lockForUpdate()->first();
-        if ($interview === null || $interview->status === HiringInterviewStatusEnum::CANCELLED) {
+        if ($interview === null || in_array($interview->status, [HiringInterviewStatusEnum::CANCELLED, HiringInterviewStatusEnum::COMPLETED], true)) {
             return;
         }
         if ($interview->google_calendar_event_id) {
@@ -266,7 +267,7 @@ class HiringInterviewWorkflow
             $interview->refresh();
             if ($response !== HiringInterviewResponseEnum::ACCEPTED) {
                 $interview->update(['status' => HiringInterviewStatusEnum::AWAITING_RESCHEDULE]);
-                $interview->item->update(['status' => HiringRequestItemStatusEnum::AWAITING_INTERVIEW_SLOTS]);
+                $interview->item->update(['status' => HiringRequestItemStatusEnum::INTERVIEW]);
             } elseif (
                 $interview->client_response === HiringInterviewResponseEnum::ACCEPTED
                 && $interview->talent_response === HiringInterviewResponseEnum::ACCEPTED
@@ -300,7 +301,7 @@ class HiringInterviewWorkflow
         $completedAt = now();
         $interview->update(['status' => HiringInterviewStatusEnum::COMPLETED, 'completed_at' => $completedAt]);
         $item->update([
-            'status' => HiringRequestItemStatusEnum::AWAITING_DECISIONS,
+            'status' => HiringRequestItemStatusEnum::INTERVIEW,
             'decision_due_at' => $completedAt->copy()->addHours($this->settings->decisionResponseHours()),
         ]);
         $this->events->record($item, $actor, 'interview_completed', [

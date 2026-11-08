@@ -67,7 +67,7 @@ class HiringDecisionWorkflow
             $query = HiringRequestItem::query();
             $scope($query);
             $item = $query->lockForUpdate()->findOrFail($itemId);
-            if ($item->status !== HiringRequestItemStatusEnum::AWAITING_DECISIONS || $item->{$party.'_decision'} !== null) {
+            if ($item->status !== HiringRequestItemStatusEnum::INTERVIEW || $item->decision_due_at === null || $item->{$party.'_decision'} !== null) {
                 throw new ConflictHttpException(__('hiring.decision_not_allowed'));
             }
             if (! $adminOverride && ($item->decision_due_at === null || now()->gt($item->decision_due_at))) {
@@ -82,8 +82,8 @@ class HiringDecisionWorkflow
             $nextStatus = $item->client_decision === HiringDecisionEnum::REJECT || $item->talent_decision === HiringDecisionEnum::REJECT
                 ? HiringRequestItemStatusEnum::REJECTED
                 : ($item->client_decision === HiringDecisionEnum::PROCEED && $item->talent_decision === HiringDecisionEnum::PROCEED
-                    ? HiringRequestItemStatusEnum::READY_TO_PROCEED
-                    : HiringRequestItemStatusEnum::AWAITING_DECISIONS);
+                    ? HiringRequestItemStatusEnum::ACCEPTED
+                    : HiringRequestItemStatusEnum::INTERVIEW);
             $item->update(['status' => $nextStatus]);
             $this->events->record($item, $actor, $adminOverride ? 'decision_recorded_on_behalf' : 'decision_recorded', [
                 'party' => $party, 'decision' => $decision->value, 'reason' => $reason,
@@ -99,7 +99,7 @@ class HiringDecisionWorkflow
             $query = HiringRequestItem::query();
             $scope($query);
             $item = $query->lockForUpdate()->findOrFail($itemId);
-            if (! in_array($item->status, [HiringRequestItemStatusEnum::AWAITING_DECISIONS, HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::READY_TO_PROCEED], true)
+            if (! in_array($item->status, [HiringRequestItemStatusEnum::INTERVIEW, HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::ACCEPTED], true)
                 || $item->{$party.'_decision'} === null) {
                 throw new ConflictHttpException(__('hiring.decision_withdrawal_not_allowed'));
             }
@@ -108,7 +108,7 @@ class HiringDecisionWorkflow
                 $party.'_decision' => null,
                 $party.'_decision_reason' => null,
                 $party.'_decided_at' => null,
-                'status' => HiringRequestItemStatusEnum::AWAITING_DECISIONS,
+                'status' => HiringRequestItemStatusEnum::INTERVIEW,
             ]);
             $this->events->record($item, $actor, 'decision_withdrawn', [
                 'party' => $party, 'previous_decision' => $previous->value,

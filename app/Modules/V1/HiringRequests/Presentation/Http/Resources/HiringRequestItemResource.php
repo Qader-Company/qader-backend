@@ -3,6 +3,7 @@
 namespace App\Modules\V1\HiringRequests\Presentation\Http\Resources;
 
 use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminPermissionEnum;
+use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringInterviewStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferPartyEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
@@ -102,12 +103,12 @@ class HiringRequestItemResource extends JsonResource
         $actions = ['view'];
 
         if ($portal === 'talent') {
-            if ($status === HiringRequestItemStatusEnum::AWAITING_TALENT_RESPONSE
+            if ($status === HiringRequestItemStatusEnum::OFFER
                 && $this->latestOffer?->status === HiringOfferStatusEnum::PENDING
                 && $this->latestOffer?->proposed_by === HiringOfferPartyEnum::CLIENT) {
                 array_push($actions, 'accept_offer', 'reject_offer', 'counter_offer');
             }
-            if ($this->decision_due_at !== null && in_array($status, [HiringRequestItemStatusEnum::AWAITING_DECISIONS, HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::READY_TO_PROCEED], true)) {
+            if ($this->decision_due_at !== null && in_array($status, [HiringRequestItemStatusEnum::INTERVIEW, HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::ACCEPTED], true)) {
                 $actions[] = $this->talent_decision === null ? 'submit_decision' : 'cancel_decision';
             }
 
@@ -121,7 +122,7 @@ class HiringRequestItemResource extends JsonResource
             if ($status === HiringRequestItemStatusEnum::ON_HOLD) {
                 array_push($actions, 'resume', 'cancel');
             }
-            if ($this->decision_due_at !== null && in_array($status, [HiringRequestItemStatusEnum::AWAITING_DECISIONS, HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::READY_TO_PROCEED], true)) {
+            if ($this->decision_due_at !== null && in_array($status, [HiringRequestItemStatusEnum::INTERVIEW, HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::ACCEPTED], true)) {
                 $actions[] = $this->client_decision === null ? 'submit_decision' : 'cancel_decision';
             }
 
@@ -134,10 +135,14 @@ class HiringRequestItemResource extends JsonResource
             return $actions;
         }
         if ($user?->can(AdminPermissionEnum::HIRING_REQUESTS_HANDLE->value)) {
-            if ($status === HiringRequestItemStatusEnum::NEGOTIATING || $this->latestOffer?->status === HiringOfferStatusEnum::EXPIRED) {
+            if (($status === HiringRequestItemStatusEnum::OFFER
+                    && $this->latestOffer?->status === HiringOfferStatusEnum::PENDING
+                    && $this->latestOffer?->proposed_by === HiringOfferPartyEnum::TALENT)
+                || $this->latestOffer?->status === HiringOfferStatusEnum::EXPIRED) {
                 $actions[] = 'send_offer';
             }
-            if ($status === HiringRequestItemStatusEnum::AWAITING_INTERVIEW_SLOTS) {
+            if ($status === HiringRequestItemStatusEnum::INTERVIEW
+                && ! in_array($this->interview?->status, [HiringInterviewStatusEnum::CONFIRMED, HiringInterviewStatusEnum::IN_PROGRESS, HiringInterviewStatusEnum::COMPLETED], true)) {
                 $actions[] = 'schedule_interview';
             }
             if ($this->isOperational($status)) {
@@ -151,7 +156,7 @@ class HiringRequestItemResource extends JsonResource
             if (in_array($this->latestOffer?->status, [HiringOfferStatusEnum::PENDING, HiringOfferStatusEnum::EXPIRED], true)) {
                 $actions[] = 'respond_to_offer_on_behalf';
             }
-            if ($this->decision_due_at !== null && in_array($status, [HiringRequestItemStatusEnum::AWAITING_DECISIONS, HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::READY_TO_PROCEED], true)) {
+            if ($this->decision_due_at !== null && in_array($status, [HiringRequestItemStatusEnum::INTERVIEW, HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::ACCEPTED], true)) {
                 $actions[] = 'manage_decisions_on_behalf';
             }
         }
@@ -162,9 +167,9 @@ class HiringRequestItemResource extends JsonResource
     private function isOperational(HiringRequestItemStatusEnum $status): bool
     {
         return ! in_array($status, [
-            HiringRequestItemStatusEnum::DRAFT, HiringRequestItemStatusEnum::PENDING,
+            HiringRequestItemStatusEnum::PENDING,
             HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::CANCELLED,
-            HiringRequestItemStatusEnum::READY_FOR_CONTRACT, HiringRequestItemStatusEnum::COMPLETED,
+            HiringRequestItemStatusEnum::COMPLETED,
         ], true);
     }
 }

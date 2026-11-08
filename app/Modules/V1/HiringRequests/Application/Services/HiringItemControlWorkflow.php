@@ -87,17 +87,12 @@ class HiringItemControlWorkflow
             }
             $hold = $item->events()->where('action', 'item_held')->lockForUpdate()->first();
             $previous = HiringRequestItemStatusEnum::tryFrom((string) data_get($hold?->data, 'previous_status'));
-            $next = match ($previous) {
-                HiringRequestItemStatusEnum::INTERVIEW_SCHEDULED,
-                HiringRequestItemStatusEnum::AWAITING_INTERVIEW_SLOTS => HiringRequestItemStatusEnum::AWAITING_INTERVIEW_SLOTS,
-                HiringRequestItemStatusEnum::AWAITING_DECISIONS => HiringRequestItemStatusEnum::AWAITING_DECISIONS,
-                default => $previous ?? HiringRequestItemStatusEnum::AWAITING_TALENT_RESPONSE,
-            };
+            $next = $previous ?? HiringRequestItemStatusEnum::OFFER;
             $updates = ['status' => $next, 'hold_reason' => null];
-            if ($next === HiringRequestItemStatusEnum::AWAITING_DECISIONS) {
+            if ($next === HiringRequestItemStatusEnum::INTERVIEW && data_get($hold?->data, 'previous_decision_due_at') !== null) {
                 $updates['decision_due_at'] = now()->addHours($this->settings->decisionResponseHours());
             }
-            if ($next === HiringRequestItemStatusEnum::AWAITING_TALENT_RESPONSE && $item->latestOffer?->status === HiringOfferStatusEnum::PENDING) {
+            if ($next === HiringRequestItemStatusEnum::OFFER && $item->latestOffer?->status === HiringOfferStatusEnum::PENDING) {
                 $item->latestOffer->update(['response_due_at' => now()->addHours($this->settings->offerResponseHours())]);
             }
             $item->update($updates);
@@ -134,9 +129,9 @@ class HiringItemControlWorkflow
     private function isOperational(HiringRequestItemStatusEnum $status): bool
     {
         return ! in_array($status, [
-            HiringRequestItemStatusEnum::DRAFT, HiringRequestItemStatusEnum::PENDING,
+            HiringRequestItemStatusEnum::PENDING,
             HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::CANCELLED,
-            HiringRequestItemStatusEnum::READY_FOR_CONTRACT, HiringRequestItemStatusEnum::COMPLETED,
+            HiringRequestItemStatusEnum::COMPLETED,
         ], true);
     }
 

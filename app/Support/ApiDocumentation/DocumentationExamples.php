@@ -78,7 +78,7 @@ class DocumentationExamples
             $name === 'status' && str_contains($uri, '/talent-applications') => ['submitted'],
             $name === 'status' && str_contains($uri, '/interviews') => ['confirmed'],
             $name === 'status' && str_contains($uri, '/admin/hiring-requests') => ['pending'],
-            $name === 'status' && str_contains($uri, '/talent/hiring-offers') => ['awaiting_talent_response'],
+            $name === 'status' && str_contains($uri, '/talent/hiring-offers') => ['offer'],
             $name === 'offer_status' && str_contains($uri, '/talent/hiring-offers') => ['pending'],
             $name === 'status' && str_contains($uri, '/client/workspaces') && str_contains($uri, '/hiring-requests') => 'pending',
             $name === 'type' && str_contains($uri, '/interviews') => ['technical'],

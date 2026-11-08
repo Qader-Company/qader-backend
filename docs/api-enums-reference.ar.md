@@ -590,20 +590,17 @@ cancelled
 ### حالة عنصر الطلب
 
 ```text
-draft
 pending
-awaiting_talent_response
-negotiating
-awaiting_interview_slots
-interview_scheduled
-awaiting_decisions
-ready_to_proceed
-ready_for_contract
+offer
+interview
+accepted
 on_hold
 rejected
 cancelled
 completed
 ```
+
+تفاصيل انتظار الرد والتفاوض تأتي من حالة العرض، وتفاصيل الجدولة والتنفيذ من حالة المقابلة، أما `waiting_to_start` فهي Label مشتقة من العقد وتاريخ البداية وليست حالة مستقلة للعنصر.
 
 ### نوع التعاقد
 
