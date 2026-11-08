@@ -1,21 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $subject }}</title>
-</head>
-<body>
-    <p>{{ $greeting }}</p>
+@extends('mail.layout')
 
-    <p>Your verification code is:</p>
+@section('title', $subject)
+@section('preheader', __('otp.preheader'))
 
-    <p style="font-size: 24px; font-weight: bold; letter-spacing: 4px;">
-        {{ $code }}
+@section('content')
+    <h1 class="email-title">{{ $subject }}</h1>
+
+    <div class="email-text">
+        <p>{{ $greeting }}</p>
+        <p>{{ __('otp.code_intro') }}</p>
+    </div>
+
+    <div style="margin: 26px 0; padding: 24px; background-color: #f3f6ff; border: 1px solid #dbe4ff; border-radius: 14px; text-align: center;">
+        <p class="info-label" style="text-align:center;">{{ __('otp.code_label') }}</p>
+        <p style="margin:0;color:#0a32db;font-size:34px;line-height:42px;font-weight:700;letter-spacing:8px;direction:ltr;">
+            {{ $code }}
+        </p>
+    </div>
+
+    <div class="notice-box">
+        {{ __('otp.expires', ['minutes' => $expiresInMinutes]) }}
+    </div>
+
+    <p class="email-text" style="margin-top:22px;margin-bottom:0;">
+        {{ __('otp.ignore') }}
     </p>
-
-    <p>This code expires in {{ $expiresInMinutes }} minutes.</p>
-
-    <p>If you did not request this code, you can safely ignore this email.</p>
-</body>
-</html>
+@endsection
