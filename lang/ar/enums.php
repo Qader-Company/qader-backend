@@ -115,4 +115,16 @@ return [
     'job_form_version_statuses' => ['draft' => 'مسودة', 'published' => 'منشور', 'retired' => 'متوقف'],
     'workspace_member_statuses' => ['active' => 'نشط', 'suspended' => 'موقوف'],
     'onboarding_step_statuses' => ['not_started' => 'لم تبدأ', 'in_progress' => 'قيد التنفيذ', 'completed' => 'مكتملة'],
+    'help_request_types' => [
+        'hiring_support' => 'دعم في التوظيف',
+        'finding_talent' => 'إيجاد الموهبة المناسبة',
+        'onboarding_help' => 'مساعدة في البدء',
+        'technical_issue' => 'مشكلة تقنية',
+        'other' => 'أخرى',
+    ],
+    'help_request_statuses' => ['new' => 'جديد', 'in_progress' => 'قيد المعالجة', 'closed' => 'مغلق'],
+    'help_request_contact_methods' => ['email' => 'البريد الإلكتروني', 'whatsapp' => 'واتساب'],
+    'help_request_closure_outcomes' => [
+        'new_hiring_request_created' => 'تم إنشاء طلب توظيف جديد', 'client_request_clarified' => 'تم توضيح طلب العميل', 'issue_problem' => 'مشكلة / عائق'],
+    'help_request_scopes' => ['all' => 'كل الطلبات', 'mine' => 'طلباتي'],
 ];

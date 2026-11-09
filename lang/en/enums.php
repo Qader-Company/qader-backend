@@ -115,4 +115,9 @@ return [
     'job_form_version_statuses' => ['draft' => 'Draft', 'published' => 'Published', 'retired' => 'Retired'],
     'workspace_member_statuses' => ['active' => 'Active', 'suspended' => 'Suspended'],
     'onboarding_step_statuses' => ['not_started' => 'Not Started', 'in_progress' => 'In Progress', 'completed' => 'Completed'],
+    'help_request_types' => ['hiring_support' => 'Hiring Support', 'finding_talent' => 'Finding the Right Talent', 'onboarding_help' => 'Onboarding Help', 'technical_issue' => 'Technical Issue', 'other' => 'Other'],
+    'help_request_statuses' => ['new' => 'New', 'in_progress' => 'In Progress', 'closed' => 'Closed'],
+    'help_request_contact_methods' => ['email' => 'Email', 'whatsapp' => 'WhatsApp'],
+    'help_request_closure_outcomes' => ['new_hiring_request_created' => 'New Hiring Request Created', 'client_request_clarified' => 'Client Request Clarified', 'issue_problem' => 'Issue / Problem'],
+    'help_request_scopes' => ['all' => 'All Requests', 'mine' => 'My Requests'],
 ];

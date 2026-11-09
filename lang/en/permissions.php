@@ -27,6 +27,7 @@ return [
         'talent-selections' => 'Selected talents',
         'hiring-requests' => 'Hiring requests',
         'contract-types' => 'Contract types',
+        'help-requests' => 'Help requests',
         'talent-applications' => 'Talent applications',
         'interviews' => 'Interviews',
         'talents' => 'Talents',
@@ -98,6 +99,7 @@ return [
         'job-form-submissions' => ['view' => 'View job form submissions', 'delete' => 'Delete job form submissions', 'start-hiring' => 'Start hiring from submissions'],
         'hiring-requests' => ['view' => 'View hiring requests', 'assign' => 'Assign hiring requests', 'handle' => 'Handle hiring requests', 'respond-on-behalf' => 'Respond on behalf of hiring parties'],
         'contract-types' => ['view' => 'View contract types', 'update' => 'Update contract type configurations', 'toggle-status' => 'Activate and deactivate contract types'],
+        'help-requests' => ['view' => 'View help requests', 'assign' => 'Assign help requests', 'handle' => 'Handle and close help requests'],
     ],
 
     'talent' => [
@@ -113,5 +115,6 @@ return [
         'marketplace' => ['view' => 'View the talent marketplace'],
         'talent-selections' => ['view' => 'View selected talents', 'manage' => 'Manage selected talents'],
         'hiring-requests' => ['view' => 'View hiring requests', 'manage' => 'Create and submit hiring requests'],
+        'help-requests' => ['create' => 'Request Qader assistance'],
     ],
 ];

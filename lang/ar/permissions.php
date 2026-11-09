@@ -27,6 +27,7 @@ return [
         'talent-selections' => 'المواهب المختارة',
         'hiring-requests' => 'طلبات التوظيف',
         'contract-types' => 'أنواع العقود',
+        'help-requests' => 'طلبات المساعدة',
         'talent-applications' => 'طلبات المواهب',
         'interviews' => 'المقابلات',
         'talents' => 'المواهب',
@@ -98,6 +99,7 @@ return [
         'job-form-submissions' => ['view' => 'عرض تقديمات نماذج الوظائف', 'delete' => 'حذف تقديمات نماذج الوظائف', 'start-hiring' => 'بدء التوظيف من التقديمات'],
         'hiring-requests' => ['view' => 'عرض طلبات التوظيف', 'assign' => 'تعيين مسؤول طلبات التوظيف', 'handle' => 'إدارة طلبات التوظيف', 'respond-on-behalf' => 'الرد بالنيابة عن أطراف التوظيف'],
         'contract-types' => ['view' => 'عرض أنواع العقود', 'update' => 'تعديل إعدادات أنواع العقود', 'toggle-status' => 'تفعيل وتعطيل أنواع العقود'],
+        'help-requests' => ['view' => 'عرض طلبات المساعدة', 'assign' => 'تعيين مسؤول طلبات المساعدة', 'handle' => 'معالجة وإغلاق طلبات المساعدة'],
     ],
 
     'talent' => [
@@ -113,5 +115,6 @@ return [
         'marketplace' => ['view' => 'عرض سوق المواهب'],
         'talent-selections' => ['view' => 'عرض المواهب المختارة', 'manage' => 'إدارة المواهب المختارة'],
         'hiring-requests' => ['view' => 'عرض طلبات التوظيف', 'manage' => 'إنشاء وإرسال طلبات التوظيف'],
+        'help-requests' => ['create' => 'طلب مساعدة من قادر'],
     ],
 ];

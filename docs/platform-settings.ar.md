@@ -1,6 +1,6 @@
 # إعدادات المنصة — Platform Settings
 
-الحالة: **مرجع القرارات المعتمدة حتى 1 نوفمبر 2026**  
+الحالة: **مرجع القرارات المعتمدة حتى 9 نوفمبر 2026**
 النطاق الحالي: الإعدادات العامة التي يستطيع الأدمن تغييرها وتؤثر على دورة التوظيف، الـMarketing Website، والأجزاء المشتركة الثابتة داخل البورتالات.  
 ملاحظة: هذا الملف يوثق الإعدادات فقط؛ موديول Platform Settings وEndpoints الخاصة به لم تنفذ بعد. عند التنفيذ سنستخدم مكتبة `spatie/laravel-settings` بدل بناء Repository وجدول Settings مخصصين.
 
@@ -26,6 +26,12 @@
 | `website.footer_copyright_text_ar` | Nullable string | `null` | Admin مخول | نص حقوق النشر العربي في Footer الموقع |
 | `website.footer_copyright_text_en` | String | `© {year} Qader. All rights reserved.` | Admin مخول | نص حقوق النشر الإنجليزي مع سنة ديناميكية |
 | `marketplace.anonymous_talent_image` | Nullable string | `null` | Admin مخول | صورة Talent الافتراضية الظاهرة للعميل بدل الصورة الحقيقية |
+| `paid_services.qader_expert_opinion_price` | Positive decimal | `250` | Admin مخول | سعر فتح Qader Expert Opinion للعميل |
+| `paid_services.qader_expert_opinion_currency` | Currency code | `EGP` | Admin مخول | عملة خدمة Qader Expert Opinion |
+| `paid_services.detailed_rejection_feedback_price` | Positive decimal | `100` | Admin مخول | سعر فتح Detailed Rejection Feedback للموهبة |
+| `paid_services.detailed_rejection_feedback_currency` | Currency code | `EGP` | Admin مخول | عملة خدمة Detailed Rejection Feedback |
+| `paid_services.profile_expert_review_price` | Positive decimal | `10` | Admin مخول | سعر Profile Expert Review للموهبة |
+| `paid_services.profile_expert_review_currency` | Currency code | `USD` | Admin مخول | عملة خدمة Profile Expert Review |
 
 ### مصدر الإضافات من Figma
 
@@ -35,6 +41,7 @@
 - روابط Privacy Policy وTerms تظهر كروابط عامة مشتركة، وليست Master Data.
 - صورة Talent في Marketplace يجب أن تكون صورة افتراضية لأن العميل لا يرى هوية الموهبة قبل المرحلة المسموح بها.
 - حد رفض مواعيد مقابلة التقييم الحالي مرتان، وطلب إعادة الجدولة بعد التأكيد مرة واحدة.
+- الخدمات المدفوعة الثلاث الظاهرة في Figma معتمدة للتنفيذ المستقبلي، وأسعار التصميم هي القيم الافتراضية ويستطيع الأدمن تعديل السعر والعملة من Platform Settings.
 
 القيم التي افتراضها `null` لم يظهر لها محتوى نهائي معتمد في Figma، لذلك لن نخزن بيانات وهمية. يجب تعبئتها قبل الإطلاق إذا كانت واجهة المستخدم ستعرضها.
 
@@ -193,6 +200,7 @@ TalentEvaluationSettings => group: talent_evaluation
 PlatformSettings         => group: platform
 WebsiteSettings          => group: website
 MarketplaceSettings      => group: marketplace
+PaidServicesSettings     => group: paid_services
 ```
 
 تسجل هذه الـSettings classes صراحة داخل `config/settings.php`. سنفضل التسجيل الصريح بدل Auto-discovery لأن عددها محدود ولأن ذلك يجعل الاعتمادات واضحة.
@@ -231,6 +239,13 @@ return new class extends SettingsMigration
         );
 
         $this->migrator->add('marketplace.anonymous_talent_image', null);
+
+        $this->migrator->add('paid_services.qader_expert_opinion_price', 250);
+        $this->migrator->add('paid_services.qader_expert_opinion_currency', 'EGP');
+        $this->migrator->add('paid_services.detailed_rejection_feedback_price', 100);
+        $this->migrator->add('paid_services.detailed_rejection_feedback_currency', 'EGP');
+        $this->migrator->add('paid_services.profile_expert_review_price', 10);
+        $this->migrator->add('paid_services.profile_expert_review_currency', 'USD');
     }
 };
 ```
@@ -285,6 +300,8 @@ php artisan settings:clear-cache
 | `privacy_policy_url`, `terms_and_conditions_url` | `nullable`, `url`, `max:2048` |
 | `footer_copyright_text_ar`, `footer_copyright_text_en` | `nullable`, `string`, `max:500` |
 | `anonymous_talent_image` | `nullable`, Media path أوURL صالح حسب آلية الرفع المعتمدة |
+| أسعار الخدمات المدفوعة | `numeric`, أكبر من `0` |
+| عملات الخدمات المدفوعة | `string`, `size:3`، ويجب أن تطابق كود Currency فعالًا |
 
 القيم الافتراضية تضاف من Settings migration. بعد ربط الموديول لن نعتمد على صف مفقود؛ غياب خاصية مطلوبة يعتبر خطأ إعداد Deployment بدل إخفائه بـFallback صامت.
 
@@ -306,6 +323,7 @@ PATCH /api/v1/admin/platform-settings/talent-evaluation
 PATCH /api/v1/admin/platform-settings/platform
 PATCH /api/v1/admin/platform-settings/website
 PATCH /api/v1/admin/platform-settings/marketplace
+PATCH /api/v1/admin/platform-settings/paid-services
 ```
 
 مثال Body:

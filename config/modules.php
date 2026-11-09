@@ -43,6 +43,7 @@ return [
             ['prefix' => 'admin/job-forms', 'file' => 'job-forms.php', 'api_key' => true],
             ['prefix' => 'admin/hiring-requests', 'file' => 'hiring-requests.php', 'api_key' => true],
             ['prefix' => 'admin/contract-types', 'file' => 'contract-types.php', 'api_key' => true],
+            ['prefix' => 'admin/help-requests', 'file' => 'help-requests.php', 'api_key' => true],
         ],
 
         'client' => [
@@ -50,6 +51,7 @@ return [
             ['prefix' => 'client/access-control', 'file' => 'access-control.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
             ['prefix' => 'client/workspaces', 'file' => 'workspaces.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
             ['prefix' => 'client/workspaces', 'file' => 'hiring-requests.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
+            ['prefix' => 'client/workspaces', 'file' => 'help-requests.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
         ],
 
         'talent' => [

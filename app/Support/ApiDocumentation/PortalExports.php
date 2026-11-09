@@ -44,6 +44,7 @@ class PortalExports
 
                         $operation = self::withAuthenticationVariables($uri, $operation);
                         $operation = self::withStableRequestExamples($uri, $method, $operation);
+                        $operation = self::withNamedResponseExamples($operation);
 
                         if (empty($operation['responses'])) {
                             $operation['responses'] = [
@@ -274,6 +275,53 @@ class PortalExports
                 'value' => $blacklisted,
             ],
         ];
+
+        return $operation;
+    }
+
+    /**
+     * Scribe exports several @response scenarios with the same status code as a `oneOf` schema,
+     * which Apidog shows as schema variants instead of readable examples. Convert them into
+     * named OpenAPI `examples` (one per scenario) and keep the richest variant as the schema.
+     */
+    private static function withNamedResponseExamples(array $operation): array
+    {
+        foreach ($operation['responses'] ?? [] as $code => $response) {
+            foreach ($response['content'] ?? [] as $contentType => $content) {
+                $variants = $content['schema']['oneOf'] ?? null;
+
+                if (! is_array($variants) || $variants === []) {
+                    continue;
+                }
+
+                $examples = [];
+                $schema = null;
+                $schemaSize = -1;
+
+                foreach ($variants as $index => $variant) {
+                    $name = trim((string) ($variant['description'] ?? '')) ?: 'Example '.($index + 1);
+                    unset($variant['description']);
+
+                    if (array_key_exists('example', $variant)) {
+                        $examples[$name] = ['summary' => $name, 'value' => $variant['example']];
+                    }
+
+                    $size = strlen(json_encode($variant['example'] ?? $variant));
+                    if ($size > $schemaSize) {
+                        $schema = $variant;
+                        $schemaSize = $size;
+                    }
+                }
+
+                unset($schema['example']);
+                $operation['responses'][$code]['content'][$contentType] = array_diff_key($content, ['schema' => true, 'example' => true])
+                    + ['schema' => $schema, 'examples' => $examples];
+
+                if (($response['description'] ?? '') === '') {
+                    $operation['responses'][$code]['description'] = implode(' | ', array_keys($examples));
+                }
+            }
+        }
 
         return $operation;
     }

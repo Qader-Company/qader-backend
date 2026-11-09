@@ -125,6 +125,14 @@ class EndpointNames
         }
 
         if ($module === 'workspaces') {
+            if (str_contains($route->uri(), '/help-requests')) {
+                return match ($route->getActionMethod()) {
+                    'options' => 'List Help Request Options',
+                    'store' => 'Request Qader Assistance',
+                    default => Str::headline($route->getActionMethod()),
+                };
+            }
+
             if (str_contains($route->uri(), '/hiring-requests') || str_contains($route->uri(), '/hiring-request-items') || str_contains($route->uri(), '/hiring-interviews')) {
                 return match ($route->getActionMethod()) {
                     'index' => 'List Hiring Requests',
@@ -177,6 +185,22 @@ class EndpointNames
                     str_contains($route->uri(), '/members/') => 'Remove Workspace Member',
                     default => 'Delete Workspace Role',
                 },
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'help-requests') {
+            return match ($route->getActionMethod()) {
+                'options' => 'List Help Request Options',
+                'index' => 'List Help Requests',
+                'assignees' => 'List Help Request Assignees',
+                'assign' => 'Assign Help Requests',
+                'show' => 'Get Help Request',
+                'reassign' => 'Reassign Help Request',
+                'start' => 'Start Handling Help Request',
+                'storeNote' => 'Add Help Request Internal Note',
+                'hiringRequests' => 'List Hiring Requests for Help Request Closure',
+                'close' => 'Close Help Request',
                 default => Str::headline($route->getActionMethod()),
             };
         }
