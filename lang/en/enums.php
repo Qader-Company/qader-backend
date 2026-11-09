@@ -51,6 +51,7 @@ return [
         'submitted' => 'Submitted',
         'under_review' => 'Under Review',
         'interview_required' => 'Interview Required',
+        'scheduled' => 'Scheduled',
         'rejected' => 'Rejected',
         'accepted' => 'Accepted',
     ],
@@ -85,6 +86,7 @@ return [
         'awaiting_slot_selection' => 'Awaiting Slot Selection',
         'awaiting_new_slots' => 'Awaiting New Slots',
         'confirmed' => 'Confirmed',
+        'in_progress' => 'In Progress',
         'completed' => 'Completed',
         'cancelled' => 'Cancelled',
     ],
@@ -110,4 +112,7 @@ return [
     'hiring_decisions' => ['proceed' => 'Proceed', 'reject' => 'Reject'],
     'work_days' => ['sunday' => 'Sunday', 'monday' => 'Monday', 'tuesday' => 'Tuesday', 'wednesday' => 'Wednesday', 'thursday' => 'Thursday', 'friday' => 'Friday', 'saturday' => 'Saturday'],
     'hiring_request_scopes' => ['all' => 'All Requests', 'mine' => 'My Requests'],
+    'job_form_version_statuses' => ['draft' => 'Draft', 'published' => 'Published', 'retired' => 'Retired'],
+    'workspace_member_statuses' => ['active' => 'Active', 'suspended' => 'Suspended'],
+    'onboarding_step_statuses' => ['not_started' => 'Not Started', 'in_progress' => 'In Progress', 'completed' => 'Completed'],
 ];

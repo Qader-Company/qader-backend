@@ -3,6 +3,7 @@
 namespace App\Modules\V1\HiringRequests\Presentation\Http\Resources;
 
 use App\Modules\V1\TalentApplications\Presentation\Http\Resources\AdminSummaryResource;
+use App\Support\ApiMetadata\EnumLabel;
 use BackedEnum;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -18,6 +19,7 @@ class HiringRequestResource extends JsonResource
             'id' => $this->id,
             'reference' => $this->reference,
             'status' => $this->status instanceof BackedEnum ? $this->status->value : $this->status,
+            'status_label' => EnumLabel::for($this->status, 'hiring_request_statuses'),
             'workspace' => $this->relationLoaded('workspace') ? [
                 'id' => $this->workspace->id,
                 'name' => $this->workspace->name,

@@ -5,6 +5,7 @@ namespace App\Modules\V1\TalentApplications\Presentation\Http\Resources;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewStatusEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationScreenStateEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationStatusEnum;
+use App\Support\ApiMetadata\EnumLabel;
 use BackedEnum;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -19,6 +20,7 @@ class TalentApplicationResource extends JsonResource
         return [
             'id' => $this->id,
             'status' => $status,
+            'status_label' => EnumLabel::for($status, 'application_statuses'),
             'application_status' => $status,
             'effective_status' => $isBlacklisted ? 'blacklisted' : $status,
             'screen_state' => $this->screenState()->value,
@@ -72,7 +74,8 @@ class TalentApplicationResource extends JsonResource
             TalentApplicationStatusEnum::UNDER_REVIEW => TalentApplicationScreenStateEnum::UNDER_REVIEW,
             TalentApplicationStatusEnum::REJECTED => TalentApplicationScreenStateEnum::REJECTED,
             TalentApplicationStatusEnum::ACCEPTED => TalentApplicationScreenStateEnum::ACCEPTED,
-            TalentApplicationStatusEnum::INTERVIEW_REQUIRED => match ($this->interview?->status) {
+            TalentApplicationStatusEnum::INTERVIEW_REQUIRED,
+            TalentApplicationStatusEnum::SCHEDULED => match ($this->interview?->status) {
                 InterviewStatusEnum::AWAITING_SLOT_SELECTION => TalentApplicationScreenStateEnum::INTERVIEW_SLOT_REQUIRED,
                 InterviewStatusEnum::AWAITING_NEW_SLOTS => TalentApplicationScreenStateEnum::AWAITING_NEW_INTERVIEW_SLOTS,
                 InterviewStatusEnum::CONFIRMED => TalentApplicationScreenStateEnum::INTERVIEW_CONFIRMED,

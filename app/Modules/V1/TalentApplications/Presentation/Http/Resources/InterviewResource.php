@@ -2,6 +2,7 @@
 
 namespace App\Modules\V1\TalentApplications\Presentation\Http\Resources;
 
+use App\Support\ApiMetadata\EnumLabel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,10 +15,12 @@ class InterviewResource extends JsonResource
             'round_number' => $this->round_number,
             'type' => $this->type->value,
             'status' => $this->status->value,
+            'status_label' => EnumLabel::for($this->status, 'interview_statuses'),
             'application_id' => $this->application_id,
             'application' => $this->whenLoaded('application', fn () => [
                 'id' => $this->application->id,
                 'status' => $this->application->status->value,
+                'status_label' => EnumLabel::for($this->application->status, 'application_statuses'),
                 'talent' => [
                     'id' => $this->application->talent_id,
                     'full_name' => trim(
@@ -37,6 +40,7 @@ class InterviewResource extends JsonResource
                 'latitude' => $slot->latitude,
                 'longitude' => $slot->longitude,
                 'status' => $slot->status->value,
+                'status_label' => EnumLabel::for($slot->status, 'interview_slot_statuses'),
             ])),
             'google_calendar_event_id' => $this->google_calendar_event_id,
             'meeting_url' => $this->meeting_url,

@@ -4,6 +4,7 @@ namespace App\Modules\V1\HiringRequests\Presentation\Http\Resources;
 
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringInterviewResponseEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringInterviewStatusEnum;
+use App\Support\ApiMetadata\EnumLabel;
 use BackedEnum;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -18,16 +19,19 @@ class HiringInterviewResource extends JsonResource
         return [
             'id' => $this->id,
             'status' => $this->value($this->status),
+            'status_label' => EnumLabel::for($this->status, 'hiring_interview_statuses'),
             'start' => $this->starts_at,
             'end' => $this->ends_at,
             'duration_minutes' => $this->starts_at?->diffInMinutes($this->ends_at),
             'client_response' => [
                 'status' => $this->value($this->client_response),
+                'status_label' => EnumLabel::for($this->client_response, 'hiring_interview_responses'),
                 'reason' => $this->client_response_reason,
                 'responded_at' => $this->client_responded_at,
             ],
             'talent_response' => [
                 'status' => $this->value($this->talent_response),
+                'status_label' => EnumLabel::for($this->talent_response, 'hiring_interview_responses'),
                 'reason' => $this->talent_response_reason,
                 'responded_at' => $this->talent_responded_at,
             ],

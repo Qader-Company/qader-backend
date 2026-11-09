@@ -7,6 +7,7 @@ use App\Modules\V1\TalentApplications\Application\Contracts\ApplicationFormField
 use App\Modules\V1\Talents\Domain\Models\Talent;
 use App\Modules\V1\Talents\Domain\ValueObjects\OnboardingStepEnum;
 use App\Modules\V1\Talents\Domain\ValueObjects\OnboardingStepStatusEnum;
+use App\Support\ApiMetadata\EnumLabel;
 use BackedEnum;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -58,6 +59,7 @@ class TalentProfileProgressService
                 'route_name' => $step->value,
                 'required' => $step->isRequired(),
                 'status' => $status->value,
+                'status_label' => EnumLabel::for($status, 'onboarding_step_statuses'),
                 'visible_fields' => $visibleFields,
                 'required_fields' => $requiredFields,
                 'missing_fields' => $missingFields,

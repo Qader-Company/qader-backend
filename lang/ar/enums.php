@@ -51,6 +51,7 @@ return [
         'submitted' => 'تم التقديم',
         'under_review' => 'قيد المراجعة',
         'interview_required' => 'مطلوب مقابلة',
+        'scheduled' => 'تم تحديد الموعد',
         'rejected' => 'مرفوض',
         'accepted' => 'مقبول',
     ],
@@ -85,6 +86,7 @@ return [
         'awaiting_slot_selection' => 'في انتظار اختيار الموعد',
         'awaiting_new_slots' => 'في انتظار مواعيد جديدة',
         'confirmed' => 'مؤكدة',
+        'in_progress' => 'جارية',
         'completed' => 'مكتملة',
         'cancelled' => 'ملغاة',
     ],
@@ -110,4 +112,7 @@ return [
     'hiring_decisions' => ['proceed' => 'متابعة', 'reject' => 'رفض'],
     'work_days' => ['sunday' => 'الأحد', 'monday' => 'الاثنين', 'tuesday' => 'الثلاثاء', 'wednesday' => 'الأربعاء', 'thursday' => 'الخميس', 'friday' => 'الجمعة', 'saturday' => 'السبت'],
     'hiring_request_scopes' => ['all' => 'كل الطلبات', 'mine' => 'طلباتي'],
+    'job_form_version_statuses' => ['draft' => 'مسودة', 'published' => 'منشور', 'retired' => 'متوقف'],
+    'workspace_member_statuses' => ['active' => 'نشط', 'suspended' => 'موقوف'],
+    'onboarding_step_statuses' => ['not_started' => 'لم تبدأ', 'in_progress' => 'قيد التنفيذ', 'completed' => 'مكتملة'],
 ];

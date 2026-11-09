@@ -6,6 +6,7 @@ use App\Modules\V1\TalentApplications\Domain\Models\Interview;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewModeEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewSlotStatusEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewStatusEnum;
+use App\Support\ApiMetadata\EnumLabel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -35,6 +36,7 @@ class TalentInterviewResource extends JsonResource
             'round_number' => $this->round_number,
             'type' => $this->type->value,
             'status' => $this->status->value,
+            'status_label' => EnumLabel::for($this->status, 'interview_statuses'),
             'available_slots' => TalentInterviewSlotResource::collection($availableSlots),
             'selected_slot' => $selectedSlot ? new TalentInterviewSlotResource($selectedSlot) : null,
             'meeting_url' => in_array($this->status, [

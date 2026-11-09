@@ -26,6 +26,7 @@ class TalentApplicationQueryService
                 TalentApplicationStatusEnum::SUBMITTED->value,
                 TalentApplicationStatusEnum::UNDER_REVIEW->value,
                 TalentApplicationStatusEnum::INTERVIEW_REQUIRED->value,
+                TalentApplicationStatusEnum::SCHEDULED->value,
             ])->count(),
             'accepted' => (clone $summaryQuery)->where('status', TalentApplicationStatusEnum::ACCEPTED->value)->count(),
             'rejected' => (clone $summaryQuery)->where('status', TalentApplicationStatusEnum::REJECTED->value)->count(),

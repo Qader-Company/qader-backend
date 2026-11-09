@@ -66,6 +66,10 @@ class TalentInterviewWorkflowTest extends TestCase
             ->where('status', InterviewSlotStatusEnum::EXPIRED->value)
             ->count());
         $this->assertCount(1, $this->calendar->createdSlots);
+        $this->assertDatabaseHas('talent_applications', [
+            'id' => $interview->application_id,
+            'status' => TalentApplicationStatusEnum::SCHEDULED->value,
+        ]);
     }
 
     public function test_talent_selects_an_online_slot_using_manual_meeting_url_without_google_calendar(): void
@@ -130,6 +134,10 @@ class TalentInterviewWorkflowTest extends TestCase
         $this->assertDatabaseHas('interview_slots', [
             'id' => $selected->id,
             'status' => InterviewSlotStatusEnum::CANCELLED->value,
+        ]);
+        $this->assertDatabaseHas('talent_applications', [
+            'id' => $interview->application_id,
+            'status' => TalentApplicationStatusEnum::INTERVIEW_REQUIRED->value,
         ]);
 
         $this->expectException(ConflictHttpException::class);

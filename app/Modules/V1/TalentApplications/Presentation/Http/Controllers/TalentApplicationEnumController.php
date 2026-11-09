@@ -9,10 +9,7 @@ use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewModeEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewSlotStatusEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewStatusEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewTypeEnum;
-use App\Modules\V1\TalentApplications\Domain\ValueObjects\ReapplyPolicyEnum;
-use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationListScopeEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationScreenStateEnum;
-use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationSortEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationStatusEnum;
 use App\Support\ApiMetadata\EnumOptions;
 use Illuminate\Http\JsonResponse;
@@ -20,19 +17,18 @@ use Illuminate\Http\JsonResponse;
 class TalentApplicationEnumController extends Controller
 {
     /**
-     * List all Talent Application enum options in one response.
+     * List the Talent Application enum options used by the Talent Portal.
      *
-     * @response {"success":true,"data":{"application_statuses":[{"value":"submitted","label":"Submitted"}],"screen_states":[{"value":"under_review","label":"Under Review"}],"application_scopes":[{"value":"all","label":"All Applications"}],"application_sort_options":[{"value":"newest","label":"Newest"}],"evaluation_tip_priorities":[{"value":"low","label":"Low"}],"reapply_policies":[{"value":"allowed_after_period","label":"Allowed After Period"}],"interview_types":[{"value":"hr","label":"HR"}],"interview_modes":[{"value":"online","label":"Online"}],"interview_statuses":[{"value":"awaiting_slot_selection","label":"Awaiting Slot Selection"}],"interview_slot_statuses":[{"value":"available","label":"Available"}]}}
+     * Admin-only options (list scopes, sorting, reapply policies) are intentionally excluded.
+     *
+     * @response {"success":true,"data":{"application_statuses":[{"value":"submitted","label":"Submitted"}],"screen_states":[{"value":"under_review","label":"Under Review"}],"evaluation_tip_priorities":[{"value":"low","label":"Low"}],"interview_types":[{"value":"hr","label":"HR"}],"interview_modes":[{"value":"online","label":"Online"}],"interview_statuses":[{"value":"awaiting_slot_selection","label":"Awaiting Slot Selection"}],"interview_slot_statuses":[{"value":"available","label":"Available"}]}}
      */
     public function options(): JsonResponse
     {
         return ApiResponse::success([
             'application_statuses' => EnumOptions::make(TalentApplicationStatusEnum::class, 'application_statuses'),
             'screen_states' => EnumOptions::make(TalentApplicationScreenStateEnum::class, 'screen_states'),
-            'application_scopes' => EnumOptions::make(TalentApplicationListScopeEnum::class, 'application_scopes'),
-            'application_sort_options' => EnumOptions::make(TalentApplicationSortEnum::class, 'application_sort_options'),
             'evaluation_tip_priorities' => EnumOptions::make(EvaluationTipPriorityEnum::class, 'evaluation_tip_priorities'),
-            'reapply_policies' => EnumOptions::make(ReapplyPolicyEnum::class, 'reapply_policies'),
             'interview_types' => EnumOptions::make(InterviewTypeEnum::class, 'interview_types'),
             'interview_modes' => EnumOptions::make(InterviewModeEnum::class, 'interview_modes'),
             'interview_statuses' => EnumOptions::make(InterviewStatusEnum::class, 'interview_statuses'),

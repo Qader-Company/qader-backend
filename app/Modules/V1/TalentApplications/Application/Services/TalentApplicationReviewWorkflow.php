@@ -171,7 +171,7 @@ class TalentApplicationReviewWorkflow
             if ($status === TalentApplicationStatusEnum::UNDER_REVIEW) {
                 $this->ensureDecisionAllowed($application, $actor);
                 $roundNumber = 1;
-            } elseif ($status === TalentApplicationStatusEnum::INTERVIEW_REQUIRED) {
+            } elseif ($status->isInterviewStage()) {
                 $lastInterview = $this->ensureInterviewDecisionAllowed($application, $actor);
                 $roundNumber = $lastInterview->round_number + 1;
             } else {
@@ -457,7 +457,7 @@ class TalentApplicationReviewWorkflow
 
     private function ensureInterviewDecisionAllowed(TalentApplication $application, Admin $actor): Interview
     {
-        if ($this->status($application) !== TalentApplicationStatusEnum::INTERVIEW_REQUIRED) {
+        if (! $this->status($application)->isInterviewStage()) {
             throw new ConflictHttpException(__('talents.review.decision_not_allowed'));
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Modules\V1\TalentApplications\Presentation\Http\Resources;
 
+use App\Support\ApiMetadata\EnumLabel;
 use BackedEnum;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -15,6 +16,7 @@ class AdminTalentApplicationResource extends JsonResource
         return [
             'id' => $this->id,
             'status' => $this->status instanceof BackedEnum ? $this->status->value : $this->status,
+            'status_label' => EnumLabel::for($this->status, 'application_statuses'),
             'submitted_at' => $this->submitted_at,
             'profile_completion_at_submission' => $this->profile_completion_at_submission,
             'snapshot_version' => $this->snapshot_version,

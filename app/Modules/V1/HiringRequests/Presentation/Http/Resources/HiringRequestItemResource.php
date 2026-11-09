@@ -7,6 +7,7 @@ use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringInterviewStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferPartyEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
+use App\Support\ApiMetadata\EnumLabel;
 use App\Support\Http\Resources\ResolvesLocalizedResourceValues;
 use BackedEnum;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ class HiringRequestItemResource extends JsonResource
             'id' => $this->id,
             'reference' => $this->reference,
             'status' => $this->value($this->status),
+            'status_label' => EnumLabel::for($this->status, 'hiring_request_item_statuses'),
             'contract_type' => $this->value($this->contract_type),
             'contract_configuration' => $this->contractConfiguration($isAdmin),
             'interview_required' => (bool) $this->interview_required,

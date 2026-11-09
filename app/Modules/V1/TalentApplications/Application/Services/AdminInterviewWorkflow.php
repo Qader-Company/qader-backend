@@ -69,7 +69,7 @@ class AdminInterviewWorkflow
             $this->ensureResponsibleAdmin($application, $actor);
             if (
                 $interview->status !== InterviewStatusEnum::COMPLETED
-                || $application->status !== TalentApplicationStatusEnum::INTERVIEW_REQUIRED
+                || ! $application->status->isInterviewStage()
             ) {
                 throw new ConflictHttpException(__('talents.interview.evaluation_not_allowed'));
             }
@@ -93,7 +93,7 @@ class AdminInterviewWorkflow
             }
             $interview = $application->interviews()->with('evaluation')->lockForUpdate()->latest('round_number')->first();
             if (
-                $application->status !== TalentApplicationStatusEnum::INTERVIEW_REQUIRED
+                ! $application->status->isInterviewStage()
                 || $interview === null
                 || $interview->status !== InterviewStatusEnum::COMPLETED
                 || $interview->evaluation === null

@@ -70,6 +70,7 @@ class TalentInterviewWorkflow
                 'meeting_url' => $meeting?->meetingUrl ?? $manualMeetingUrl,
                 'rejected_slots_reason' => null,
             ]);
+            $application->update(['status' => TalentApplicationStatusEnum::SCHEDULED]);
 
             return $this->loadForTalent($interview->refresh());
         });
@@ -131,7 +132,7 @@ class TalentInterviewWorkflow
                 ->first();
 
             if (
-                $application->status !== TalentApplicationStatusEnum::INTERVIEW_REQUIRED
+                $application->status !== TalentApplicationStatusEnum::SCHEDULED
                 || $interview->status !== InterviewStatusEnum::CONFIRMED
                 || $interview->talent_reschedule_used_at !== null
                 || $selectedSlot === null
@@ -151,6 +152,7 @@ class TalentInterviewWorkflow
                 'meeting_url' => null,
                 'talent_reschedule_used_at' => now(),
             ]);
+            $application->update(['status' => TalentApplicationStatusEnum::INTERVIEW_REQUIRED]);
 
             return $this->loadForTalent($interview->refresh());
         });
