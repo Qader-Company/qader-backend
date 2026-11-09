@@ -53,6 +53,7 @@ class EndpointNames
 
         if ($module === 'application') {
             return match ($route->getActionMethod()) {
+                'options' => 'List Talent Application Options',
                 'show' => 'Get Talent Application Status',
                 'selectInterviewSlot' => 'Confirm Interview Slot',
                 'rejectInterviewSlots' => 'Reject All Interview Slots',
