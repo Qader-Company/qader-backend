@@ -1,6 +1,6 @@
 # S06 — تنفيذ المقابلات والعروض
 
-تم تنفيذ دورة العرض والتفاوض ومقابلة التوظيف وقرار الطرفين لكل عنصر داخل Hiring Request، مع فصلها بالكامل عن مقابلات تقييم انضمام الموهبة في S02.
+تم تنفيذ دورة العرض والتفاوض ومقابلة التوظيف وقرار العميل لكل عنصر داخل Hiring Request، مع فصلها بالكامل عن مقابلات تقييم انضمام الموهبة في S02.
 
 ## ما تم تنفيذه
 
@@ -19,9 +19,9 @@
 - منع تداخل مقابلات الموهبة أوممثل العميل المسجل في الطلب.
 - انتقال المقابلة تلقائيًا أويدويًا إلى `in_progress` ثم `completed`.
 - ظهور رابط Join فقط من بداية الموعد حتى نهايته.
-- قرار مستقل للعميل والموهبة بعد المقابلة: `proceed` أو`reject`.
-- انتقال العنصر إلى `accepted` عند موافقة الطرفين، أو`rejected` عند رفض أي طرف.
-- سحب القرار قبل بدء S07 مع الاحتفاظ بقرار الطرف الآخر.
+- قرار العميل بعد المقابلة: `proceed` أو`reject`، كما يظهر في Figma.
+- انتقال العنصر مباشرة إلى `accepted` عند `proceed` أو`rejected` عند `reject`.
+- لا يوجد قرار بعد المقابلة للموهبة، ولا يستطيع العميل سحب قراره بعد إرساله؛ التصحيح التشغيلي متاح للأدمن المسؤول فقط.
 - Hold وResume وCancel للعميل والأدمن، مع إلغاء المقابلة المؤكدة وبدء مهلة كاملة جديدة عند Resume.
 - Audit Events لكل تغيير جوهري و`available_actions` حسب البورتال والحالة والصلاحية.
 - Scheduled jobs لانتهاء العروض وتحديث حالات المقابلات كل دقيقة.
@@ -32,13 +32,15 @@ Migration:
 
 ```text
 database/migrations/2026_11_05_000000_create_s06_hiring_interviews_and_offer_workflow.php
+database/migrations/2026_11_10_000000_remove_talent_hiring_decisions.php
 ```
 
 التغييرات:
 
 - جدول جديد `hiring_interviews`، صف واحد حالي لكل `hiring_request_item`.
 - إضافة `proposed_by`, `notice_period_days`, `work_location` إلى `hiring_offers`.
-- إضافة قراري العميل والموهبة و`decision_due_at` إلى `hiring_request_items`.
+- إضافة قرار العميل و`decision_due_at` إلى `hiring_request_items`.
+- إزالة أعمدة قرار الموهبة التي لم تظهر في Figma من السكيما المطبقة سابقًا.
 - إضافة `offer_no_response_count` إلى `talents`.
 - السماح بأن يكون `hiring_request_events.actor_user_id` فارغًا للأحداث التلقائية فقط.
 
@@ -57,8 +59,6 @@ GET    /api/v1/talent/hiring-interviews/{interview}
 POST   /api/v1/talent/hiring-interviews/{interview}/accept-schedule
 POST   /api/v1/talent/hiring-interviews/{interview}/request-schedule-change
 POST   /api/v1/talent/hiring-interviews/{interview}/apologize
-POST   /api/v1/talent/hiring-request-items/{item}/decision
-DELETE /api/v1/talent/hiring-request-items/{item}/decision
 ```
 
 ## Endpoints العميل داخل Workspace
@@ -69,7 +69,6 @@ POST   /api/v1/client/workspaces/{workspace}/hiring-interviews/{interview}/accep
 POST   /api/v1/client/workspaces/{workspace}/hiring-interviews/{interview}/request-schedule-change
 POST   /api/v1/client/workspaces/{workspace}/hiring-interviews/{interview}/apologize
 POST   /api/v1/client/workspaces/{workspace}/hiring-request-items/{item}/decision
-DELETE /api/v1/client/workspaces/{workspace}/hiring-request-items/{item}/decision
 POST   /api/v1/client/workspaces/{workspace}/hiring-request-items/{item}/hold
 POST   /api/v1/client/workspaces/{workspace}/hiring-request-items/{item}/resume
 POST   /api/v1/client/workspaces/{workspace}/hiring-request-items/{item}/cancel
@@ -156,7 +155,6 @@ POST   /api/v1/admin/hiring-requests/items/{item}/cancel
 
 ```json
 {
-  "party": "talent",
   "decision": "reject",
   "reason": "تم تسجيل القرار بعد التواصل الخارجي."
 }
@@ -184,7 +182,7 @@ tests/Feature/HiringRequestFlowTest.php
 12 tests, 95 assertions — PASS
 ```
 
-يشمل الاختبار الكامل: Start Request → مرحلة `offer` → قبول العرض → مرحلة `interview` → موعد وموافقة الطرفين → تأكيد وبدء وإكمال المقابلة → قراري الطرفين → `accepted`، بالإضافة إلى انتهاء عرضين وتعطيل حساب الموهبة دون غلق العنصر.
+يشمل الاختبار الكامل: Start Request → مرحلة `offer` → قبول العرض → مرحلة `interview` → موعد وموافقة الطرفين → تأكيد وبدء وإكمال المقابلة → قرار العميل → `accepted`، بالإضافة إلى انتهاء عرضين وتعطيل حساب الموهبة دون غلق العنصر.
 
 كما تم تشغيل كل اختبارات Feature على SQLite in-memory للتأكد من عدم كسر S02 وS04 وS05:
 

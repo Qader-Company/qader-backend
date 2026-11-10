@@ -195,7 +195,7 @@ class HiringRequestFlowTest extends TestCase
         $this->assertTrue($offer->sent_at->copy()->addHours(48)->equalTo($offer->response_due_at));
     }
 
-    public function test_s06_offer_interview_and_both_decisions_reach_accepted(): void
+    public function test_s06_offer_interview_and_client_decision_reaches_accepted(): void
     {
         $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
         $admin = $this->adminUser('s06-admin@example.test');
@@ -235,10 +235,13 @@ class HiringRequestFlowTest extends TestCase
 
         Sanctum::actingAs($this->owner, ['access', 'client']);
         $this->postJson("/api/v1/client/workspaces/{$this->workspace->id}/hiring-request-items/{$itemId}/decision", ['decision' => 'proceed'])
-            ->assertOk()->assertJsonPath('data.status', 'interview');
+            ->assertOk()->assertJsonPath('data.status', 'accepted');
+
         Sanctum::actingAs($this->talent->user, ['access', 'talent']);
         $this->postJson("/api/v1/talent/hiring-request-items/{$itemId}/decision", ['decision' => 'proceed'])
-            ->assertOk()->assertJsonPath('data.status', 'accepted');
+            ->assertNotFound();
+        $this->deleteJson("/api/v1/talent/hiring-request-items/{$itemId}/decision")
+            ->assertNotFound();
     }
 
     public function test_two_expired_offers_disable_talent_without_closing_item(): void

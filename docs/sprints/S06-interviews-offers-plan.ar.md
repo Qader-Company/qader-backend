@@ -2,7 +2,7 @@
 
 الحالة: **معتمدة وجاهزة للتنفيذ**  
 آخر مراجعة: 1 نوفمبر 2026  
-النطاق: رد الموهبة على العرض، التفاوض الذي يديره الأدمن، جدولة المقابلة وتأكيدها، ثم توثيق قرار العميل والموهبة بعد المقابلة.  
+النطاق: رد الموهبة على العرض، التفاوض الذي يديره الأدمن، جدولة المقابلة وتأكيدها، ثم توثيق قرار العميل بعد المقابلة.
 عرض التسليم: مقابلة موثقة وقرار عرض موثق لكل عنصر داخل Hiring Request.
 
 > القرارات التنفيذية والتعارضات التي ظهرت في التصميم حسمت في قسم **القرارات المعتمدة**، ولا توجد حاليًا نقطة Business مفتوحة تمنع التنفيذ.
@@ -207,7 +207,7 @@ flowchart TD
 7. إذا طلب أي طرف تغيير الموعد أواعتذر، تغلق محاولة الموعد الحالية ويحدد الأدمن موعدًا واحدًا جديدًا للطرفين.
 8. زر Join لا يتاح قبل الموعد؛ يتاح من `starts_at` وحتى `ends_at` فقط.
 9. تبدأ وتنتهي المقابلة تلقائيًا حسب الوقت، ويمكن للأدمن Start/Complete يدويًا.
-10. بعد `completed` ينتقل العنصر إلى `awaiting_decisions` ويبدأ Deadline قرار الطرفين من إعداد المنصة.
+10. بعد `completed` يبقى العنصر في مرحلة المقابلة ويبدأ Deadline قرار العميل من إعداد المنصة.
 
 ### 4.3 القرار بعد المقابلة
 
@@ -289,19 +289,16 @@ flowchart TD
 - كشف التعارض يطبق على `starts_at` و`ends_at` الجديدين قبل إرسالهما، مع مراعاة Client وTalent وأي مشارك مطلوب حضوره حسب البيانات المتاحة.
 - في S06 ممثل Client الذي يفحص تعارضه ويرسل له Calendar invitation هو `created_by_member_id` الخاص بالطلب، بالإضافة إلى Talent. الأدمن المسؤول منسق للعملية ولا يعتبر Attendee إلا إذا أضيف مستقبلًا بقرار صريح.
 
-### 5.3 قرارات الطرفين
+### 5.3 قرار العميل بعد المقابلة
 
-لن ننشئ جدول `hiring_request_item_decisions`. بما أن الطرفين ثابتان، تحفظ الحالة الحالية للقرارين مباشرة داخل `hiring_request_items`:
+لن ننشئ جدول `hiring_request_item_decisions`. طبقًا لشاشة `interview-completed-decision` في Figma، العميل وحده يتخذ قرار ما بعد المقابلة، وتحفظ حالته مباشرة داخل `hiring_request_items`:
 
 - `client_decision`: `proceed`, `reject` أو`null`.
 - `client_decision_reason`: سبب اختياري.
 - `client_decided_at`: وقت القرار.
-- `talent_decision`: `proceed`, `reject` أو`null`.
-- `talent_decision_reason`: سبب اختياري.
-- `talent_decided_at`: وقت القرار.
-- `decision_due_at`: Deadline المشترك لرد الطرفين بعد اكتمال المقابلة.
+- `decision_due_at`: Deadline رد العميل بعد اكتمال المقابلة.
 
-عند سحب أحد الطرفين قراره، تعاد أعمدة قراره إلى `null` ويعاد العنصر إلى `awaiting_decisions` حتى لو كان وصل داخل S06 إلى `rejected` أو`ready_to_proceed`. تبقى أعمدة قرار الطرف الآخر دون تغيير. القرار المسحوب ووقت السحب والحالة السابقة والمستخدم الذي نفذه أوالأدمن الذي نفذه بالنيابة يحفظون في `hiring_request_events`. يمنع السحب بعد بدء S07 أوإنشاء عقد.
+قرار العميل ينقل العنصر مباشرة إلى `accepted` عند `proceed` أو`rejected` عند `reject`. لا يوجد Action للموهبة بعد المقابلة، ولا يستطيع العميل سحب القرار بعد إرساله. يظل الأدمن المسؤول قادرًا على تصحيح قرار العميل بالنيابة عند الضرورة، مع حفظ التصحيح في `hiring_request_events`.
 
 ### 5.4 Hold / Resume / Cancel
 
@@ -312,15 +309,15 @@ flowchart TD
 3. عند Resume يبدأ Deadline كامل جديد من إعداد المنصة، ولا يستكمل الوقت القديم.
 4. يرجع العنصر إلى مرحلته التشغيلية قبل Hold، لكن المقابلة الملغاة لا تعاد ويحدد الأدمن موعدًا جديدًا.
 5. Client وAdmin يستطيعان Hold في أي حالة تشغيلية غير نهائية داخل S06، وResume متاح من `on_hold` فقط.
-6. Client وAdmin يستطيعان Cancel في أي وقت قبل بدء S07. Talent لا ينفذ Hold أوCancel للعنصر نفسه؛ لديه Actions رفض العرض والاعتذار وقراره بعد المقابلة.
+6. Client وAdmin يستطيعان Cancel في أي وقت قبل بدء S07. Talent لا ينفذ Hold أوCancel للعنصر نفسه؛ لديه Actions رفض العرض والتفاوض والرد على موعد المقابلة فقط.
 7. تحفظ الحالة السابقة والـDeadline السابق وإجراءات الإيقاف والاستئناف في `hiring_request_events` دون إضافة `status_before_hold`. يعتمد Resume على آخر Event من نوع Hold داخل Transaction وLock على العنصر.
 
 ### 5.5 إعدادات الـDeadlines
 
 - مدة رد Talent على العرض قيمة ثابتة قابلة للتعديل من Platform Settings، وتحسب منها `response_due_at` عند الإرسال أوResume.
-- مدة قرار Client وTalent بعد المقابلة قيمة ثابتة قابلة للتعديل من Platform Settings، وتحسب من `completed_at`.
+- مدة قرار Client بعد المقابلة قيمة ثابتة قابلة للتعديل من Platform Settings، وتحسب من `completed_at`.
 - تغيير الإعداد يؤثر على Deadlines الجديدة فقط ولا يعيد حساب المهل التي بدأت بالفعل.
-- انتهاء المهلة يقيد Client أوTalent صاحب الرد فقط، ولا يقيد الأدمن المسؤول أوActions التنفيذ بالنيابة.
+- انتهاء المهلة يقيد Client فقط، ولا يقيد الأدمن المسؤول أوActions التنفيذ بالنيابة.
 - حد عدم رد Talent على العروض يحفظ في Platform Settings باسم مثل `talent_offer_no_response_limit`، وقيمته الافتراضية `2` ويمكن للأدمن تغييرها.
 - لا ينتظر تنفيذ S06 موديول Platform Settings: تستخدم قيم `config` الافتراضية `48`, `24`, `2` من خلال Service قابلة لتغيير مصدرها لاحقًا إلى Spatie Settings.
 
@@ -354,8 +351,6 @@ flowchart TD
 - `POST /api/v1/talent/hiring-interviews/{interview}/accept-schedule`
 - `POST /api/v1/talent/hiring-interviews/{interview}/request-schedule-change`
 - `POST /api/v1/talent/hiring-interviews/{interview}/apologize`
-- `POST /api/v1/talent/hiring-request-items/{item}/decision`
-- `DELETE /api/v1/talent/hiring-request-items/{item}/decision`
 
 ### 6.2 Client داخل Workspace
 
@@ -368,7 +363,6 @@ flowchart TD
 - `POST /api/v1/client/workspaces/{workspace}/hiring-interviews/{interview}/request-schedule-change`
 - `POST /api/v1/client/workspaces/{workspace}/hiring-interviews/{interview}/apologize`
 - `POST /api/v1/client/workspaces/{workspace}/hiring-request-items/{item}/decision`
-- `DELETE /api/v1/client/workspaces/{workspace}/hiring-request-items/{item}/decision`
 
 ### 6.3 Admin
 
@@ -378,26 +372,26 @@ flowchart TD
 - `POST /api/v1/admin/hiring-requests/items/{item}/interview/confirm`
 - `POST /api/v1/admin/hiring-requests/items/{item}/interview/start`
 - `POST /api/v1/admin/hiring-requests/items/{item}/interview/complete`
-- `POST /api/v1/admin/hiring-requests/items/{item}/decision-on-behalf`
+- `POST /api/v1/admin/hiring-requests/items/{item}/decision-on-behalf` لتسجيل قرار العميل فقط
 - `DELETE /api/v1/admin/hiring-requests/items/{item}/decision-on-behalf`
 - `POST /api/v1/admin/hiring-requests/items/{item}/hold`
 - `POST /api/v1/admin/hiring-requests/items/{item}/resume`
 - `POST /api/v1/admin/hiring-requests/items/{item}/cancel`
 - كل Action يرجع داخل `available_actions` بنفس اسمه الفعلي في الـroute.
 
-> سنحافظ على Endpoints الموجودة ولن نغير أسماء أوContracts مرتبطة. كل Endpoints S06 ستكون إضافية ما لم توجد حاجة مؤكدة لتوسيع Response فقط.
+> نحافظ على Endpoints المرتبطة الصحيحة. أزيلت Endpoints قرار الموهبة وقرار سحب العميل بعد مراجعة Figma لأنها لم تكن جزءًا من الفلو المعتمد.
 
 ## 7. القرارات المعتمدة قبل التنفيذ
 
 ### قرارات تم اعتمادها في هذه المراجعة
 
 1. الأدمن يقترح موعدًا Online واحدًا في كل محاولة للطرفين معًا.
-2. Client وTalent يردان بشكل مستقل، والأدمن يؤكد الموعد بعد موافقتهما أويرسل موعدًا جديدًا عند التغيير/الاعتذار.
+2. Client وTalent يردان بشكل مستقل على الموعد، والأدمن يؤكده بعد موافقتهما أويرسل موعدًا جديدًا عند التغيير/الاعتذار.
 3. الطرف الذي طلب التغيير أوالاعتذار يرسل السبب فقط، والأدمن وحده يحدد الموعد البديل.
 4. نسخ العرض تحفظ `proposed_by=client|talent`، بينما Event يحفظ المستخدم الفعلي، لتجهيز تفاوض Client المباشر مستقبلًا.
 5. `notice_period_days` تحفظ على كل عرض، وتنسخ من ملف الموهبة إذا لم ترسل، ويمكن تعديلها في كل نسخة.
 6. `Contract Duration` لا تدخل S06 وتترك للعقد في S07.
-7. قرار ما بعد المقابلة يمكن سحبه في أي وقت مع الاحتفاظ بالـAudit trail.
+7. قرار ما بعد المقابلة يخص العميل ويصبح نهائيًا عند الإرسال؛ يستطيع الأدمن المسؤول تصحيحه تشغيليًا مع الاحتفاظ بالـAudit trail.
 8. أسباب Hold وCancel اختيارية وفق Figma.
 9. الأدمن المسؤول متاح له كل Actions التي تسمح بها الحالة، بما فيها التنفيذ بالنيابة.
 10. Email/FCM الإضافية اختيارية في S06؛ الأساس هو حفظ الحالة والـEvents وإرجاعها عبر API.

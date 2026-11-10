@@ -21,97 +21,73 @@ class HiringDecisionWorkflow
 
     public function __construct(private readonly HiringEventRecorder $events) {}
 
-    public function submitAsTalent(User $user, int $itemId, HiringDecisionEnum $decision, ?string $reason): HiringRequestItem
-    {
-        $talent = $user->talent()->firstOrFail();
-
-        return $this->submit($user, $itemId, 'talent', $decision, $reason, false,
-            fn (Builder $query) => $query->where('talent_id', $talent->id));
-    }
-
     public function submitAsClient(User $user, Workspace $workspace, int $itemId, HiringDecisionEnum $decision, ?string $reason): HiringRequestItem
     {
-        return $this->submit($user, $itemId, 'client', $decision, $reason, false,
+        return $this->submit($user, $itemId, $decision, $reason, false,
             fn (Builder $query) => $query->whereHas('hiringRequest', fn (Builder $request) => $request->where('workspace_id', $workspace->id)));
     }
 
-    public function submitOnBehalf(User $user, Admin $admin, int $itemId, string $party, HiringDecisionEnum $decision, ?string $reason): HiringRequestItem
+    public function submitOnBehalf(User $user, Admin $admin, int $itemId, HiringDecisionEnum $decision, ?string $reason): HiringRequestItem
     {
-        return $this->submit($user, $itemId, $party, $decision, $reason, true,
+        return $this->submit($user, $itemId, $decision, $reason, true,
             fn (Builder $query) => $query->whereHas('hiringRequest', fn (Builder $request) => $request->where('assigned_admin_id', $admin->id)));
     }
 
-    public function withdrawAsTalent(User $user, int $itemId): HiringRequestItem
+    public function withdrawOnBehalf(User $user, Admin $admin, int $itemId): HiringRequestItem
     {
-        $talent = $user->talent()->firstOrFail();
-
-        return $this->withdraw($user, $itemId, 'talent',
-            fn (Builder $query) => $query->where('talent_id', $talent->id));
-    }
-
-    public function withdrawAsClient(User $user, Workspace $workspace, int $itemId): HiringRequestItem
-    {
-        return $this->withdraw($user, $itemId, 'client',
-            fn (Builder $query) => $query->whereHas('hiringRequest', fn (Builder $request) => $request->where('workspace_id', $workspace->id)));
-    }
-
-    public function withdrawOnBehalf(User $user, Admin $admin, int $itemId, string $party): HiringRequestItem
-    {
-        return $this->withdraw($user, $itemId, $party,
+        return $this->withdraw($user, $itemId,
             fn (Builder $query) => $query->whereHas('hiringRequest', fn (Builder $request) => $request->where('assigned_admin_id', $admin->id)));
     }
 
-    private function submit(User $actor, int $itemId, string $party, HiringDecisionEnum $decision, ?string $reason, bool $adminOverride, callable $scope): HiringRequestItem
+    private function submit(User $actor, int $itemId, HiringDecisionEnum $decision, ?string $reason, bool $adminOverride, callable $scope): HiringRequestItem
     {
-        return DB::transaction(function () use ($actor, $itemId, $party, $decision, $reason, $adminOverride, $scope): HiringRequestItem {
+        return DB::transaction(function () use ($actor, $itemId, $decision, $reason, $adminOverride, $scope): HiringRequestItem {
             $query = HiringRequestItem::query();
             $scope($query);
             $item = $query->lockForUpdate()->findOrFail($itemId);
-            if ($item->status !== HiringRequestItemStatusEnum::INTERVIEW || $item->decision_due_at === null || $item->{$party.'_decision'} !== null) {
+            if ($item->status !== HiringRequestItemStatusEnum::INTERVIEW || $item->decision_due_at === null || $item->client_decision !== null) {
                 throw new ConflictHttpException(__('hiring.decision_not_allowed'));
             }
             if (! $adminOverride && ($item->decision_due_at === null || now()->gt($item->decision_due_at))) {
                 throw new ConflictHttpException(__('hiring.decision_deadline_expired'));
             }
             $item->update([
-                $party.'_decision' => $decision,
-                $party.'_decision_reason' => $reason,
-                $party.'_decided_at' => now(),
+                'client_decision' => $decision,
+                'client_decision_reason' => $reason,
+                'client_decided_at' => now(),
             ]);
             $item->refresh();
-            $nextStatus = $item->client_decision === HiringDecisionEnum::REJECT || $item->talent_decision === HiringDecisionEnum::REJECT
+            $nextStatus = $item->client_decision === HiringDecisionEnum::REJECT
                 ? HiringRequestItemStatusEnum::REJECTED
-                : ($item->client_decision === HiringDecisionEnum::PROCEED && $item->talent_decision === HiringDecisionEnum::PROCEED
-                    ? HiringRequestItemStatusEnum::ACCEPTED
-                    : HiringRequestItemStatusEnum::INTERVIEW);
+                : HiringRequestItemStatusEnum::ACCEPTED;
             $item->update(['status' => $nextStatus]);
             $this->events->record($item, $actor, $adminOverride ? 'decision_recorded_on_behalf' : 'decision_recorded', [
-                'party' => $party, 'decision' => $decision->value, 'reason' => $reason,
+                'party' => 'client', 'decision' => $decision->value, 'reason' => $reason,
             ]);
 
             return $item->refresh()->load(self::RELATIONS);
         });
     }
 
-    private function withdraw(User $actor, int $itemId, string $party, callable $scope): HiringRequestItem
+    private function withdraw(User $actor, int $itemId, callable $scope): HiringRequestItem
     {
-        return DB::transaction(function () use ($actor, $itemId, $party, $scope): HiringRequestItem {
+        return DB::transaction(function () use ($actor, $itemId, $scope): HiringRequestItem {
             $query = HiringRequestItem::query();
             $scope($query);
             $item = $query->lockForUpdate()->findOrFail($itemId);
             if (! in_array($item->status, [HiringRequestItemStatusEnum::INTERVIEW, HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::ACCEPTED], true)
-                || $item->{$party.'_decision'} === null) {
+                || $item->client_decision === null) {
                 throw new ConflictHttpException(__('hiring.decision_withdrawal_not_allowed'));
             }
-            $previous = $item->{$party.'_decision'};
+            $previous = $item->client_decision;
             $item->update([
-                $party.'_decision' => null,
-                $party.'_decision_reason' => null,
-                $party.'_decided_at' => null,
+                'client_decision' => null,
+                'client_decision_reason' => null,
+                'client_decided_at' => null,
                 'status' => HiringRequestItemStatusEnum::INTERVIEW,
             ]);
             $this->events->record($item, $actor, 'decision_withdrawn', [
-                'party' => $party, 'previous_decision' => $previous->value,
+                'party' => 'client', 'previous_decision' => $previous->value,
             ]);
 
             return $item->refresh()->load(self::RELATIONS);

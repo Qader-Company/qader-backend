@@ -142,8 +142,7 @@ class EndpointNames
                     'acceptInterviewSchedule' => 'Accept Hiring Interview Time',
                     'requestInterviewScheduleChange' => 'Request a New Hiring Interview Time',
                     'apologizeForInterview' => 'Apologize for Hiring Interview',
-                    'decision' => 'Submit Hiring Decision',
-                    'withdrawDecision' => 'Cancel Hiring Decision',
+                    'decision' => 'Submit Post-Interview Talent Decision',
                     'hold' => 'Hold Hiring Item',
                     'resume' => 'Resume Hiring Item',
                     'cancel' => 'Cancel Hiring Item',
@@ -251,8 +250,6 @@ class EndpointNames
                 'acceptInterviewSchedule' => 'Accept Hiring Interview Time',
                 'requestInterviewScheduleChange' => 'Request a New Hiring Interview Time',
                 'apologizeForInterview' => 'Apologize for Hiring Interview',
-                'decision' => 'Submit Hiring Decision',
-                'withdrawDecision' => 'Cancel Hiring Decision',
                 default => Str::headline($route->getActionMethod()),
             };
         }

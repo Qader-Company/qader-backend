@@ -57,9 +57,6 @@ class HiringRequestItemResource extends JsonResource
             'client_decision' => $this->value($this->client_decision),
             'client_decision_reason' => $this->client_decision_reason,
             'client_decided_at' => $this->client_decided_at,
-            'talent_decision' => $this->value($this->talent_decision),
-            'talent_decision_reason' => $this->talent_decision_reason,
-            'talent_decided_at' => $this->talent_decided_at,
             'decision_due_at' => $this->decision_due_at,
             'available_actions' => $this->available_actions ?? $this->actions($request),
             'rejection_reason' => $this->rejection_reason,
@@ -110,10 +107,6 @@ class HiringRequestItemResource extends JsonResource
                 && $this->latestOffer?->proposed_by === HiringOfferPartyEnum::CLIENT) {
                 array_push($actions, 'accept_offer', 'reject_offer', 'counter_offer');
             }
-            if ($this->decision_due_at !== null && in_array($status, [HiringRequestItemStatusEnum::INTERVIEW, HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::ACCEPTED], true)) {
-                $actions[] = $this->talent_decision === null ? 'submit_decision' : 'cancel_decision';
-            }
-
             return $actions;
         }
 
@@ -124,8 +117,8 @@ class HiringRequestItemResource extends JsonResource
             if ($status === HiringRequestItemStatusEnum::ON_HOLD) {
                 array_push($actions, 'resume', 'cancel');
             }
-            if ($this->decision_due_at !== null && in_array($status, [HiringRequestItemStatusEnum::INTERVIEW, HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::ACCEPTED], true)) {
-                $actions[] = $this->client_decision === null ? 'submit_decision' : 'cancel_decision';
+            if ($this->decision_due_at !== null && $status === HiringRequestItemStatusEnum::INTERVIEW && $this->client_decision === null) {
+                $actions[] = 'submit_decision';
             }
 
             return array_values(array_unique($actions));

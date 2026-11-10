@@ -67,16 +67,14 @@ class AdminHiringWorkflowController extends Controller
 
     public function decisionOnBehalf(Request $request, int $item, AdminHiringRequestActor $actors, HiringDecisionWorkflow $workflow): JsonResponse
     {
-        $data = $request->validate(['party' => ['required', Rule::in(['client', 'talent'])], 'decision' => ['required', Rule::enum(HiringDecisionEnum::class)], 'reason' => ['nullable', 'string', 'max:2000']]);
+        $data = $request->validate(['decision' => ['required', Rule::enum(HiringDecisionEnum::class)], 'reason' => ['nullable', 'string', 'max:2000']]);
 
-        return ApiResponse::updated(new HiringRequestItemResource($workflow->submitOnBehalf($request->user(), $actors->resolve($request->user()), $item, $data['party'], HiringDecisionEnum::from($data['decision']), $data['reason'] ?? null)), __('hiring.decision_saved'));
+        return ApiResponse::updated(new HiringRequestItemResource($workflow->submitOnBehalf($request->user(), $actors->resolve($request->user()), $item, HiringDecisionEnum::from($data['decision']), $data['reason'] ?? null)), __('hiring.decision_saved'));
     }
 
     public function withdrawDecisionOnBehalf(Request $request, int $item, AdminHiringRequestActor $actors, HiringDecisionWorkflow $workflow): JsonResponse
     {
-        $data = $request->validate(['party' => ['required', Rule::in(['client', 'talent'])]]);
-
-        return ApiResponse::updated(new HiringRequestItemResource($workflow->withdrawOnBehalf($request->user(), $actors->resolve($request->user()), $item, $data['party'])), __('hiring.decision_withdrawn'));
+        return ApiResponse::updated(new HiringRequestItemResource($workflow->withdrawOnBehalf($request->user(), $actors->resolve($request->user()), $item)), __('hiring.decision_withdrawn'));
     }
 
     public function hold(Request $request, int $item, AdminHiringRequestActor $actors, HiringItemControlWorkflow $workflow): JsonResponse
