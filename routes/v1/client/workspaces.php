@@ -13,6 +13,7 @@ Route::post('/', [WorkspaceController::class, 'store']);
 Route::get('{workspace}', [WorkspaceController::class, 'show']);
 Route::patch('{workspace}', [WorkspaceController::class, 'update']);
 Route::get('{workspace}/dashboard', [WorkspaceController::class, 'dashboard']);
+Route::get('{workspace}/tax-card', [WorkspaceController::class, 'taxCard']);
 Route::get('{workspace}/members', [WorkspaceMemberController::class, 'index']);
 Route::post('{workspace}/members', [WorkspaceMemberController::class, 'store']);
 Route::get('{workspace}/members/{member}', [WorkspaceMemberController::class, 'show']);
@@ -26,4 +27,3 @@ Route::get('{workspace}/talent-marketplace/{talent}', [TalentMarketplaceControll
 Route::get('{workspace}/talent-selections', [WorkspaceTalentSelectionController::class, 'index']);
 Route::post('{workspace}/talent-selections', [WorkspaceTalentSelectionController::class, 'store']);
 Route::delete('{workspace}/talent-selections/{talent}', [WorkspaceTalentSelectionController::class, 'destroy']);
-

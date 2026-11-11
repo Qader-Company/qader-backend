@@ -33,6 +33,16 @@ class WorkspaceController extends Controller
         return ApiResponse::updated(new WorkspaceResource($s->update($r->user(), $workspace, $r->validated())));
     }
 
+    /** View the workspace tax card inline, or download it with ?download=1. */
+    public function taxCard(Request $r, Workspace $workspace, WorkspaceService $s)
+    {
+        $media = $s->taxCard($r->user(), $workspace);
+
+        return $r->boolean('download')
+            ? response()->download($media->getPath(), $media->file_name)
+            : response()->file($media->getPath(), ['Content-Type' => $media->mime_type]);
+    }
+
     public function dashboard(Request $r, Workspace $workspace, WorkspaceService $s)
     {
         return ApiResponse::success($s->dashboard($r->user(), $workspace));

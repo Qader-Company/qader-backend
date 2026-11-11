@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class AdminHiringRequestService
 {
@@ -97,6 +98,7 @@ class AdminHiringRequestService
     {
         return DB::transaction(function () use ($requestId, $user, $actor): HiringRequest {
             $request = HiringRequest::query()->with(['items.latestOffer'])->lockForUpdate()->findOrFail($requestId);
+            $this->ensureWorkspaceActive($request);
             if ($request->status !== HiringRequestStatusEnum::PENDING) {
                 throw ValidationException::withMessages(['hiring_request' => [__('hiring.pending_only')]]);
             }
@@ -164,6 +166,7 @@ class AdminHiringRequestService
     {
         return DB::transaction(function () use ($requestId, $adminId, $actor, $reassign): HiringRequest {
             $request = HiringRequest::query()->lockForUpdate()->findOrFail($requestId);
+            $this->ensureWorkspaceActive($request);
             if (! in_array($request->status, [HiringRequestStatusEnum::PENDING, HiringRequestStatusEnum::ACTIVE], true)) {
                 throw ValidationException::withMessages(['hiring_request' => [__('hiring.pending_only')]]);
             }
@@ -201,6 +204,10 @@ class AdminHiringRequestService
         $canHandle = $user->can(AdminPermissionEnum::HIRING_REQUESTS_HANDLE->value);
         $actorId = $user->admin?->id;
         $actions = [];
+        $workspace = $request->relationLoaded('workspace') ? $request->workspace : null;
+        if ($workspace !== null && ($workspace->trashed() || ! $workspace->isActive())) {
+            return $actions;
+        }
 
         if ($canAssign && $request->assigned_admin_id === null && $request->status === HiringRequestStatusEnum::PENDING) {
             $actions[] = 'assign';
@@ -213,6 +220,14 @@ class AdminHiringRequestService
         }
 
         return $actions;
+    }
+
+    private function ensureWorkspaceActive(HiringRequest $request): void
+    {
+        $workspace = $request->loadMissing('workspace')->workspace;
+        if ($workspace !== null && ($workspace->trashed() || ! $workspace->isActive())) {
+            throw new ConflictHttpException(__('workspaces.inactive'));
+        }
     }
 
     private function load(int $requestId): HiringRequest

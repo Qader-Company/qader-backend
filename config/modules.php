@@ -44,6 +44,7 @@ return [
             ['prefix' => 'admin/hiring-requests', 'file' => 'hiring-requests.php', 'api_key' => true],
             ['prefix' => 'admin/contract-types', 'file' => 'contract-types.php', 'api_key' => true],
             ['prefix' => 'admin/help-requests', 'file' => 'help-requests.php', 'api_key' => true],
+            ['prefix' => 'admin/clients', 'file' => 'clients.php', 'api_key' => true],
         ],
 
         'client' => [

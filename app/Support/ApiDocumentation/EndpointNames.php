@@ -179,11 +179,32 @@ class EndpointNames
                 'permissions' => 'List Workspace Permissions', 'status' => 'Update Workspace Role Status',
                 'filters' => 'List Talent Marketplace Filters',
                 'dashboard' => 'Get Workspace Dashboard',
+                'taxCard' => 'View or Download Workspace Tax Card',
                 'destroy' => match (true) {
                     str_contains($route->uri(), '/talent-selections/') => 'Remove Talent from Squad',
                     str_contains($route->uri(), '/members/') => 'Remove Workspace Member',
                     default => 'Delete Workspace Role',
                 },
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'clients') {
+            return match ($route->getActionMethod()) {
+                'options' => 'List Client Management Options',
+                'index' => 'List Clients',
+                'show' => 'Get Client',
+                'suspend' => 'Suspend Client',
+                'reactivate' => 'Reactivate Client',
+                'destroy' => 'Delete Client',
+                'workspaces' => 'List Client Workspaces',
+                'workspace' => 'Get Client Workspace',
+                'activateWorkspace' => 'Activate Client Workspace',
+                'deactivateWorkspace' => 'Deactivate Client Workspace',
+                'destroyWorkspace' => 'Delete Client Workspace',
+                'taxCard' => 'View or Download Workspace Tax Card',
+                'members' => 'List Client Workspace Team',
+                'destroyMember' => 'Remove Client Workspace Team Member',
                 default => Str::headline($route->getActionMethod()),
             };
         }

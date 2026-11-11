@@ -120,4 +120,9 @@ return [
     'help_request_contact_methods' => ['email' => 'Email', 'whatsapp' => 'WhatsApp'],
     'help_request_closure_outcomes' => ['new_hiring_request_created' => 'New Hiring Request Created', 'client_request_clarified' => 'Client Request Clarified', 'issue_problem' => 'Issue / Problem'],
     'help_request_scopes' => ['all' => 'All Requests', 'mine' => 'My Requests'],
+    'client_account_statuses' => ['active' => 'Active', 'suspended' => 'Suspended'],
+    'client_registration_periods' => ['last_7_days' => 'Last 7 days', 'last_30_days' => 'Last 30 days', 'last_90_days' => 'Last 90 days', 'this_year' => 'This year'],
+    'client_list_sorts' => ['newest' => 'Newest', 'oldest' => 'Oldest', 'name_asc' => 'Name (A-Z)', 'name_desc' => 'Name (Z-A)'],
+    'workspace_statuses' => ['active' => 'Active', 'inactive' => 'Inactive'],
+    'workspace_social_platforms' => ['linkedin' => 'LinkedIn', 'facebook' => 'Facebook', 'instagram' => 'Instagram', 'x' => 'X', 'youtube' => 'YouTube', 'tiktok' => 'TikTok', 'snapchat' => 'Snapchat', 'threads' => 'Threads', 'pinterest' => 'Pinterest', 'reddit' => 'Reddit', 'telegram' => 'Telegram', 'whatsapp' => 'WhatsApp', 'discord' => 'Discord', 'github' => 'GitHub', 'gitlab' => 'GitLab', 'behance' => 'Behance', 'dribbble' => 'Dribbble', 'medium' => 'Medium', 'stack_overflow' => 'Stack Overflow', 'twitch' => 'Twitch', 'other' => 'Other'],
 ];

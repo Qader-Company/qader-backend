@@ -10,8 +10,10 @@ use App\Modules\V1\Workspaces\Domain\Models\Workspace;
 use App\Modules\V1\Workspaces\Domain\Models\WorkspaceMember;
 use App\Modules\V1\Workspaces\Domain\ValueObjects\WorkspaceMemberStatusEnum;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class WorkspaceService
 {
@@ -29,11 +31,12 @@ class WorkspaceService
     {
         $client = $this->client($user);
         $logo = Arr::pull($data, 'logo');
+        $taxCard = Arr::pull($data, 'tax_card');
         $links = Arr::pull($data, 'social_links', []);
         $industryIds = Arr::pull($data, 'industry_ids');
         $professionalFieldIds = Arr::pull($data, 'professional_field_ids');
 
-        return DB::transaction(function () use ($client, $data, $logo, $links, $industryIds, $professionalFieldIds) {
+        return DB::transaction(function () use ($client, $data, $logo, $taxCard, $links, $industryIds, $professionalFieldIds) {
             $workspace = Workspace::query()->create(['owner_client_id' => $client->id, ...$data]);
             $workspace->industries()->sync($industryIds);
             $workspace->professionalFields()->sync($professionalFieldIds);
@@ -43,6 +46,9 @@ class WorkspaceService
             $workspace->socialLinks()->createMany($links);
             if ($logo) {
                 $workspace->addMedia($logo)->toMediaCollection('logo', 'public');
+            }
+            if ($taxCard) {
+                $workspace->addMedia($taxCard)->toMediaCollection(Workspace::TAX_CARD_COLLECTION, 'local');
             }
 
             return $this->load($workspace);
@@ -61,6 +67,8 @@ class WorkspaceService
         $this->access->authorize($user, $workspace, 'client.workspace.update');
         $logo = Arr::pull($data, 'logo');
         $remove = (bool) Arr::pull($data, 'remove_logo', false);
+        $taxCard = Arr::pull($data, 'tax_card');
+        $removeTaxCard = (bool) Arr::pull($data, 'remove_tax_card', false);
         $hasLinks = array_key_exists('social_links', $data);
         $links = Arr::pull($data, 'social_links', []);
         $hasIndustries = array_key_exists('industry_ids', $data);
@@ -72,7 +80,7 @@ class WorkspaceService
             $data['city_id'] = null;
         }
 
-        return DB::transaction(function () use ($workspace, $data, $logo, $remove, $hasLinks, $links, $hasIndustries, $industryIds, $hasProfessionalFields, $professionalFieldIds) {
+        return DB::transaction(function () use ($workspace, $data, $logo, $remove, $taxCard, $removeTaxCard, $hasLinks, $links, $hasIndustries, $industryIds, $hasProfessionalFields, $professionalFieldIds) {
             $workspace->update($data);
             if ($hasIndustries) {
                 $workspace->industries()->sync($industryIds);
@@ -90,9 +98,23 @@ class WorkspaceService
             if ($logo) {
                 $workspace->addMedia($logo)->toMediaCollection('logo', 'public');
             }
+            if ($removeTaxCard) {
+                $workspace->clearMediaCollection(Workspace::TAX_CARD_COLLECTION);
+            }
+            if ($taxCard) {
+                $workspace->addMedia($taxCard)->toMediaCollection(Workspace::TAX_CARD_COLLECTION, 'local');
+            }
 
             return $this->load($workspace->refresh());
         });
+    }
+
+    public function taxCard(User $user, Workspace $workspace): Media
+    {
+        $this->access->authorize($user, $workspace, 'client.workspace.view');
+
+        return $workspace->getFirstMedia(Workspace::TAX_CARD_COLLECTION)
+            ?? throw (new ModelNotFoundException)->setModel(Media::class);
     }
 
     public function dashboard(User $user, Workspace $workspace): array

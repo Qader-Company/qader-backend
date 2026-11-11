@@ -28,6 +28,7 @@ return [
         'hiring-requests' => 'Hiring requests',
         'contract-types' => 'Contract types',
         'help-requests' => 'Help requests',
+        'clients' => 'Clients',
         'talent-applications' => 'Talent applications',
         'interviews' => 'Interviews',
         'talents' => 'Talents',
@@ -99,6 +100,7 @@ return [
         'job-form-submissions' => ['view' => 'View job form submissions', 'delete' => 'Delete job form submissions', 'start-hiring' => 'Start hiring from submissions'],
         'hiring-requests' => ['view' => 'View hiring requests', 'assign' => 'Assign hiring requests', 'handle' => 'Handle hiring requests', 'respond-on-behalf' => 'Respond on behalf of hiring parties'],
         'contract-types' => ['view' => 'View contract types', 'update' => 'Update contract type configurations', 'toggle-status' => 'Activate and deactivate contract types'],
+        'clients' => ['view' => 'View clients and their workspaces', 'manage' => 'Suspend and reactivate clients and activate or deactivate workspaces', 'delete' => 'Delete clients, workspaces, and workspace members'],
         'help-requests' => ['view' => 'View help requests', 'assign' => 'Assign help requests', 'handle' => 'Handle and close help requests'],
     ],
 

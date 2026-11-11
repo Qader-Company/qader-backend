@@ -14,6 +14,8 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class HiringItemControlWorkflow
 {
+    public const WORKSPACE_HOLD_SOURCE = 'workspace_deactivated';
+
     private const RELATIONS = ['hiringRequest.workspace', 'talent.user', 'jobTitle', 'latestOffer.currency.translations', 'offers.currency.translations', 'interview'];
 
     public function __construct(
@@ -42,6 +44,54 @@ class HiringItemControlWorkflow
         return $this->resume($user, $itemId, fn (Builder $query) => $query->whereHas('hiringRequest', fn (Builder $request) => $request->where('assigned_admin_id', $admin->id)));
     }
 
+    /**
+     * Workspace deactivated (or deleted): pause every running item. Interviews are cancelled and
+     * deadlines are cleared by the regular hold logic; the hold is tagged so activation can resume it.
+     */
+    public function holdForWorkspaceDeactivation(User $actor, Workspace $workspace): int
+    {
+        $scope = fn (Builder $query) => $query->whereHas('hiringRequest', fn (Builder $request) => $request->where('workspace_id', $workspace->id));
+        $itemIds = HiringRequestItem::query()
+            ->tap($scope)
+            ->whereIn('status', [
+                HiringRequestItemStatusEnum::OFFER->value,
+                HiringRequestItemStatusEnum::INTERVIEW->value,
+                HiringRequestItemStatusEnum::ACCEPTED->value,
+            ])
+            ->orderBy('id')
+            ->pluck('id');
+
+        foreach ($itemIds as $itemId) {
+            $this->hold($actor, $itemId, __('hiring.held_by_workspace_deactivation'), $scope, self::WORKSPACE_HOLD_SOURCE, true);
+        }
+
+        return $itemIds->count();
+    }
+
+    /** Workspace reactivated: resume only the items that its deactivation put on hold, with fresh deadlines. */
+    public function resumeAfterWorkspaceActivation(User $actor, Workspace $workspace): int
+    {
+        $scope = fn (Builder $query) => $query->whereHas('hiringRequest', fn (Builder $request) => $request->where('workspace_id', $workspace->id));
+        $resumed = 0;
+
+        $items = HiringRequestItem::query()
+            ->tap($scope)
+            ->where('status', HiringRequestItemStatusEnum::ON_HOLD->value)
+            ->orderBy('id')
+            ->get();
+
+        foreach ($items as $item) {
+            $hold = $item->events()->where('action', 'item_held')->first();
+            if (data_get($hold?->data, 'source') !== self::WORKSPACE_HOLD_SOURCE) {
+                continue;
+            }
+            $this->resume($actor, $item->id, $scope, true);
+            $resumed++;
+        }
+
+        return $resumed;
+    }
+
     public function cancelForClient(User $user, Workspace $workspace, int $itemId, ?string $reason): HiringRequestItem
     {
         return $this->cancel($user, $itemId, $reason, fn (Builder $query) => $query->whereHas('hiringRequest', fn (Builder $request) => $request->where('workspace_id', $workspace->id)));
@@ -52,10 +102,13 @@ class HiringItemControlWorkflow
         return $this->cancel($user, $itemId, $reason, fn (Builder $query) => $query->whereHas('hiringRequest', fn (Builder $request) => $request->where('assigned_admin_id', $admin->id)));
     }
 
-    private function hold(User $actor, int $itemId, ?string $reason, callable $scope): HiringRequestItem
+    private function hold(User $actor, int $itemId, ?string $reason, callable $scope, ?string $source = null, bool $system = false): HiringRequestItem
     {
-        return DB::transaction(function () use ($actor, $itemId, $reason, $scope): HiringRequestItem {
+        return DB::transaction(function () use ($actor, $itemId, $reason, $scope, $source, $system): HiringRequestItem {
             $item = $this->locked($itemId, $scope);
+            if (! $system) {
+                $this->ensureWorkspaceActive($item);
+            }
             if (! $this->isOperational($item->status) || $item->status === HiringRequestItemStatusEnum::ON_HOLD) {
                 throw new ConflictHttpException(__('hiring.hold_not_allowed'));
             }
@@ -72,16 +125,20 @@ class HiringItemControlWorkflow
                 'previous_offer_due_at' => $previousOfferDueAt,
                 'previous_decision_due_at' => $previousDecisionDueAt,
                 'reason' => $reason,
+                ...($source === null ? [] : ['source' => $source]),
             ]);
 
             return $this->load($item);
         });
     }
 
-    private function resume(User $actor, int $itemId, callable $scope): HiringRequestItem
+    private function resume(User $actor, int $itemId, callable $scope, bool $system = false): HiringRequestItem
     {
-        return DB::transaction(function () use ($actor, $itemId, $scope): HiringRequestItem {
+        return DB::transaction(function () use ($actor, $itemId, $scope, $system): HiringRequestItem {
             $item = $this->locked($itemId, $scope);
+            if (! $system) {
+                $this->ensureWorkspaceActive($item);
+            }
             if ($item->status !== HiringRequestItemStatusEnum::ON_HOLD) {
                 throw new ConflictHttpException(__('hiring.resume_not_allowed'));
             }
@@ -106,6 +163,7 @@ class HiringItemControlWorkflow
     {
         return DB::transaction(function () use ($actor, $itemId, $reason, $scope): HiringRequestItem {
             $item = $this->locked($itemId, $scope);
+            $this->ensureWorkspaceActive($item);
             if (! $this->isOperational($item->status) && $item->status !== HiringRequestItemStatusEnum::ON_HOLD) {
                 throw new ConflictHttpException(__('hiring.cancel_not_allowed'));
             }
@@ -124,6 +182,14 @@ class HiringItemControlWorkflow
         $scope($query);
 
         return $query->with(['latestOffer', 'interview'])->lockForUpdate()->findOrFail($itemId);
+    }
+
+    private function ensureWorkspaceActive(HiringRequestItem $item): void
+    {
+        $workspace = $item->loadMissing('hiringRequest.workspace')->hiringRequest?->workspace;
+        if ($workspace !== null && ($workspace->trashed() || ! $workspace->isActive())) {
+            throw new ConflictHttpException(__('workspaces.inactive'));
+        }
     }
 
     private function isOperational(HiringRequestItemStatusEnum $status): bool

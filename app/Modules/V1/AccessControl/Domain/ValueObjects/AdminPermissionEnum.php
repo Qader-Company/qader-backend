@@ -75,6 +75,10 @@ enum AdminPermissionEnum: string implements PermissionDefinition
     case CONTRACT_TYPES_UPDATE = 'admin.contract-types.update';
     case CONTRACT_TYPES_TOGGLE_STATUS = 'admin.contract-types.toggle-status';
 
+    case CLIENTS_VIEW = 'admin.clients.view';
+    case CLIENTS_MANAGE = 'admin.clients.manage';
+    case CLIENTS_DELETE = 'admin.clients.delete';
+
     case HELP_REQUESTS_VIEW = 'admin.help-requests.view';
     case HELP_REQUESTS_ASSIGN = 'admin.help-requests.assign';
     case HELP_REQUESTS_HANDLE = 'admin.help-requests.handle';

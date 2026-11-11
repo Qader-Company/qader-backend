@@ -5,6 +5,7 @@ return [
     'invalid_permissions' => 'One or more selected permissions are invalid.',
     'access_denied' => 'You are not an active member of this workspace.',
     'permission_denied' => 'You do not have permission to perform this workspace action.',
+    'inactive' => 'This workspace is inactive. All its activity is paused until Qader reactivates it.',
     'client_required' => 'A client account is required.',
     'owner_role_reserved' => 'The owner role name is reserved.',
     'owner_role_protected' => 'The owner role cannot be changed or deleted.',

@@ -10,27 +10,32 @@ use App\Modules\V1\HiringRequests\Domain\Models\HiringRequest;
 use App\Modules\V1\Industries\Domain\Models\Industry;
 use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
 use App\Modules\V1\Workspaces\Domain\ValueObjects\WorkspaceSizeBandEnum;
+use App\Modules\V1\Workspaces\Domain\ValueObjects\WorkspaceStatusEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Workspace extends Model implements HasMedia
 {
     use InteractsWithMedia;
+    use SoftDeletes;
 
-    protected $fillable = ['owner_client_id', 'name', 'description', 'is_company', 'country_id', 'city_id', 'size_band', 'website_url'];
+    public const TAX_CARD_COLLECTION = 'tax_card';
+
+    protected $fillable = ['owner_client_id', 'name', 'description', 'is_company', 'cr_number', 'country_id', 'city_id', 'size_band', 'website_url', 'status'];
 
     protected function casts(): array
     {
-        return ['is_company' => 'boolean', 'size_band' => WorkspaceSizeBandEnum::class];
+        return ['is_company' => 'boolean', 'size_band' => WorkspaceSizeBandEnum::class, 'status' => WorkspaceStatusEnum::class];
     }
 
     public function owner(): BelongsTo
     {
-        return $this->belongsTo(Client::class, 'owner_client_id');
+        return $this->belongsTo(Client::class, 'owner_client_id')->withTrashed();
     }
 
     public function industries(): BelongsToMany
@@ -85,5 +90,11 @@ class Workspace extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('logo')->singleFile()->acceptsMimeTypes(['image/png', 'image/jpeg', 'image/webp']);
+        $this->addMediaCollection(self::TAX_CARD_COLLECTION)->singleFile()->acceptsMimeTypes(['application/pdf', 'image/png', 'image/jpeg']);
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === null || $this->status === WorkspaceStatusEnum::ACTIVE;
     }
 }

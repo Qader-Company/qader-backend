@@ -110,6 +110,7 @@ class AdminHelpRequestService
 
             foreach ($requests as $request) {
                 $this->ensureOpen($request);
+                $this->ensureWorkspaceActive($request);
                 if ($request->assigned_admin_id !== null) {
                     throw ValidationException::withMessages(['help_request_ids' => [__('help_requests.already_assigned')]]);
                 }
@@ -130,6 +131,7 @@ class AdminHelpRequestService
         return DB::transaction(function () use ($requestId, $adminId, $user): HelpRequest {
             $request = HelpRequest::query()->lockForUpdate()->findOrFail($requestId);
             $this->ensureOpen($request);
+            $this->ensureWorkspaceActive($request);
             if ($request->assigned_admin_id === null) {
                 throw ValidationException::withMessages(['admin_id' => [__('help_requests.not_assigned')]]);
             }
@@ -149,6 +151,7 @@ class AdminHelpRequestService
 
         return DB::transaction(function () use ($requestId, $user, $actor): HelpRequest {
             $request = HelpRequest::query()->lockForUpdate()->findOrFail($requestId);
+            $this->ensureWorkspaceActive($request);
             if ($request->status !== HelpRequestStatusEnum::NEW) {
                 throw ValidationException::withMessages(['help_request' => [__('help_requests.start_new_only')]]);
             }
@@ -203,6 +206,7 @@ class AdminHelpRequestService
 
         return DB::transaction(function () use ($requestId, $data, $user, $actor): HelpRequest {
             $request = HelpRequest::query()->lockForUpdate()->findOrFail($requestId);
+            $this->ensureWorkspaceActive($request);
             if ($request->status !== HelpRequestStatusEnum::IN_PROGRESS) {
                 throw ValidationException::withMessages(['help_request' => [__('help_requests.close_in_progress_only')]]);
             }
@@ -243,7 +247,9 @@ class AdminHelpRequestService
         $canAssign = $user->can(AdminPermissionEnum::HELP_REQUESTS_ASSIGN->value);
         $canHandle = $user->can(AdminPermissionEnum::HELP_REQUESTS_HANDLE->value);
         $actorId = $user->admin?->id;
-        $isOpen = $request->status !== HelpRequestStatusEnum::CLOSED;
+        $workspace = $request->relationLoaded('workspace') ? $request->workspace : null;
+        $isOpen = $request->status !== HelpRequestStatusEnum::CLOSED
+            && ($workspace === null || (! $workspace->trashed() && $workspace->isActive()));
         $isMine = $request->assigned_admin_id !== null && (int) $request->assigned_admin_id === (int) $actorId;
         $actions = [];
 
@@ -253,10 +259,10 @@ class AdminHelpRequestService
         if ($canAssign && $isOpen && $request->assigned_admin_id !== null) {
             $actions[] = 'reassign';
         }
-        if ($canHandle && $request->status === HelpRequestStatusEnum::NEW && ($request->assigned_admin_id === null || $isMine)) {
+        if ($canHandle && $isOpen && $request->status === HelpRequestStatusEnum::NEW && ($request->assigned_admin_id === null || $isMine)) {
             $actions[] = 'start';
         }
-        if ($canHandle && $request->status === HelpRequestStatusEnum::IN_PROGRESS && $isMine) {
+        if ($canHandle && $isOpen && $request->status === HelpRequestStatusEnum::IN_PROGRESS && $isMine) {
             $actions[] = 'close';
         }
         if ($canHandle) {
@@ -274,6 +280,15 @@ class AdminHelpRequestService
         }
 
         return $admin;
+    }
+
+    /** An inactive or deleted workspace pauses its help requests: only viewing and internal notes stay available. */
+    private function ensureWorkspaceActive(HelpRequest $request): void
+    {
+        $workspace = $request->loadMissing('workspace')->workspace;
+        if ($workspace !== null && ($workspace->trashed() || ! $workspace->isActive())) {
+            throw ValidationException::withMessages(['help_request' => [__('workspaces.inactive')]]);
+        }
     }
 
     private function ensureOpen(HelpRequest $request): void

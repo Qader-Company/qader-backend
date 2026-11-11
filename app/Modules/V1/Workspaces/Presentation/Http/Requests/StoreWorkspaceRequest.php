@@ -23,6 +23,8 @@ class StoreWorkspaceRequest extends FormRequest
             'professional_field_ids' => ['required', 'array', 'min:1'],
             'professional_field_ids.*' => ['required', 'integer', 'distinct', Rule::exists('professional_fields', 'id')->where('is_active', true)],
             'description' => ['required', 'string', 'max:5000'], 'is_company' => ['required', 'boolean'],
+            'cr_number' => ['nullable', 'string', 'max:64'],
+            'tax_card' => ['nullable', 'file', 'mimetypes:application/pdf,image/png,image/jpeg', 'max:10240'],
             'country_id' => ['required', Rule::exists('countries', 'id')->where('is_active', true)],
             'city_id' => ['nullable', Rule::exists('cities', 'id')->where(fn ($q) => $q->where('country_id', $this->input('country_id'))->where('is_active', true))],
             'size_band' => ['required', Rule::enum(WorkspaceSizeBandEnum::class)],

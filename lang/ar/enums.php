@@ -127,4 +127,9 @@ return [
     'help_request_closure_outcomes' => [
         'new_hiring_request_created' => 'تم إنشاء طلب توظيف جديد', 'client_request_clarified' => 'تم توضيح طلب العميل', 'issue_problem' => 'مشكلة / عائق'],
     'help_request_scopes' => ['all' => 'كل الطلبات', 'mine' => 'طلباتي'],
+    'client_account_statuses' => ['active' => 'نشط', 'suspended' => 'موقوف'],
+    'client_registration_periods' => ['last_7_days' => 'آخر 7 أيام', 'last_30_days' => 'آخر 30 يومًا', 'last_90_days' => 'آخر 90 يومًا', 'this_year' => 'هذا العام'],
+    'client_list_sorts' => ['newest' => 'الأحدث', 'oldest' => 'الأقدم', 'name_asc' => 'الاسم (أ-ي)', 'name_desc' => 'الاسم (ي-أ)'],
+    'workspace_statuses' => ['active' => 'نشطة', 'inactive' => 'معطلة'],
+    'workspace_social_platforms' => ['linkedin' => 'LinkedIn', 'facebook' => 'Facebook', 'instagram' => 'Instagram', 'x' => 'X', 'youtube' => 'YouTube', 'tiktok' => 'TikTok', 'snapchat' => 'Snapchat', 'threads' => 'Threads', 'pinterest' => 'Pinterest', 'reddit' => 'Reddit', 'telegram' => 'Telegram', 'whatsapp' => 'WhatsApp', 'discord' => 'Discord', 'github' => 'GitHub', 'gitlab' => 'GitLab', 'behance' => 'Behance', 'dribbble' => 'Dribbble', 'medium' => 'Medium', 'stack_overflow' => 'Stack Overflow', 'twitch' => 'Twitch', 'other' => 'أخرى'],
 ];
