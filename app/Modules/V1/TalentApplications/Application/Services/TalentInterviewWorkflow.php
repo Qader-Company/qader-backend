@@ -2,6 +2,8 @@
 
 namespace App\Modules\V1\TalentApplications\Application\Services;
 
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
+use Illuminate\Validation\ValidationException;
 use App\Modules\V1\TalentApplications\Application\Contracts\InterviewCalendarGatewayInterface;
 use App\Modules\V1\TalentApplications\Domain\Models\Interview;
 use App\Modules\V1\TalentApplications\Domain\Models\InterviewSlot;
@@ -45,7 +47,8 @@ class TalentInterviewWorkflow
 
             if ($slot->mode === InterviewModeEnum::ONLINE && blank($manualMeetingUrl)) {
                 $interview->loadMissing(['admins.user', 'application.talent.user']);
-                $meeting = $this->calendar->createOnlineMeeting(
+                try {
+                    $meeting = $this->calendar->createOnlineMeeting(
                     $slot,
                     __('talents.interview.calendar_title', [
                         'type' => ucfirst($interview->type->value),
@@ -53,10 +56,14 @@ class TalentInterviewWorkflow
                     ]),
                     $interview->admins->pluck('user.email')
                         ->push($talent->user->email)
-                        ->filter()
-                        ->values()
-                        ->all(),
-                );
+                            ->filter()
+                            ->values()
+                            ->all(),
+                    );
+                } catch (ServiceUnavailableHttpException) {
+                    // No manual meeting link and Google Calendar is unavailable: tell the talent clearly instead of a 503.
+                    throw ValidationException::withMessages(['slot' => [__('talents.interview.meeting_link_unavailable')]]);
+                }
             }
 
             $interview->slots()

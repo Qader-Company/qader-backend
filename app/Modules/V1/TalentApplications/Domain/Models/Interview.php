@@ -60,4 +60,27 @@ class Interview extends Model
         return $this->hasOne(InterviewSlot::class)
             ->where('status', InterviewSlotStatusEnum::SELECTED->value);
     }
+
+    /**
+     * Every offered slot is already in the past while the talent still had to pick one,
+     * so the talent has nothing to select and the reviewer must offer new times.
+     */
+    public function hasOnlyExpiredSlots(): bool
+    {
+        if ($this->status !== InterviewStatusEnum::AWAITING_SLOT_SELECTION) {
+            return false;
+        }
+
+        $slots = $this->relationLoaded('slots') ? $this->slots : $this->slots()->get();
+
+        return ! $slots->contains(
+            fn (InterviewSlot $slot): bool => $slot->status === InterviewSlotStatusEnum::AVAILABLE && $slot->starts_at->isFuture(),
+        );
+    }
+
+    /** The reviewer can (and must) offer replacement slots. */
+    public function needsReplacementSlots(): bool
+    {
+        return $this->status === InterviewStatusEnum::AWAITING_NEW_SLOTS || $this->hasOnlyExpiredSlots();
+    }
 }

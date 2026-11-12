@@ -18,7 +18,7 @@ class AdminInterviewQueryService
     public function paginate(array $filters, Admin $actor, User $user): LengthAwarePaginator
     {
         $query = Interview::query()->with([
-            'application.talent.user', 'admins.user', 'slots', 'evaluation.evaluator.user',
+            'application.talent.user', 'application.talent.jobTitle', 'admins.user', 'slots', 'evaluation.evaluator.user',
         ]);
 
         if (($filters['scope'] ?? 'all') === 'my') {
@@ -66,13 +66,14 @@ class AdminInterviewQueryService
     public function findForDetails(int $interviewId, User $user, Admin $actor): Interview
     {
         $interview = Interview::query()->with([
-            'application.talent.user', 'admins.user', 'slots', 'evaluation.evaluator.user',
+            'application.talent.user', 'application.talent.jobTitle', 'admins.user', 'slots', 'evaluation.evaluator.user',
             'application.interviews.admins.user', 'application.interviews.slots',
             'application.interviews.evaluation.evaluator.user',
         ])->findOrFail($interviewId);
         $interview = $this->synchronizer->synchronize($interview);
         $interview->load([
             'application.talent.user',
+            'application.talent.jobTitle',
             'application.interviews.admins.user',
             'application.interviews.slots',
             'application.interviews.evaluation.evaluator.user',
@@ -102,6 +103,9 @@ class AdminInterviewQueryService
             && $has(AdminPermissionEnum::INTERVIEWS_MANAGE)
         ) {
             $actions[] = 'start';
+        }
+        if ($interview->needsReplacementSlots() && $has(AdminPermissionEnum::TALENT_APPLICATIONS_DECIDE)) {
+            $actions[] = 'offer_new_slots';
         }
         if ($interview->status === InterviewStatusEnum::IN_PROGRESS && $has(AdminPermissionEnum::INTERVIEWS_MANAGE)) {
             $actions[] = 'complete';

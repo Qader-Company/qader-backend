@@ -51,6 +51,7 @@ class HiringInterviewResource extends JsonResource
     {
         if ($portal === 'admin') {
             return match ($this->status) {
+                HiringInterviewStatusEnum::AWAITING_RESPONSES => ['respond_to_interview_on_behalf', 'reschedule_interview'],
                 HiringInterviewStatusEnum::AWAITING_ADMIN_CONFIRMATION => ['confirm_interview', 'reschedule_interview'],
                 HiringInterviewStatusEnum::AWAITING_RESCHEDULE => ['reschedule_interview'],
                 HiringInterviewStatusEnum::CONFIRMED => now()->betweenIncluded($this->starts_at, $this->ends_at)

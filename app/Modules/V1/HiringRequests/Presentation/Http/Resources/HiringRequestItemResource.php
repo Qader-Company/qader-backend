@@ -49,6 +49,11 @@ class HiringRequestItemResource extends JsonResource
                 ...($isAdmin ? [
                     'full_name' => trim(($user?->first_name ?? '').' '.($user?->last_name ?? '')),
                     'email' => $user?->email,
+                    'phone_country_code' => $talent?->phone_country_code,
+                    'phone_number' => $talent?->phone_number,
+                    'seniority_level' => $this->value($talent?->seniority_level),
+                    'years_of_experience' => $talent?->years_of_experience,
+                    'notice_period_days' => $talent?->notice_period_days,
                 ] : []),
             ],
             'offer' => $offer,
@@ -130,10 +135,10 @@ class HiringRequestItemResource extends JsonResource
             return $actions;
         }
         if ($user?->can(AdminPermissionEnum::HIRING_REQUESTS_HANDLE->value)) {
-            if (($status === HiringRequestItemStatusEnum::OFFER
-                    && $this->latestOffer?->status === HiringOfferStatusEnum::PENDING
+            if ($status === HiringRequestItemStatusEnum::OFFER
+                && (($this->latestOffer?->status === HiringOfferStatusEnum::PENDING
                     && $this->latestOffer?->proposed_by === HiringOfferPartyEnum::TALENT)
-                || $this->latestOffer?->status === HiringOfferStatusEnum::EXPIRED) {
+                    || $this->latestOffer?->status === HiringOfferStatusEnum::EXPIRED)) {
                 $actions[] = 'send_offer';
             }
             if ($status === HiringRequestItemStatusEnum::INTERVIEW
@@ -148,8 +153,15 @@ class HiringRequestItemResource extends JsonResource
             }
         }
         if ($user?->can(AdminPermissionEnum::HIRING_REQUESTS_RESPOND_ON_BEHALF->value)) {
-            if (in_array($this->latestOffer?->status, [HiringOfferStatusEnum::PENDING, HiringOfferStatusEnum::EXPIRED], true)) {
+            if (
+                $status === HiringRequestItemStatusEnum::OFFER
+                && in_array($this->latestOffer?->status, [HiringOfferStatusEnum::PENDING, HiringOfferStatusEnum::EXPIRED], true)
+            ) {
                 $actions[] = 'respond_to_offer_on_behalf';
+            }
+            if ($status === HiringRequestItemStatusEnum::INTERVIEW
+                && $this->interview?->status === HiringInterviewStatusEnum::AWAITING_RESPONSES) {
+                $actions[] = 'respond_to_interview_on_behalf';
             }
             if ($this->decision_due_at !== null && in_array($status, [HiringRequestItemStatusEnum::INTERVIEW, HiringRequestItemStatusEnum::REJECTED, HiringRequestItemStatusEnum::ACCEPTED], true)) {
                 $actions[] = 'manage_decisions_on_behalf';

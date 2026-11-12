@@ -23,11 +23,18 @@ class InterviewResource extends JsonResource
                 'status_label' => EnumLabel::for($this->application->status, 'application_statuses'),
                 'talent' => [
                     'id' => $this->application->talent_id,
+                    'talent_code' => $this->application->talent?->talent_code,
                     'full_name' => trim(
                         ($this->application->talent?->user?->first_name ?? '').' '
                         .($this->application->talent?->user?->last_name ?? ''),
                     ),
                     'email' => $this->application->talent?->user?->email,
+                    'job_title' => $this->application->talent?->jobTitle === null ? null : [
+                        'id' => $this->application->talent->jobTitle->id,
+                        'name' => $this->application->talent->jobTitle->name,
+                    ],
+                    'seniority_level' => $this->application->talent?->seniority_level?->value,
+                    'years_of_experience' => $this->application->talent?->years_of_experience,
                 ],
             ]),
             'interviewers' => AdminSummaryResource::collection($this->whenLoaded('admins')),

@@ -115,6 +115,27 @@ class HiringInterviewWorkflow
         return $this->respond($user, $interviewId, 'client', $response, $reason, fn (Builder $query) => $query->whereHas('item.hiringRequest', fn (Builder $request) => $request->where('workspace_id', $workspace->id)));
     }
 
+    public function respondOnBehalf(
+        Admin $admin,
+        User $user,
+        int $itemId,
+        string $party,
+        HiringInterviewResponseEnum $response,
+        ?string $reason,
+    ): HiringInterview {
+        return $this->respond(
+            $user,
+            $itemId,
+            $party,
+            $response,
+            $reason,
+            fn (Builder $query) => $query
+                ->where('request_item_id', $itemId)
+                ->whereHas('item.hiringRequest', fn (Builder $request) => $request->where('assigned_admin_id', $admin->id)),
+            true,
+        );
+    }
+
     public function confirm(Admin $admin, User $user, int $itemId, ?string $manualMeetingUrl): HiringInterview
     {
         return DB::transaction(function () use ($admin, $user, $itemId, $manualMeetingUrl): HiringInterview {
@@ -240,12 +261,23 @@ class HiringInterviewWorkflow
         $this->events->record($item, $actor, $action, ['interview_id' => $interview->id]);
     }
 
-    private function respond(User $user, int $interviewId, string $party, HiringInterviewResponseEnum $response, ?string $reason, callable $scope): HiringInterview
+    private function respond(
+        User $user,
+        int $subjectId,
+        string $party,
+        HiringInterviewResponseEnum $response,
+        ?string $reason,
+        callable $scope,
+        bool $subjectIsItem = false,
+    ): HiringInterview
     {
-        return DB::transaction(function () use ($user, $interviewId, $party, $response, $reason, $scope): HiringInterview {
+        return DB::transaction(function () use ($user, $subjectId, $party, $response, $reason, $scope, $subjectIsItem): HiringInterview {
             $query = HiringInterview::query();
             $scope($query);
-            $interview = $query->with('item.hiringRequest')->lockForUpdate()->findOrFail($interviewId);
+            $query->with('item.hiringRequest')->lockForUpdate();
+            $interview = $subjectIsItem
+                ? $query->where('request_item_id', $subjectId)->firstOrFail()
+                : $query->findOrFail($subjectId);
             $initialResponse = $interview->status === HiringInterviewStatusEnum::AWAITING_RESPONSES
                 && $interview->{$party.'_response'} === HiringInterviewResponseEnum::PENDING;
             $confirmedCancellation = $interview->status === HiringInterviewStatusEnum::CONFIRMED

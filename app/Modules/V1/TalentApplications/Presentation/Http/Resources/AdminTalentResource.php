@@ -23,6 +23,7 @@ class AdminTalentResource extends JsonResource
             'application_status_label' => EnumLabel::for($applicationStatus, 'application_statuses'),
             'effective_status' => $activeBlacklist ? 'blacklisted' : $applicationStatus,
             'talent' => [
+                'talent_code' => $this->talent?->talent_code,
                 'full_name' => trim(($this->talent?->user?->first_name ?? '').' '.($this->talent?->user?->last_name ?? '')),
                 'email' => $this->talent?->user?->email,
                 'phone_country_code' => $this->talent?->phone_country_code,

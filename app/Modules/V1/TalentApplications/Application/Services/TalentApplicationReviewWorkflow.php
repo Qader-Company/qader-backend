@@ -294,9 +294,14 @@ class TalentApplicationReviewWorkflow
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($interview->status !== InterviewStatusEnum::AWAITING_NEW_SLOTS) {
+            if (! $interview->needsReplacementSlots()) {
                 throw new ConflictHttpException(__('talents.review.replacement_slots_not_allowed'));
             }
+
+            // Slots that passed without being chosen are closed before the new ones are offered.
+            $interview->slots()
+                ->where('status', InterviewSlotStatusEnum::AVAILABLE->value)
+                ->update(['status' => InterviewSlotStatusEnum::EXPIRED->value]);
 
             $interviewerIds = $interview->admins()->pluck('admins.id')->sort()->values();
             Admin::query()->whereIn('id', $interviewerIds)->orderBy('id')->lockForUpdate()->get();

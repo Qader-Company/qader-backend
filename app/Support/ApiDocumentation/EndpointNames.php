@@ -237,6 +237,7 @@ class EndpointNames
                 'sendOffer' => 'Send Revised Offer',
                 'respondOnBehalf' => 'Respond to Offer on Behalf',
                 'proposeInterview' => 'Schedule Hiring Interview',
+                'respondToInterviewOnBehalf' => 'Respond to Hiring Interview on Behalf',
                 'confirmInterview' => 'Confirm Hiring Interview',
                 'startInterview' => 'Start Hiring Interview',
                 'completeInterview' => 'Complete Hiring Interview',

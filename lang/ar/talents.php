@@ -6,6 +6,10 @@ return [
     'resume_parser_not_configured' => 'لم يتم إعداد خدمة تحليل السيرة الذاتية بعد.',
     'resume_parser_unavailable' => 'خدمة تحليل السيرة الذاتية غير متاحة حاليًا. حاول مرة أخرى بعد قليل.',
     'resume_unmatched_master_data' => 'تعذر مطابقة بعض بيانات السيرة الذاتية مع الاختيارات المتاحة.',
+    'profile' => [
+        'skills_outside_professional_field' => 'يجب أن تنتمي كل المهارات المختارة إلى مجالك المهني.',
+        'tools_outside_professional_field' => 'يجب أن تنتمي كل الأدوات المختارة إلى مجالك المهني.',
+    ],
     'application' => [
         'not_submitted' => 'لم يتم تقديم ملفك للمراجعة حتى الآن.',
     ],
@@ -44,6 +48,7 @@ return [
         'cancelled' => 'تم إلغاء مقابلتك، وسيقوم فريق قادر بتوفير مواعيد جديدة.',
         'calendar_not_configured' => 'لم يتم إعداد Google Calendar للمقابلات عبر الإنترنت.',
         'calendar_unavailable' => 'خدمة Google Calendar غير متاحة حاليًا، حاول مرة أخرى بعد قليل.',
+        'meeting_link_unavailable' => 'رابط الاجتماع الأونلاين غير متاح لهذا الموعد حاليًا. اختر موعدًا آخر أو تواصل مع دعم قادر.',
         'meeting_not_created' => 'تعذر إنشاء رابط Google Meet، حاول مرة أخرى بعد قليل.',
         'calendar_title' => 'مقابلة قادر :type - :talent',
         'start_not_allowed' => 'لا يمكن بدء المقابلة في هذا الوقت.',

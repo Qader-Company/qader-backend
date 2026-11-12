@@ -34,7 +34,7 @@ class AdminHiringRequestService
     public function paginate(array $filters, Admin $actor): LengthAwarePaginator
     {
         $paginator = HiringRequest::query()
-            ->with(['workspace', 'assignedAdmin.user'])
+            ->with(['workspace', 'createdByMember.client.user', 'assignedAdmin.user'])
             ->withCount('items')
             ->when(($filters['scope'] ?? HiringRequestListScopeEnum::ALL->value) === HiringRequestListScopeEnum::MINE->value, fn (Builder $query) => $query->where('assigned_admin_id', $actor->id))
             ->when($filters['status'] ?? null, fn (Builder $query, array $statuses) => $query->whereIn('status', $statuses))

@@ -112,6 +112,14 @@ class HiringOfferWorkflow
         return DB::transaction(function () use ($user, $admin, $itemId, $terms): HiringRequestItem {
             $item = $this->lockAdminItem($admin, $itemId);
             $latest = $this->lockLatestOffer($item);
+            $workspace = $item->hiringRequest?->workspace;
+            if ($workspace !== null && ($workspace->trashed() || ! $workspace->isActive())) {
+                throw new ConflictHttpException(__('workspaces.inactive'));
+            }
+            // A revised offer is only part of the offer-stage negotiation; it must not revive closed or paused items.
+            if ($item->status !== HiringRequestItemStatusEnum::OFFER) {
+                throw new ConflictHttpException(__('hiring.offer_not_actionable'));
+            }
             if ($latest->status === HiringOfferStatusEnum::PENDING) {
                 $latest->update(['status' => HiringOfferStatusEnum::COUNTERED]);
             }
@@ -150,7 +158,15 @@ class HiringOfferWorkflow
         return DB::transaction(function () use ($user, $admin, $itemId, $decision, $reason): HiringRequestItem {
             $item = $this->lockAdminItem($admin, $itemId);
             $offer = $this->lockLatestOffer($item);
-            if (! in_array($offer->status, [HiringOfferStatusEnum::PENDING, HiringOfferStatusEnum::EXPIRED], true)) {
+            $workspace = $item->hiringRequest?->workspace;
+            if ($workspace !== null && ($workspace->trashed() || ! $workspace->isActive())) {
+                throw new ConflictHttpException(__('workspaces.inactive'));
+            }
+            // Only an item still in the offer stage can take an offer answer; cancelled / on-hold / decided items cannot.
+            if (
+                $item->status !== HiringRequestItemStatusEnum::OFFER
+                || ! in_array($offer->status, [HiringOfferStatusEnum::PENDING, HiringOfferStatusEnum::EXPIRED], true)
+            ) {
                 throw new ConflictHttpException(__('hiring.offer_not_actionable'));
             }
             $wasExpired = $offer->status === HiringOfferStatusEnum::EXPIRED;

@@ -62,6 +62,7 @@ class TalentProfileProgressService
                 'status_label' => EnumLabel::for($status, 'onboarding_step_statuses'),
                 'visible_fields' => $visibleFields,
                 'required_fields' => $requiredFields,
+                'conditional_required_fields' => $this->conditionalRequiredFields($visibleFields),
                 'missing_fields' => $missingFields,
                 'data' => $data,
             ];
@@ -221,6 +222,28 @@ class TalentProfileProgressService
         }
 
         return array_values(array_unique($requiredFields));
+    }
+
+    /**
+     * Rules the frontend must apply before saving: a field that becomes required because of another field's value.
+     * Today: experiences are required when years_of_experience is greater than zero.
+     *
+     * @return array<int, array{field: string, required_when: array{field: string, operator: string, value: int}}>
+     */
+    private function conditionalRequiredFields(array $visibleFields): array
+    {
+        if (! in_array(ProfessionalFormFieldEnum::EXPERIENCES->value, $visibleFields, true)) {
+            return [];
+        }
+
+        return [[
+            'field' => ProfessionalFormFieldEnum::EXPERIENCES->value,
+            'required_when' => [
+                'field' => ProfessionalFormFieldEnum::YEARS_OF_EXPERIENCE->value,
+                'operator' => '>',
+                'value' => 0,
+            ],
+        ]];
     }
 
     private function missingFields(Talent $talent, array $requiredFields): array

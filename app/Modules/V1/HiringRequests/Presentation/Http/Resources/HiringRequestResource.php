@@ -24,6 +24,15 @@ class HiringRequestResource extends JsonResource
                 'id' => $this->workspace->id,
                 'name' => $this->workspace->name,
             ] : null,
+            ...($isAdmin ? [
+                'client' => $this->relationLoaded('createdByMember') && $this->createdByMember?->client?->user !== null ? [
+                    'id' => $this->createdByMember->client->id,
+                    'full_name' => trim($this->createdByMember->client->user->first_name.' '.$this->createdByMember->client->user->last_name),
+                    'email' => $this->createdByMember->client->user->email,
+                    'phone_country_code' => $this->createdByMember->client->phone_country_code,
+                    'phone_number' => $this->createdByMember->client->phone_number,
+                ] : null,
+            ] : []),
             'assigned_admin' => $this->assignedAdmin === null ? null : new AdminSummaryResource($this->assignedAdmin),
             'items_count' => isset($this->items_count) ? (int) $this->items_count : $items->count(),
             'status_counts' => $items->isEmpty()

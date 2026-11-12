@@ -125,6 +125,12 @@ class TalentApplicationQueryService
             $actions[] = 'schedule_interview';
         }
 
+        // The talent rejected every slot, or every offered slot passed: the reviewer offers new times.
+        if ($status->isInterviewStage() && $assignedToActor && $has(AdminPermissionEnum::TALENT_APPLICATIONS_DECIDE)
+            && $application->loadMissing('interview.slots')->interview?->needsReplacementSlots()) {
+            $actions[] = 'offer_new_slots';
+        }
+
         return $actions;
     }
 

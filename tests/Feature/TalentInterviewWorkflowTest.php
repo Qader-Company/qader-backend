@@ -20,7 +20,9 @@ use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use Database\Seeders\AdminRoleSeeder;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Tests\TestCase;
 
 class TalentInterviewWorkflowTest extends TestCase
@@ -83,6 +85,62 @@ class TalentInterviewWorkflowTest extends TestCase
         $this->assertNull($result->google_calendar_event_id);
         $this->assertSame('https://meet.google.com/manual-room', $result->meeting_url);
         $this->assertSame([], $this->calendar->createdSlots);
+    }
+
+    public function test_calendar_outage_returns_a_validation_error_without_consuming_the_slot(): void
+    {
+        [$talent, $interview] = $this->createScheduledInterview();
+        $selected = $interview->slots->first();
+        $this->calendar->unavailable = true;
+
+        try {
+            $this->talentWorkflow->selectSlot($talent, $selected->id);
+            $this->fail('A calendar outage must not confirm an online interview without a meeting URL.');
+        } catch (ValidationException $exception) {
+            $this->assertSame(
+                [__('talents.interview.meeting_link_unavailable')],
+                $exception->errors()['slot'],
+            );
+        }
+
+        $this->assertDatabaseHas('interview_slots', [
+            'id' => $selected->id,
+            'status' => InterviewSlotStatusEnum::AVAILABLE->value,
+        ]);
+        $this->assertDatabaseHas('interviews', [
+            'id' => $interview->id,
+            'status' => InterviewStatusEnum::AWAITING_SLOT_SELECTION->value,
+        ]);
+    }
+
+    public function test_reviewer_can_replace_slots_after_every_available_slot_has_expired(): void
+    {
+        [, $interview] = $this->createScheduledInterview();
+        $interview->slots()->get()->each(function (InterviewSlot $slot, int $index): void {
+            $slot->update([
+                'starts_at' => now()->subHours(4 - $index),
+                'ends_at' => now()->subHours(3 - $index),
+            ]);
+        });
+        $interview->unsetRelation('slots');
+
+        $this->assertTrue($interview->hasOnlyExpiredSlots());
+        $this->assertTrue($interview->needsReplacementSlots());
+
+        $replacement = $this->adminWorkflow->replaceInterviewSlots($interview->application_id, [
+            'slots' => [[
+                'mode' => 'online',
+                'start' => now()->addDays(3)->startOfHour()->toISOString(),
+            ]],
+        ], $this->reviewer);
+
+        $this->assertSame(InterviewStatusEnum::AWAITING_SLOT_SELECTION, $replacement->status);
+        $this->assertSame(2, $replacement->slots()
+            ->where('status', InterviewSlotStatusEnum::EXPIRED->value)
+            ->count());
+        $this->assertSame(1, $replacement->slots()
+            ->where('status', InterviewSlotStatusEnum::AVAILABLE->value)
+            ->count());
     }
 
     public function test_talent_can_reject_all_available_slots_with_a_reason(): void
@@ -220,6 +278,8 @@ class TalentInterviewWorkflowTest extends TestCase
 
 class FakeInterviewCalendarGateway implements InterviewCalendarGatewayInterface
 {
+    public bool $unavailable = false;
+
     /** @var array<int, int> */
     public array $createdSlots = [];
 
@@ -231,6 +291,10 @@ class FakeInterviewCalendarGateway implements InterviewCalendarGatewayInterface
         string $summary,
         array $attendeeEmails,
     ): CalendarMeetingData {
+        if ($this->unavailable) {
+            throw new ServiceUnavailableHttpException(null, 'Google Calendar is unavailable.');
+        }
+
         $this->createdSlots[] = $slot->id;
 
         return new CalendarMeetingData(

@@ -297,6 +297,74 @@ class HiringRequestFlowTest extends TestCase
         ]);
     }
 
+    public function test_responsible_admin_can_record_both_interview_responses_on_behalf(): void
+    {
+        $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
+        $admin = $this->adminUser('interview-on-behalf-admin@example.test');
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $itemId = $this->postJson("/api/v1/admin/hiring-requests/{$requestId}/start")
+            ->assertOk()->json('data.items.0.id');
+
+        Sanctum::actingAs($this->talent->user, ['access', 'talent']);
+        $this->postJson("/api/v1/talent/hiring-offers/{$itemId}/accept")->assertOk();
+
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $scheduled = $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/interview/schedule", [
+            'starts_at' => now()->addDay()->toIso8601String(),
+        ])->assertOk()
+            ->assertJsonPath('data.status', 'awaiting_responses')
+            ->assertJsonPath('data.available_actions.0', 'respond_to_interview_on_behalf');
+
+        $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/interview/respond-on-behalf", [
+            'party' => 'talent',
+            'response' => 'accepted',
+        ])->assertOk()
+            ->assertJsonPath('data.id', $scheduled->json('data.id'))
+            ->assertJsonPath('data.talent_response.status', 'accepted')
+            ->assertJsonPath('data.client_response.status', 'pending')
+            ->assertJsonPath('data.status', 'awaiting_responses');
+
+        $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/interview/respond-on-behalf", [
+            'party' => 'client',
+            'response' => 'accepted',
+        ])->assertOk()
+            ->assertJsonPath('data.client_response.status', 'accepted')
+            ->assertJsonPath('data.status', 'awaiting_admin_confirmation')
+            ->assertJsonPath('data.available_actions.0', 'confirm_interview');
+
+        $this->assertDatabaseHas('hiring_request_events', [
+            'request_item_id' => $itemId,
+            'actor_user_id' => $admin->user_id,
+            'action' => 'interview_schedule_responded',
+        ]);
+    }
+
+    public function test_admin_cannot_answer_an_offer_after_the_item_is_cancelled(): void
+    {
+        $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
+        $admin = $this->adminUser('cancelled-offer-admin@example.test');
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $itemId = $this->postJson("/api/v1/admin/hiring-requests/{$requestId}/start")
+            ->assertOk()->json('data.items.0.id');
+
+        $cancelled = $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/cancel", [
+            'reason' => 'The client cancelled the request.',
+        ])->assertOk()
+            ->assertJsonPath('data.status', 'cancelled')
+            ->json('data');
+
+        $this->assertNotContains('respond_to_offer_on_behalf', $cancelled['available_actions']);
+
+        $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/offers/respond-on-behalf", [
+            'decision' => 'accepted',
+        ])->assertConflict();
+
+        $this->assertDatabaseHas('hiring_request_items', [
+            'id' => $itemId,
+            'status' => HiringRequestItemStatusEnum::CANCELLED->value,
+        ]);
+    }
+
     public function test_talent_offer_list_supports_design_filters_and_options(): void
     {
         $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');

@@ -76,7 +76,10 @@ class TalentApplicationResource extends JsonResource
             TalentApplicationStatusEnum::ACCEPTED => TalentApplicationScreenStateEnum::ACCEPTED,
             TalentApplicationStatusEnum::INTERVIEW_REQUIRED,
             TalentApplicationStatusEnum::SCHEDULED => match ($this->interview?->status) {
-                InterviewStatusEnum::AWAITING_SLOT_SELECTION => TalentApplicationScreenStateEnum::INTERVIEW_SLOT_REQUIRED,
+                // Every offered slot passed unchosen: the talent waits for new times instead of an empty picker.
+                InterviewStatusEnum::AWAITING_SLOT_SELECTION => $this->interview->hasOnlyExpiredSlots()
+                    ? TalentApplicationScreenStateEnum::AWAITING_NEW_INTERVIEW_SLOTS
+                    : TalentApplicationScreenStateEnum::INTERVIEW_SLOT_REQUIRED,
                 InterviewStatusEnum::AWAITING_NEW_SLOTS => TalentApplicationScreenStateEnum::AWAITING_NEW_INTERVIEW_SLOTS,
                 InterviewStatusEnum::CONFIRMED => TalentApplicationScreenStateEnum::INTERVIEW_CONFIRMED,
                 InterviewStatusEnum::IN_PROGRESS => TalentApplicationScreenStateEnum::INTERVIEW_IN_PROGRESS,
