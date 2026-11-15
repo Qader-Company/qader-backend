@@ -15,6 +15,7 @@ enum AdminPermissionEnum: string implements PermissionDefinition
 
     case ADMINS_VIEW = 'admin.admins.view';
     case ADMINS_MANAGE = 'admin.admins.manage';
+    case ADMINS_DELETE = 'admin.admins.delete';
 
     case COUNTRIES_VIEW = 'admin.countries.view';
     case COUNTRIES_MANAGE = 'admin.countries.manage';
@@ -56,6 +57,7 @@ enum AdminPermissionEnum: string implements PermissionDefinition
     case TALENTS_VIEW = 'admin.talents.view';
     case TALENTS_MANAGE_BLACKLIST = 'admin.talents.manage-blacklist';
     case TALENTS_MANAGE_REAPPLY = 'admin.talents.manage-reapply';
+    case TALENTS_DELETE = 'admin.talents.delete';
 
     case TALENT_REVIEW_FAQS_VIEW = 'admin.talent-review-faqs.view';
     case TALENT_REVIEW_FAQS_MANAGE = 'admin.talent-review-faqs.manage';
@@ -82,6 +84,14 @@ enum AdminPermissionEnum: string implements PermissionDefinition
     case HELP_REQUESTS_VIEW = 'admin.help-requests.view';
     case HELP_REQUESTS_ASSIGN = 'admin.help-requests.assign';
     case HELP_REQUESTS_HANDLE = 'admin.help-requests.handle';
+    case HELP_REQUESTS_DELETE = 'admin.help-requests.delete';
+
+    case PLATFORM_SETTINGS_VIEW = 'admin.platform-settings.view';
+    case PLATFORM_SETTINGS_UPDATE = 'admin.platform-settings.update';
+
+    case TRASH_VIEW = 'admin.trash.view';
+    case TRASH_RESTORE = 'admin.trash.restore';
+    case TRASH_REMOVE = 'admin.trash.remove';
 
     public function portal(): PortalTypeEnum
     {

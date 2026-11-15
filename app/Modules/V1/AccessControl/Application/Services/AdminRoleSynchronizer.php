@@ -43,7 +43,7 @@ class AdminRoleSynchronizer
 
     private function migrateLegacyOwnerRole(): void
     {
-        $legacy = Role::query()
+        $legacy = Role::withTrashed()
             ->where('name', 'owner')
             ->where('portal', PortalTypeEnum::ADMIN->value)
             ->get();
@@ -52,7 +52,7 @@ class AdminRoleSynchronizer
             return;
         }
 
-        $superAdmin = Role::query()
+        $superAdmin = Role::withTrashed()
             ->where('name', AdminRoleEnum::SUPER_ADMIN->value)
             ->where('portal', PortalTypeEnum::ADMIN->value)
             ->orderByRaw('guard_name = ? desc', [PermissionRegistry::GUARD])
@@ -85,7 +85,7 @@ class AdminRoleSynchronizer
         string $nameAr,
         array $permissions
     ): Role {
-        $matches = Role::query()
+        $matches = Role::withTrashed()
             ->where('name', $name)
             ->where('portal', PortalTypeEnum::ADMIN->value)
             ->orderByRaw('guard_name = ? desc', [PermissionRegistry::GUARD])
@@ -97,6 +97,11 @@ class AdminRoleSynchronizer
             $role = new Role;
             $role->name = $name;
             $role->portal = PortalTypeEnum::ADMIN->value;
+        }
+
+        if ($role->trashed()) {
+            $role->forceFill(['removed_from_trash_at' => null])->saveQuietly();
+            $role->restore();
         }
 
         foreach ($matches as $duplicate) {

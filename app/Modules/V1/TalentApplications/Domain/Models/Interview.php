@@ -19,7 +19,8 @@ class Interview extends Model
     protected $fillable = [
         'application_id', 'round_number', 'type', 'status', 'created_by_admin_id',
         'google_calendar_event_id', 'meeting_url', 'rejected_slots_reason',
-        'slot_rejection_count', 'talent_reschedule_used_at', 'started_at', 'completed_at',
+        'slot_rejection_count', 'talent_reschedule_used_at', 'talent_reschedule_count',
+        'started_at', 'completed_at',
     ];
 
     protected function casts(): array
@@ -30,6 +31,7 @@ class Interview extends Model
             'slot_rejection_count' => 'integer',
             'round_number' => 'integer',
             'talent_reschedule_used_at' => 'datetime',
+            'talent_reschedule_count' => 'integer',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
         ];

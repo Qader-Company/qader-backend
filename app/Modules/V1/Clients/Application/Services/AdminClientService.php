@@ -9,6 +9,7 @@ use App\Modules\V1\Clients\Domain\ValueObjects\ClientListSortEnum;
 use App\Modules\V1\Clients\Domain\ValueObjects\ClientManagementActionEnum;
 use App\Modules\V1\Clients\Domain\ValueObjects\ClientRegistrationPeriodEnum;
 use App\Modules\V1\Users\Domain\Models\User;
+use App\Modules\V1\Trash\Application\Services\TrashService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,7 @@ class AdminClientService
     public function __construct(
         private readonly ClientKpiService $kpis,
         private readonly ClientManagementRecorder $recorder,
-        private readonly AdminClientWorkspaceService $workspaces,
+        private readonly TrashService $trash,
     ) {}
 
     public function paginate(array $filters, User $actor): LengthAwarePaginator
@@ -113,27 +114,14 @@ class AdminClientService
         return $this->show($clientId, $actor);
     }
 
-    /**
-     * Soft delete: the client loses access, owned workspaces are soft deleted with them (pausing their hiring),
-     * and all history is kept for the future deleted-items page.
-     */
+    /** Soft delete is allowed only for an empty client account; all history remains available to Trash. */
     public function delete(int $clientId, string $reason, User $actor): void
     {
         $admin = $this->recorder->actor($actor);
 
         DB::transaction(function () use ($clientId, $reason, $actor, $admin): void {
-            $client = Client::query()->with('user')->lockForUpdate()->findOrFail($clientId);
-
-            foreach ($client->ownedWorkspaces()->orderBy('id')->get() as $workspace) {
-                $this->workspaces->softDelete($workspace, $actor, $admin, $reason);
-            }
-
-            $client->user?->forceFill(['is_active' => false])->save();
-            if ($client->user !== null) {
-                $this->revokeAccess($client->user);
-            }
-            $client->delete();
-            $this->recorder->record($admin, ClientManagementActionEnum::CLIENT_DELETED, $client->id, reason: $reason);
+            $this->trash->softDelete('clients', $clientId, $actor);
+            $this->recorder->record($admin, ClientManagementActionEnum::CLIENT_DELETED, $clientId, reason: $reason);
         });
     }
 

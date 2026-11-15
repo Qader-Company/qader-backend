@@ -3,6 +3,7 @@
 namespace App\Modules\V1\Tools\Domain\Models;
 
 use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
+use App\Modules\V1\Trash\Domain\Concerns\HasTrashLifecycle;
 use EloquentFilter\Filterable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -10,7 +11,7 @@ use Illuminate\Support\Str;
 
 class Tool extends Model
 {
-    use Filterable;
+    use Filterable, HasTrashLifecycle;
 
     protected $fillable = ['name', 'is_active'];
 

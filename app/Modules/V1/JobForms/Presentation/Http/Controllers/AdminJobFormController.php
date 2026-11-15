@@ -10,6 +10,7 @@ use App\Modules\V1\JobForms\Presentation\Http\Requests\ListJobFormsRequest;
 use App\Modules\V1\JobForms\Presentation\Http\Requests\SaveJobFormRequest;
 use App\Modules\V1\JobForms\Presentation\Http\Resources\JobFormResource;
 use App\Modules\V1\TalentApplications\Application\Services\AdminApplicationActor;
+use App\Modules\V1\Trash\Application\Services\TrashService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -52,10 +53,9 @@ class AdminJobFormController extends Controller
         return ApiResponse::updated(new JobFormResource($workflow->setActivation($jobForm, $data['is_active'])));
     }
 
-    public function destroy(JobPosting $jobForm): JsonResponse
+    public function destroy(Request $request, JobPosting $jobForm, TrashService $trash): JsonResponse
     {
-        $jobForm->update(['is_active' => false]);
-        $jobForm->delete();
+        $trash->softDelete('job-forms', (int) $jobForm->getKey(), $request->user());
 
         return ApiResponse::deleted();
     }

@@ -2,6 +2,7 @@
 
 use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminPermissionEnum;
 use App\Modules\V1\HelpRequests\Presentation\Http\Controllers\AdminHelpRequestController;
+use App\Modules\V1\Trash\Presentation\Http\Controllers\AdminTrashDeletionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', 'abilities:access,admin'])
@@ -20,4 +21,6 @@ Route::middleware(['auth:sanctum', 'abilities:access,admin'])
             Route::get('hiring-requests', 'hiringRequests')->middleware(AdminPermissionEnum::HELP_REQUESTS_HANDLE->middleware());
             Route::post('close', 'close')->middleware(AdminPermissionEnum::HELP_REQUESTS_HANDLE->middleware());
         });
+
+        Route::delete('{record}', AdminTrashDeletionController::class)->whereNumber('record')->defaults('trashResource', 'help-requests')->middleware(AdminPermissionEnum::HELP_REQUESTS_DELETE->middleware());
     });

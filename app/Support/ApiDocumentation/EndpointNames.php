@@ -112,6 +112,40 @@ class EndpointNames
             };
         }
 
+        if ($module === 'platform-settings') {
+            return match ($route->getActionMethod()) {
+                'index' => 'Get Platform Settings',
+                'updateHiring' => 'Update Hiring Settings',
+                'updateTalentEvaluation' => 'Update Talent Evaluation Settings',
+                'updateTrash' => 'Update Trash Settings',
+                'updatePlatform' => 'Update General Platform Settings',
+                'updateWebsite' => 'Update Website Settings',
+                'updateMarketplace' => 'Update Talent Marketplace Settings',
+                'updatePaidServices' => 'Update Paid Services Settings',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'trash' || in_array('trash', $parts, true)) {
+            $resource = Str::headline((string) ($route->defaults['trashResource'] ?? 'Item'));
+
+            return match ($route->getActionMethod()) {
+                'index' => "List Deleted {$resource}",
+                'restore' => "Restore {$resource}",
+                'remove' => "Remove {$resource} from Trash",
+                'workspaces' => 'List Deleted Workspaces',
+                'restoreWorkspace' => 'Restore Workspace',
+                'removeWorkspace' => 'Remove Workspace from Trash',
+                'team' => 'List Deleted Workspace Members',
+                'restoreMember' => 'Restore Workspace Member',
+                'removeMember' => 'Remove Workspace Member from Trash',
+                'roles' => 'List Deleted Workspace Roles',
+                'restoreRole' => 'Restore Workspace Role',
+                'removeRole' => 'Remove Workspace Role from Trash',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
         if ($module === 'talent-review-faqs') {
             return match ($route->getActionMethod()) {
                 'screenStates' => 'List Talent Review FAQ Screen States',

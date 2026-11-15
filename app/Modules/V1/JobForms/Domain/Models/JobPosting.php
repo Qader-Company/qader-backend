@@ -8,15 +8,15 @@ use App\Modules\V1\JobForms\Domain\ValueObjects\JobWorkModeEnum;
 use App\Modules\V1\JobForms\Domain\ValueObjects\JobWorkTypeEnum;
 use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
 use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
+use App\Modules\V1\Trash\Domain\Concerns\HasTrashLifecycle;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class JobPosting extends Model
 {
-    use SoftDeletes;
+    use HasTrashLifecycle;
 
     protected $fillable = ['professional_field_id', 'job_title_id', 'title', 'slug', 'summary', 'about_role', 'work_type', 'work_mode', 'status', 'is_active', 'published_at', 'created_by_admin_id'];
 

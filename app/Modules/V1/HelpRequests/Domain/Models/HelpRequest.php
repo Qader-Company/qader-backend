@@ -8,6 +8,7 @@ use App\Modules\V1\HelpRequests\Domain\ValueObjects\HelpRequestContactMethodEnum
 use App\Modules\V1\HelpRequests\Domain\ValueObjects\HelpRequestStatusEnum;
 use App\Modules\V1\HelpRequests\Domain\ValueObjects\HelpRequestTypeEnum;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequest;
+use App\Modules\V1\Trash\Domain\Concerns\HasTrashLifecycle;
 use App\Modules\V1\Workspaces\Domain\Models\Workspace;
 use App\Modules\V1\Workspaces\Domain\Models\WorkspaceMember;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class HelpRequest extends Model
 {
+    use HasTrashLifecycle;
+
     public const REFERENCE_PREFIX = 'REQ-';
 
     public const REFERENCE_OFFSET = 1000;

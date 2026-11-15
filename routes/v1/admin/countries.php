@@ -2,6 +2,7 @@
 
 use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminPermissionEnum;
 use App\Modules\V1\Countries\Presentation\Http\Controllers\AdminCountryController;
+use App\Modules\V1\Trash\Presentation\Http\Controllers\AdminTrashDeletionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', 'abilities:access,admin'])
@@ -15,4 +16,5 @@ Route::middleware(['auth:sanctum', 'abilities:access,admin'])
 
         Route::patch('{country}', 'update')
             ->middleware(AdminPermissionEnum::COUNTRIES_MANAGE->middleware());
+        Route::delete('{record}', AdminTrashDeletionController::class)->whereNumber('record')->defaults('trashResource', 'countries')->middleware(AdminPermissionEnum::COUNTRIES_MANAGE->middleware());
     });

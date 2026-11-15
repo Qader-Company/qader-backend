@@ -21,6 +21,7 @@ class PortalMetadata extends Strategy
         $module = $isPublicJob ? 'jobs' : ($isAuth ? 'auth' : ($segments[3] ?? 'general'));
         if ($portal === 'client' && in_array($module, ['workspaces', 'access-control'], true)) {
             $module = match (true) {
+                in_array('trash', $segments, true) => 'trash',
                 in_array('talent-marketplace', $segments, true) => 'talent-marketplace',
                 in_array('talent-selections', $segments, true) => 'talent-selections',
                 in_array('help-requests', $segments, true) => 'help-requests',

@@ -45,6 +45,8 @@ return [
             ['prefix' => 'admin/contract-types', 'file' => 'contract-types.php', 'api_key' => true],
             ['prefix' => 'admin/help-requests', 'file' => 'help-requests.php', 'api_key' => true],
             ['prefix' => 'admin/clients', 'file' => 'clients.php', 'api_key' => true],
+            ['prefix' => 'admin/platform-settings', 'file' => 'platform-settings.php', 'api_key' => true],
+            ['prefix' => 'admin/trash', 'file' => 'trash.php', 'api_key' => true],
         ],
 
         'client' => [
@@ -53,6 +55,8 @@ return [
             ['prefix' => 'client/workspaces', 'file' => 'workspaces.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
             ['prefix' => 'client/workspaces', 'file' => 'hiring-requests.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
             ['prefix' => 'client/workspaces', 'file' => 'help-requests.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
+            ['prefix' => 'client/trash', 'file' => 'trash.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
+            ['prefix' => 'client/workspaces', 'file' => 'workspace-trash.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
         ],
 
         'talent' => [

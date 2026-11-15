@@ -1,12 +1,12 @@
 # إعدادات المنصة — Platform Settings
 
-الحالة: **مرجع القرارات المعتمدة حتى 9 نوفمبر 2026**
+الحالة: **منفذ ومحدث حتى 15 نوفمبر 2026**
 النطاق الحالي: الإعدادات العامة التي يستطيع الأدمن تغييرها وتؤثر على دورة التوظيف، الـMarketing Website، والأجزاء المشتركة الثابتة داخل البورتالات.  
-ملاحظة: هذا الملف يوثق الإعدادات فقط؛ موديول Platform Settings وEndpoints الخاصة به لم تنفذ بعد. عند التنفيذ سنستخدم مكتبة `spatie/laravel-settings` بدل بناء Repository وجدول Settings مخصصين.
+ملاحظة: نُفذ موديول Platform Settings باستخدام `spatie/laravel-settings`، مع Endpoints مستقلة للمجموعات وصلاحيات وأحداث Audit.
 
 > لا يشمل هذا الملف أي Master Data. الدول والمدن والعملات واللغات والمجالات والمهارات والأدوات وغيرها تظل في موديولاتها وجداولها الحالية.
 
-> قرار التنفيذ المرحلي: لا ينتظر S06 تنفيذ موديول Platform Settings. سيستخدم مؤقتًا قيم `config` الافتراضية `48` ساعة لمهلة العرض، و`24` ساعة لمهلة قرار ما بعد المقابلة، و`2` لحد عدم الرد. تعزل قراءة القيم خلف Service أوSettings contract حتى نستبدل المصدر لاحقًا بـ`spatie/laravel-settings` دون تغيير Business workflow أوContracts الـAPI.
+> تقرأ دورة التوظيف الآن قيمها من `HiringSettings`، كما تقرأ حدود مقابلات تقييم الموهبة من `TalentEvaluationSettings`، وتقرأ دورة Trash مدة الاحتفاظ من `TrashSettings`.
 
 ## 1. الإعدادات المعتمدة
 
@@ -17,6 +17,7 @@
 | `hiring.talent_offer_no_response_limit` | Positive integer | `2` مرات | Admin مخول | عدد مرات انتهاء عرض دون رد قبل تعطيل حساب Talent |
 | `talent_evaluation.interview_slot_rejection_limit` | Non-negative integer | `2` مرات | Admin مخول | أقصى عدد لرفض Talent لكل المواعيد المقترحة في مقابلة تقييمه |
 | `talent_evaluation.confirmed_interview_reschedule_limit` | Non-negative integer | `1` مرة | Admin مخول | أقصى عدد لإلغاء Talent موعد تقييم مؤكد وطلب مواعيد جديدة |
+| `trash.retention_days` | Positive integer | `30` يومًا | Admin مخول | مدة ظهور العنصر في Trash قبل إخفائه منها تلقائيًا مع إبقاء سجله في قاعدة البيانات |
 | `platform.support_response_business_days` | Positive integer | `1` يوم عمل | Admin مخول | المدة المعروضة للعميل لرد فريق Qader على Help Request |
 | `platform.support_email` | Nullable email | `null` | Admin مخول | بريد الدعم المستخدم في الـWebsite والبورتالات |
 | `platform.support_phone` | Nullable string | `null` | Admin مخول | رقم التواصل العام |
@@ -42,6 +43,7 @@
 - صورة Talent في Marketplace يجب أن تكون صورة افتراضية لأن العميل لا يرى هوية الموهبة قبل المرحلة المسموح بها.
 - حد رفض مواعيد مقابلة التقييم الحالي مرتان، وطلب إعادة الجدولة بعد التأكيد مرة واحدة.
 - الخدمات المدفوعة الثلاث الظاهرة في Figma معتمدة للتنفيذ المستقبلي، وأسعار التصميم هي القيم الافتراضية ويستطيع الأدمن تعديل السعر والعملة من Platform Settings.
+- مدة ظهور المحذوفات في Trash قرار Business معتمد وليست Master Data؛ القيمة الافتراضية `30` يومًا ويمكن للأدمن تعديلها. انتهاء المدة لا يحذف السجل من قاعدة البيانات.
 
 القيم التي افتراضها `null` لم يظهر لها محتوى نهائي معتمد في Figma، لذلك لن نخزن بيانات وهمية. يجب تعبئتها قبل الإطلاق إذا كانت واجهة المستخدم ستعرضها.
 
@@ -135,19 +137,15 @@ users.is_active = false
 - [Default package configuration](https://github.com/spatie/laravel-settings/blob/main/config/settings.php)
 - [Default settings table migration](https://github.com/spatie/laravel-settings/blob/main/database/migrations/create_settings_table.php.stub)
 
-### التثبيت المخطط داخل Docker
+### التثبيت داخل Docker
 
-لن ينفذ الآن؛ عند بدء الموديول تكون الخطوات:
+تم تثبيت الإصدار `3.10.2` وتسجيله في `composer.lock`. أمر التثبيت المرجعي:
 
 ```bash
-docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml exec app composer require spatie/laravel-settings:^3.10
-
-docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml exec app php artisan vendor:publish --provider="Spatie\LaravelSettings\LaravelSettingsServiceProvider" --tag="config"
-
-docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml exec app php artisan vendor:publish --provider="Spatie\LaravelSettings\LaravelSettingsServiceProvider" --tag="migrations"
+docker compose -f compose.yaml -f compose.local.yaml exec app composer install
 ```
 
-الإصدار `3.10` يدعم إنشاء Settings class وSettings migration معًا:
+الإصدار المثبت يدعم إنشاء Settings class وSettings migration معًا:
 
 ```bash
 docker compose -p qader-backend-local -f compose.yaml -f compose.local.yaml exec app php artisan make:setting HiringSettings --group=hiring --migration
@@ -197,6 +195,7 @@ class HiringSettings extends Settings
 ```text
 HiringSettings           => group: hiring
 TalentEvaluationSettings => group: talent_evaluation
+TrashSettings            => group: trash
 PlatformSettings         => group: platform
 WebsiteSettings          => group: website
 MarketplaceSettings      => group: marketplace
@@ -224,6 +223,8 @@ return new class extends SettingsMigration
 
         $this->migrator->add('talent_evaluation.interview_slot_rejection_limit', 2);
         $this->migrator->add('talent_evaluation.confirmed_interview_reschedule_limit', 1);
+
+        $this->migrator->add('trash.retention_days', 30);
 
         $this->migrator->add('platform.support_response_business_days', 1);
         $this->migrator->add('platform.support_email', null);
@@ -294,6 +295,7 @@ php artisan settings:clear-cache
 | `talent_offer_no_response_limit` | `integer`, أكبر من أويساوي `1` |
 | `interview_slot_rejection_limit` | `integer`, أكبر من أويساوي `0` |
 | `confirmed_interview_reschedule_limit` | `integer`, أكبر من أويساوي `0` |
+| `retention_days` | `integer`, أكبر من أويساوي `1` |
 | `support_response_business_days` | `integer`, أكبر من أويساوي `1` |
 | `support_email` | `nullable`, `email` |
 | `support_phone`, `support_whatsapp` | `nullable`, `string`, `max:32` |
@@ -305,7 +307,7 @@ php artisan settings:clear-cache
 
 القيم الافتراضية تضاف من Settings migration. بعد ربط الموديول لن نعتمد على صف مفقود؛ غياب خاصية مطلوبة يعتبر خطأ إعداد Deployment بدل إخفائه بـFallback صامت.
 
-## 4. صلاحيات وAPI مقترحة للموديول
+## 4. صلاحيات وAPI المنفذة للموديول
 
 الصلاحيات:
 
@@ -314,12 +316,13 @@ admin.platform-settings.view
 admin.platform-settings.update
 ```
 
-Endpoints المقترحة:
+Endpoints المنفذة:
 
 ```text
 GET   /api/v1/admin/platform-settings
 PATCH /api/v1/admin/platform-settings/hiring
 PATCH /api/v1/admin/platform-settings/talent-evaluation
+PATCH /api/v1/admin/platform-settings/trash
 PATCH /api/v1/admin/platform-settings/platform
 PATCH /api/v1/admin/platform-settings/website
 PATCH /api/v1/admin/platform-settings/marketplace
@@ -373,15 +376,19 @@ PATCH /api/v1/admin/platform-settings/paid-services
 4. هل صورة Talent الافتراضية ترفع من شاشة Platform Settings، أم تظل Asset ثابتًا في المشروع مع إرجاع URL فقط؟
 
 
-## 8. سياسة الحذف وصفحة المحذوفات (مؤجلة)
+## 8. سياسة الحذف وصفحة المحذوفات (منفذة)
+
+> الخطة التفصيلية المبدئية نُقلت إلى `docs/sprints/trash-management-plan.ar.md` لأنها موديول Admin/Client مستقل وليست جزءًا من Platform Settings. يحتفظ هذا القسم فقط بملخص القرارات المعتمدة.
 
 قرار صاحب المشروع (11 نوفمبر 2026):
 
-- **أي عملية حذف في النظام تكون Soft Delete،** ولا يوجد حذف نهائي من الواجهات.
+- **أي حذف أولي ينفذه المستخدم على عنصر أعمال قابل للإدارة يكون Soft Delete.** يسمح بإزالة العنصر نهائيًا من واجهة Trash بصلاحية مستقلة، وينفذ النظام الإزالة تلقائيًا بعد مدة الاحتفاظ إذا لم توجد بيانات مرتبطة مانعة. الإزالة لا تحذف Row من قاعدة البيانات؛ يظل السجل محفوظًا للتاريخ والعلاقات. لا يشمل ذلك الحذف التقني الداخلي مثل Tokens وPivot rows والبيانات المؤقتة.
 - **كل عملية حذف تحتاج صلاحية مستقلة** للأدمن، ولا تدخل ضمن صلاحيات العرض أو الإدارة العامة.
 - **الوصول إلى صفحة المحذوفات نفسها بصلاحية** (`admin.trash.view`)، والأدمن بدونها لا يرى الصفحة ويأخذ `403`.
 - تُعرض العناصر المحذوفة في **صفحة محذوفات واحدة عند الأدمن، مقسّمة إلى Tabs حسب نوع العنصر** (العملاء، ومساحات العمل، وأعضاء الفريق، وغيرها).
-- **الصفحة نفسها تُنفَّذ لاحقاً** ضمن موديول إعدادات النظام. الموديولات الحالية تكتفي بتطبيق Soft Delete وتسجيل من حذف ومتى ولماذا، حتى تجد الصفحة بياناتها جاهزة عند تنفيذها.
+- Admin Trash لا تعرض Hiring Requests أوWorkspaces. Client Trash تعرض Team وRoles وWorkspaces؛ Team وRoles يتغيران حسب الـWorkspace النشطة، بينما Workspaces Trash مشتركة على مستوى حساب Client.
+- Workspace المحذوفة لا تظهر في قائمة اختيار الـWorkspaces العادية، وتظهر فقط في Client Trash حتى استعادتها. يجب أن يظل الوصول للـTrash متاحًا إذا لم توجد Workspace نشطة.
+- **نُفذ Backend الصفحات** في موديول Trash مستقل يخدم Admin وClient Portal، مع Soft Delete وAudit وRestore وRemove from Trash وجدولة الإزالة التلقائية.
 
 ### 8.1 متطلبات كل موديول قبل الصفحة
 
@@ -389,23 +396,31 @@ PATCH /api/v1/admin/platform-settings/paid-services
 - تسجيل `deleted_by` (الأدمن) و`deletion_reason` عندما يطلب التصميم سبباً، إما في سجل الأحداث الخاص بالموديول أو في أعمدة على الجدول.
 - عدم كسر العلاقات: الـForeign keys تبقى، والتاريخ المرتبط (طلبات توظيف، عقود، أحداث) لا يُحذف.
 
-### 8.2 الصفحة المخططة
+### 8.2 الصفحة المنفذة
 
 | الجزء | المقترح |
 | --- | --- |
-| الصلاحيات | `admin.trash.view` شرط للوصول إلى الصفحة نفسها وظهورها في القائمة، و`admin.trash.restore` للاستعادة. لا يوجد حذف نهائي من الواجهة |
-| Tabs | نوع لكل موديول يدعم Soft Delete، مثل: Clients، وWorkspaces، وWorkspace Members، وJob Forms |
-| الأعمدة | الاسم أو المرجع، ومن حذف، وتاريخ الحذف، والسبب، وAction (Restore) |
-| الاستعادة | تعيد العنصر وما حُذف معه بسببه، مثل Workspaces العميل المحذوف معه، وتُسجَّل كحدث |
-| API | `GET /api/v1/admin/trash/{type}` و`POST /api/v1/admin/trash/{type}/{id}/restore` |
+| الصلاحيات | `admin.trash.view` للعرض، و`admin.trash.restore` للاستعادة، و`admin.trash.remove` للإزالة النهائية من Trash، بالإضافة إلى صلاحية Soft Delete الخاصة بكل موديول |
+| Admin Tabs المعتمدة | Jobs، Forms، Talents، Admins، Roles، Help Requests، Clients، Master Data |
+| Client Tabs المعتمدة | Team، Roles، Workspaces؛ الأعمدة والأكشنز الأساسية ظاهرة في Figma |
+| الأعمدة | الاسم أو المرجع، والحالة المعروضة للقراءة فقط، ومن حذف، وتاريخ الحذف، وموعد الإزالة التلقائية من Trash، والسبب، وActions (Restore / Remove Permanently) |
+| الاستعادة | تعيد العنصر بالحالة نفسها وتُسجَّل كحدث؛ لا توجد استعادة لـHiring Requests لأنها غير قابلة للحذف |
+| API | Endpoints منفصلة لكل Tab/موديول تحت `/api/v1/admin/trash/*`؛ لا يوجد `{type}` عام أو`trash/types` |
 
-### 8.3 مراجعة الحذف الحالي عند التنفيذ
+### 8.3 مدة الاحتفاظ والإزالة النهائية من Trash
 
-موديولات ما زالت تحذف حذفاً فعلياً من خلال Endpoints، وتُراجع لتتبع السياسة عند تنفيذ الصفحة:
+- القيمة الافتراضية `trash.retention_days = 30`، ويمكن للأدمن تعديلها.
+- تعديل القيمة يؤثر على كل العناصر التي ما زالت ظاهرة داخل Trash؛ يحسب `scheduled_removal_at` من `deleted_at` والمدة الحالية، وليس من Snapshot قديم للقيمة.
+- عند تقليل المدة، يخفي الـScheduled Job العناصر التي أصبحت مستحقة في تشغيله التالي بعد إعادة فحص العلاقات. وعند زيادتها تمتد مدة ظهور العناصر الحالية.
+- Remove from Trash اليدوي يحتاج صلاحية مستقلة، والتلقائي ينفذه Scheduled Job.
+- في الحالتين يعاد فحص العلاقات المانعة؛ العنصر المرتبط لا يزال ظاهرًا في Trash.
+- التنفيذ يضبط `removed_from_trash_at` فقط مع Audit event، ولا ينفذ `DELETE` أو`forceDelete()` على Row قاعدة البيانات.
+- بيانات الصفوف الظاهرة في Figma مثل عدد Users أوWorkspaces والحالات هي Dummy Data، ولا تلغي قواعد التحقق في Backend.
+- الـActivation Toggle داخل Trash يعرض الحالة الأصلية فقط ولا يغيرها.
+- Restore مفترض كـAction متاح لكل الأنواع حسب الصلاحية.
 
-- أدوار الأدمن (`admin/access-control/roles/{role}`).
-- أدوار الـWorkspace عند العميل (`client/access-control/roles/{role}`).
-- Talent Review FAQs.
-- Job Form Submissions.
+### 8.4 الحذف الحالي بعد التنفيذ
 
-أما `JobPosting` و`WorkspaceMember` فيستخدمان `SoftDeletes` بالفعل.
+- أدوار الأدمن وأدوار الـWorkspace وJob Forms وForm Submissions والأنواع المعتمدة في الخطة تستخدم Soft Delete.
+- Talent Review FAQs ليست ضمن Tabs Trash المعتمدة حاليًا، لذلك لم تُضم إلى هذا النطاق.
+- Admin Trash لا تشمل Hiring Requests أوWorkspaces، وClient Trash هي المسؤولة عن Workspaces.

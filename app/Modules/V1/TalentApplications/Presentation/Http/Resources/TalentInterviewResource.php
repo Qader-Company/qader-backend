@@ -2,11 +2,11 @@
 
 namespace App\Modules\V1\TalentApplications\Presentation\Http\Resources;
 
-use App\Modules\V1\TalentApplications\Domain\Models\Interview;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewModeEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewSlotStatusEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewStatusEnum;
 use App\Support\ApiMetadata\EnumLabel;
+use App\Settings\TalentEvaluationSettings;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,6 +14,9 @@ class TalentInterviewResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $settings = app(TalentEvaluationSettings::class);
+        $slotRejectionLimit = $settings->interview_slot_rejection_limit;
+        $rescheduleLimit = $settings->confirmed_interview_reschedule_limit;
         $slots = $this->relationLoaded('slots') ? $this->slots : collect();
         $selectedSlot = $slots->first(
             fn ($slot) => $slot->status === InterviewSlotStatusEnum::SELECTED,
@@ -53,18 +56,23 @@ class TalentInterviewResource extends JsonResource
             ),
             'slot_rejections' => [
                 'used' => $this->slot_rejection_count,
-                'maximum' => Interview::MAX_SLOT_REJECTIONS,
-                'remaining' => max(0, Interview::MAX_SLOT_REJECTIONS - $this->slot_rejection_count),
+                'maximum' => $slotRejectionLimit,
+                'remaining' => max(0, $slotRejectionLimit - $this->slot_rejection_count),
+            ],
+            'talent_reschedules' => [
+                'used' => $this->talent_reschedule_count,
+                'maximum' => $rescheduleLimit,
+                'remaining' => max(0, $rescheduleLimit - $this->talent_reschedule_count),
             ],
             'talent_reschedule_used_at' => $this->talent_reschedule_used_at,
             'actions' => [
                 'can_select_slot' => $this->status === InterviewStatusEnum::AWAITING_SLOT_SELECTION
                     && $availableSlots->isNotEmpty(),
                 'can_reject_all_slots' => $this->status === InterviewStatusEnum::AWAITING_SLOT_SELECTION
-                    && $this->slot_rejection_count < Interview::MAX_SLOT_REJECTIONS
+                    && $this->slot_rejection_count < $slotRejectionLimit
                     && $availableSlots->isNotEmpty(),
                 'can_cancel_and_reschedule' => $this->status === InterviewStatusEnum::CONFIRMED
-                    && $this->talent_reschedule_used_at === null
+                    && $this->talent_reschedule_count < $rescheduleLimit
                     && $selectedSlot?->starts_at->isFuture(),
                 'can_join' => $canJoin,
             ],

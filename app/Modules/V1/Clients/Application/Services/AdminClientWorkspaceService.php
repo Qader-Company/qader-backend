@@ -8,6 +8,7 @@ use App\Modules\V1\Clients\Domain\Models\Client;
 use App\Modules\V1\Clients\Domain\ValueObjects\ClientListSortEnum;
 use App\Modules\V1\Clients\Domain\ValueObjects\ClientManagementActionEnum;
 use App\Modules\V1\HiringRequests\Application\Services\HiringItemControlWorkflow;
+use App\Modules\V1\Trash\Application\Services\TrashRelationshipGuard;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Modules\V1\Workspaces\Domain\Models\Workspace;
 use App\Modules\V1\Workspaces\Domain\Models\WorkspaceMember;
@@ -32,6 +33,7 @@ class AdminClientWorkspaceService
         private readonly ClientManagementRecorder $recorder,
         private readonly ClientKpiService $kpis,
         private readonly HiringItemControlWorkflow $hiringControl,
+        private readonly TrashRelationshipGuard $trashGuard,
     ) {}
 
     public function paginate(int $clientId, array $filters, User $actor): LengthAwarePaginator
@@ -114,6 +116,7 @@ class AdminClientWorkspaceService
     /** Soft delete pauses the workspace exactly like deactivation, then hides it from every list. */
     public function softDelete(Workspace $workspace, User $actor, Admin $admin, ?string $reason): void
     {
+        $this->trashGuard->ensureCanRemove('workspaces', $workspace);
         $this->hiringControl->holdForWorkspaceDeactivation($actor, $workspace);
         $workspace->delete();
         $this->recorder->record($admin, ClientManagementActionEnum::WORKSPACE_DELETED, $workspace->owner_client_id, $workspace->id, reason: $reason);
@@ -157,6 +160,7 @@ class AdminClientWorkspaceService
                 throw new ConflictHttpException(__('clients.owner_cannot_be_deleted'));
             }
 
+            $this->trashGuard->ensureCanRemove('team', $member);
             $member->delete();
             $this->recorder->record($admin, ClientManagementActionEnum::WORKSPACE_MEMBER_DELETED, $clientId, $workspace->id, $member->id);
         });

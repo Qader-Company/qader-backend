@@ -12,4 +12,14 @@ class RejectInterviewSlotsRequest extends FormRequest
             'reason' => ['required', 'string', 'min:10', 'max:1000'],
         ];
     }
+
+    public function bodyParameters(): array
+    {
+        return [
+            'reason' => [
+                'description' => 'Reason for rejecting all proposed interview slots.',
+                'example' => 'None of the proposed interview times are suitable for me.',
+            ],
+        ];
+    }
 }

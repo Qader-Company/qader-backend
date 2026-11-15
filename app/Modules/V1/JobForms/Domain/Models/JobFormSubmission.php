@@ -5,16 +5,16 @@ namespace App\Modules\V1\JobForms\Domain\Models;
 use App\Modules\V1\Admins\Domain\Models\Admin;
 use App\Modules\V1\JobForms\Domain\ValueObjects\JobSubmissionStatusEnum;
 use App\Modules\V1\Talents\Domain\Models\Talent;
+use App\Modules\V1\Trash\Domain\Concerns\HasTrashLifecycle;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class JobFormSubmission extends Model implements HasMedia
 {
-    use InteractsWithMedia, SoftDeletes;
+    use HasTrashLifecycle, InteractsWithMedia;
 
     protected $fillable = ['form_version_id', 'applicant_name', 'email', 'phone_country_code', 'phone_number', 'status', 'idempotency_key', 'consent_at', 'submitted_at', 'converted_talent_id', 'converted_by_admin_id', 'converted_at'];
 

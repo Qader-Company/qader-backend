@@ -2,10 +2,13 @@
 
 namespace App\Modules\V1\AccessControl\Domain\Models;
 
+use App\Modules\V1\Trash\Domain\Concerns\HasTrashLifecycle;
 use Spatie\Permission\Models\Role as SpatieRole;
 
 class Role extends SpatieRole
 {
+    use HasTrashLifecycle;
+
     protected $fillable = [
         'name', 'name_en', 'name_ar', 'guard_name', 'portal',
         'is_active',

@@ -2,6 +2,7 @@
 
 namespace App\Modules\V1\AccessControl\Domain\Models;
 
+use App\Modules\V1\Trash\Domain\Concerns\HasTrashLifecycle;
 use App\Modules\V1\Workspaces\Domain\Models\Workspace;
 use App\Modules\V1\Workspaces\Domain\Models\WorkspaceMember;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class WorkspaceRole extends Model
 {
+    use HasTrashLifecycle;
+
     protected $fillable = ['workspace_id', 'key', 'name_en', 'name_ar', 'is_active'];
 
     protected function casts(): array

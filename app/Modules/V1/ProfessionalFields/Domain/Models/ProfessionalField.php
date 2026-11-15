@@ -3,6 +3,7 @@
 namespace App\Modules\V1\ProfessionalFields\Domain\Models;
 
 use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
+use App\Modules\V1\Trash\Domain\Concerns\HasTrashLifecycle;
 use App\Modules\V1\Skills\Domain\Models\Skill;
 use App\Modules\V1\Tools\Domain\Models\Tool;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
@@ -14,7 +15,7 @@ use Illuminate\Support\Str;
 
 class ProfessionalField extends Model implements TranslatableContract
 {
-    use Filterable, Translatable;
+    use Filterable, HasTrashLifecycle, Translatable;
 
     public array $translatedAttributes = ['name', 'description'];
 

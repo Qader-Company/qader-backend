@@ -24,6 +24,9 @@ enum ClientPermissionEnum: string implements PermissionDefinition
     case HIRING_REQUESTS_VIEW = 'client.hiring-requests.view';
     case HIRING_REQUESTS_MANAGE = 'client.hiring-requests.manage';
     case HELP_REQUESTS_CREATE = 'client.help-requests.create';
+    case TRASH_VIEW = 'client.trash.view';
+    case TRASH_RESTORE = 'client.trash.restore';
+    case TRASH_REMOVE = 'client.trash.remove';
 
     public function portal(): PortalTypeEnum
     {

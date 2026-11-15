@@ -9,20 +9,20 @@ use App\Modules\V1\Countries\Domain\Models\Country;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequest;
 use App\Modules\V1\Industries\Domain\Models\Industry;
 use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
+use App\Modules\V1\Trash\Domain\Concerns\HasTrashLifecycle;
 use App\Modules\V1\Workspaces\Domain\ValueObjects\WorkspaceSizeBandEnum;
 use App\Modules\V1\Workspaces\Domain\ValueObjects\WorkspaceStatusEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Workspace extends Model implements HasMedia
 {
     use InteractsWithMedia;
-    use SoftDeletes;
+    use HasTrashLifecycle;
 
     public const TAX_CARD_COLLECTION = 'tax_card';
 

@@ -18,6 +18,7 @@ use App\Modules\V1\Talents\Domain\ValueObjects\OnboardingStepEnum;
 use App\Modules\V1\Talents\Domain\ValueObjects\ReligionEnum;
 use App\Modules\V1\Talents\Domain\ValueObjects\SeniorityLevelEnum;
 use App\Modules\V1\Tools\Domain\Models\Tool;
+use App\Modules\V1\Trash\Domain\Concerns\HasTrashLifecycle;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Modules\V1\Workspaces\Domain\Models\WorkspaceTalentSelection;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -66,7 +67,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 ])]
 class Talent extends Model implements HasMedia
 {
-    use InteractsWithMedia;
+    use HasTrashLifecycle, InteractsWithMedia;
 
     protected $table = 'talents';
 

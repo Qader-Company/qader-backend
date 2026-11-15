@@ -5,16 +5,16 @@ namespace App\Modules\V1\Workspaces\Domain\Models;
 use App\Modules\V1\AccessControl\Domain\Models\WorkspaceRole;
 use App\Modules\V1\Clients\Domain\Models\Client;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequest;
+use App\Modules\V1\Trash\Domain\Concerns\HasTrashLifecycle;
 use App\Modules\V1\Workspaces\Domain\ValueObjects\WorkspaceMemberStatusEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WorkspaceMember extends Model
 {
-    use SoftDeletes;
+    use HasTrashLifecycle;
 
     protected $fillable = ['workspace_id', 'client_id', 'status', 'joined_at'];
 

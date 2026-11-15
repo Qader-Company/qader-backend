@@ -13,6 +13,7 @@ use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewSlotStatusEnu
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewStatusEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationStatusEnum;
 use App\Modules\V1\Talents\Domain\Models\Talent;
+use App\Settings\TalentEvaluationSettings;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -20,6 +21,7 @@ class TalentInterviewWorkflow
 {
     public function __construct(
         private readonly InterviewCalendarGatewayInterface $calendar,
+        private readonly TalentEvaluationSettings $settings,
     ) {}
 
     public function selectSlot(Talent $talent, int $slotId): Interview
@@ -96,7 +98,7 @@ class TalentInterviewWorkflow
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($interview->slot_rejection_count >= Interview::MAX_SLOT_REJECTIONS) {
+            if ($interview->slot_rejection_count >= $this->settings->interview_slot_rejection_limit) {
                 throw new ConflictHttpException(__('talents.interview.slot_rejection_limit_reached'));
             }
 
@@ -141,7 +143,7 @@ class TalentInterviewWorkflow
             if (
                 $application->status !== TalentApplicationStatusEnum::SCHEDULED
                 || $interview->status !== InterviewStatusEnum::CONFIRMED
-                || $interview->talent_reschedule_used_at !== null
+                || $interview->talent_reschedule_count >= $this->settings->confirmed_interview_reschedule_limit
                 || $selectedSlot === null
                 || $selectedSlot->starts_at->isPast()
             ) {
@@ -158,6 +160,7 @@ class TalentInterviewWorkflow
                 'google_calendar_event_id' => null,
                 'meeting_url' => null,
                 'talent_reschedule_used_at' => now(),
+                'talent_reschedule_count' => $interview->talent_reschedule_count + 1,
             ]);
             $application->update(['status' => TalentApplicationStatusEnum::INTERVIEW_REQUIRED]);
 
