@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Routing\UrlRoutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -88,8 +89,13 @@ class RateLimitServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('public-job-submissions', function (Request $request) {
+            $job = $request->route('job');
+            $jobKey = $job instanceof UrlRoutable
+                ? (string) $job->getRouteKey()
+                : (string) $job;
+
             return [
-                Limit::perMinute(5)->by('job:'.$request->route('job')?->getKey().'|'.$request->ip()),
+                Limit::perMinute(5)->by('job:'.$jobKey.'|'.$request->ip()),
                 Limit::perHour(30)->by('jobs|'.$request->ip()),
             ];
         });
