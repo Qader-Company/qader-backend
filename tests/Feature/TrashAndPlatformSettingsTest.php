@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Modules\V1\Admins\Domain\Models\Admin;
 use App\Modules\V1\Clients\Domain\Models\Client;
 use App\Modules\V1\PlatformSettings\Application\Services\PlatformSettingsService;
+use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
 use App\Modules\V1\Skills\Domain\Models\Skill;
+use App\Modules\V1\Tools\Domain\Models\Tool;
 use App\Modules\V1\Trash\Application\Services\TrashService;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
@@ -17,6 +19,38 @@ use Tests\TestCase;
 class TrashAndPlatformSettingsTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_linked_skills_and_tools_are_soft_deleted_without_removing_relationships(): void
+    {
+        $user = User::query()->create([
+            'first_name' => 'Linked',
+            'last_name' => 'Talent',
+            'email' => 'linked-talent@example.test',
+            'password' => 'Password123!',
+            'type' => PortalTypeEnum::TALENT,
+            'is_active' => true,
+        ]);
+        $talent = $user->talent()->create();
+        $field = ProfessionalField::query()->create(['is_active' => true]);
+        $skill = Skill::query()->create(['name' => 'Laravel', 'is_active' => true]);
+        $tool = Tool::query()->create(['name' => 'Docker', 'is_active' => true]);
+
+        $talent->skills()->attach($skill);
+        $talent->tools()->attach($tool);
+        $field->skills()->attach($skill);
+        $field->tools()->attach($tool);
+
+        $service = app(TrashService::class);
+        $service->softDelete('skills', $skill->id);
+        $service->softDelete('tools', $tool->id);
+
+        $this->assertSoftDeleted('skills', ['id' => $skill->id]);
+        $this->assertSoftDeleted('tools', ['id' => $tool->id]);
+        $this->assertDatabaseHas('talent_skills', ['talent_id' => $talent->id, 'skill_id' => $skill->id]);
+        $this->assertDatabaseHas('talent_tools', ['talent_id' => $talent->id, 'tool_id' => $tool->id]);
+        $this->assertDatabaseHas('professional_field_skill', ['professional_field_id' => $field->id, 'skill_id' => $skill->id]);
+        $this->assertDatabaseHas('professional_field_tool', ['professional_field_id' => $field->id, 'tool_id' => $tool->id]);
+    }
 
     public function test_record_is_restored_then_removed_from_trash_without_database_deletion(): void
     {

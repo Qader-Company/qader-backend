@@ -50,8 +50,9 @@ class TrashRelationshipGuard
             ['professional_field_skill', 'professional_field_id'], ['professional_field_tool', 'professional_field_id'],
         ],
         'job-titles' => [['talents', 'job_title_id'], ['job_postings', 'job_title_id'], ['job_title_professional_field', 'job_title_id']],
-        'skills' => [['talent_skills', 'skill_id'], ['professional_field_skill', 'skill_id']],
-        'tools' => [['talent_tools', 'tool_id'], ['professional_field_tool', 'tool_id']],
+        // Skills and tools remain linked to historical records after soft deletion.
+        'skills' => [],
+        'tools' => [],
         'form-submissions' => [],
         'help-requests' => [['hiring_requests', 'source_help_request_id']],
     ];
