@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -120,7 +121,7 @@ class TrashService
                 }
             });
         }
-        if (array_key_exists('is_active', $filters)) {
+        if (array_key_exists('is_active', $filters) && Schema::hasColumn($query->getModel()->getTable(), 'is_active')) {
             $query->where('is_active', (bool) $filters['is_active']);
         }
     }

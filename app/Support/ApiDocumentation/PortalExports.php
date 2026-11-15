@@ -215,6 +215,57 @@ class PortalExports
 
     private static function withStableRequestExamples(string $uri, string $method, array $operation): array
     {
+        if (
+            $method === 'post'
+            && preg_match('~^/api/v1/public/jobs/\{[^}]+\}/submissions$~', $uri) === 1
+            && isset($operation['requestBody']['content']['multipart/form-data'])
+        ) {
+            $content = &$operation['requestBody']['content']['multipart/form-data'];
+            $answers = [
+                'years_of_experience' => '3_to_5',
+                'notice_period_days' => '30 days',
+                'skill_ids' => [1, 2],
+                'industry_ids' => [1, 2],
+                'expected_salary' => [
+                    'amount' => 25000,
+                    'currency_id' => 1,
+                ],
+            ];
+            $identity = [
+                'applicant_name' => 'Ahmed Hassan',
+                'email' => 'ahmed.hassan@example.com',
+                'phone_country_code' => '+20',
+                'phone_number' => '1012345678',
+                'consent' => true,
+                'idempotency_key' => '550e8400-e29b-41d4-a716-446655440000',
+            ];
+
+            unset($content['example']);
+            $content['examples'] = [
+                'form_data' => [
+                    'summary' => 'Multipart form-data using Laravel bracket notation for answers',
+                    'value' => $identity + [
+                        'cv' => '(binary file: PDF, DOC, or DOCX)',
+                        'answers[years_of_experience]' => '3_to_5',
+                        'answers[notice_period_days]' => '30 days',
+                        'answers[skill_ids][0]' => 1,
+                        'answers[skill_ids][1]' => 2,
+                        'answers[industry_ids][0]' => 1,
+                        'answers[industry_ids][1]' => 2,
+                        'answers[expected_salary][amount]' => 25000,
+                        'answers[expected_salary][currency_id]' => 1,
+                    ],
+                ],
+                'json_structure' => [
+                    'summary' => 'JSON structure reference; the actual request remains multipart because cv is a file',
+                    'value' => $identity + [
+                        'cv' => '(binary file uploaded through multipart/form-data)',
+                        'answers' => $answers,
+                    ],
+                ],
+            ];
+        }
+
         if (str_contains($uri, '/hiring-') && isset($operation['requestBody']['content']['application/json']['schema']['properties'])) {
             $content = &$operation['requestBody']['content']['application/json'];
             $overrides = [

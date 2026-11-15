@@ -6,22 +6,17 @@ use App\Facades\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminPermissionEnum;
 use App\Modules\V1\Trash\Application\Services\TrashService;
+use App\Modules\V1\Trash\Presentation\Http\Requests\ListTrashRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AdminTrashController extends Controller
 {
-    public function index(Request $request, TrashService $service): JsonResponse
+    public function index(ListTrashRequest $request, TrashService $service): JsonResponse
     {
-        $filters = $request->validate([
-            'search' => ['nullable', 'string', 'max:255'],
-            'is_active' => ['nullable', 'boolean'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
-        ]);
-
         return ApiResponse::success($service->paginate(
             $this->resource($request),
-            $filters,
+            $request->validated(),
             availableActions: $this->availableActions($request),
         ));
     }

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\V1\AccessControl\Application\Services\WorkspaceAccessService;
 use App\Modules\V1\AccessControl\Domain\ValueObjects\ClientPermissionEnum;
 use App\Modules\V1\Trash\Application\Services\TrashService;
+use App\Modules\V1\Trash\Presentation\Http\Requests\ListTrashRequest;
 use App\Modules\V1\Workspaces\Domain\Models\Workspace;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -14,13 +15,13 @@ use Illuminate\Http\Request;
 
 class ClientTrashController extends Controller
 {
-    public function workspaces(Request $request, TrashService $service): JsonResponse
+    public function workspaces(ListTrashRequest $request, TrashService $service): JsonResponse
     {
         $clientId = $request->user()->client()->value('id');
 
         return ApiResponse::success($service->paginate(
             'workspaces',
-            $this->filters($request),
+            $request->validated(),
             fn (Builder $query) => $query->where('owner_client_id', $clientId),
             ['restore', 'remove_from_trash'],
         ));
@@ -52,11 +53,11 @@ class ClientTrashController extends Controller
         return ApiResponse::updated(null, __('trash.removed'));
     }
 
-    public function team(Request $request, Workspace $workspace, WorkspaceAccessService $access, TrashService $service): JsonResponse
+    public function team(ListTrashRequest $request, Workspace $workspace, WorkspaceAccessService $access, TrashService $service): JsonResponse
     {
         $actions = $this->workspaceActions($request, $workspace, $access);
 
-        return ApiResponse::success($service->paginate('team', $this->filters($request), fn (Builder $query) => $query->where('workspace_id', $workspace->id), $actions));
+        return ApiResponse::success($service->paginate('team', $request->validated(), fn (Builder $query) => $query->where('workspace_id', $workspace->id), $actions));
     }
 
     public function restoreMember(Request $request, Workspace $workspace, int $member, WorkspaceAccessService $access, TrashService $service): JsonResponse
@@ -75,11 +76,11 @@ class ClientTrashController extends Controller
         return ApiResponse::updated(null, __('trash.removed'));
     }
 
-    public function roles(Request $request, Workspace $workspace, WorkspaceAccessService $access, TrashService $service): JsonResponse
+    public function roles(ListTrashRequest $request, Workspace $workspace, WorkspaceAccessService $access, TrashService $service): JsonResponse
     {
         $actions = $this->workspaceActions($request, $workspace, $access);
 
-        return ApiResponse::success($service->paginate('workspace-roles', $this->filters($request), fn (Builder $query) => $query->where('workspace_id', $workspace->id), $actions));
+        return ApiResponse::success($service->paginate('workspace-roles', $request->validated(), fn (Builder $query) => $query->where('workspace_id', $workspace->id), $actions));
     }
 
     public function restoreRole(Request $request, Workspace $workspace, int $role, WorkspaceAccessService $access, TrashService $service): JsonResponse
@@ -96,15 +97,6 @@ class ClientTrashController extends Controller
         $service->remove('workspace-roles', $role, $request->user(), fn (Builder $query) => $query->where('workspace_id', $workspace->id));
 
         return ApiResponse::updated(null, __('trash.removed'));
-    }
-
-    private function filters(Request $request): array
-    {
-        return $request->validate([
-            'search' => ['nullable', 'string', 'max:255'],
-            'is_active' => ['nullable', 'boolean'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
-        ]);
     }
 
     private function workspaceActions(Request $request, Workspace $workspace, WorkspaceAccessService $access): array
