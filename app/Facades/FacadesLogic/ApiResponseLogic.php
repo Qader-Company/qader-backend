@@ -108,10 +108,13 @@ class ApiResponseLogic
         );
     }
 
-    public function tooManyRequests(int $retryAfterSeconds): JsonResponse
+    public function tooManyRequests(
+        int $retryAfterSeconds,
+        ?string $message = null,
+    ): JsonResponse
     {
         return $this->message(
-            __('auth.throttle', ['seconds' => $retryAfterSeconds]),
+            $message ?? __('auth.throttle', ['seconds' => $retryAfterSeconds]),
             Response::HTTP_TOO_MANY_REQUESTS
         )->withHeaders([
             'Retry-After' => $retryAfterSeconds,

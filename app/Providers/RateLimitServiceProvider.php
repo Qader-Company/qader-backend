@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Facades\ApiResponse;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Routing\UrlRoutable;
 use Illuminate\Http\Request;
@@ -32,7 +33,16 @@ class RateLimitServiceProvider extends ServiceProvider
             return Limit::perMinutes(
                 $config['decay_minutes'],
                 $config['max_attempts']
-            )->by($request->ip());
+            )
+                ->by($request->ip())
+                ->response(function (Request $request, array $headers) {
+                    $retryAfter = (int) ($headers['Retry-After'] ?? 60);
+
+                    return ApiResponse::tooManyRequests(
+                        $retryAfter,
+                        __('auth.registration_throttle'),
+                    );
+                });
         });
 
         RateLimiter::for('auth-otp-send', function (Request $request) {

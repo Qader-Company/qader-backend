@@ -7,7 +7,6 @@ return [
     'role_has_members' => 'This role cannot be deleted while it is assigned to users.',
     'workspace_not_empty' => 'This workspace cannot be deleted because it contains related data.',
     'member_has_dependencies' => 'This team member cannot be deleted because they are linked to operational data.',
-    'job_form_has_submissions' => 'This job form cannot be deleted because it has submissions.',
     'submission_converted' => 'This submission cannot be deleted because a talent account was created from it.',
     'cannot_restore_removed' => 'This item was permanently removed from Trash and cannot be restored.',
     'protected_admin' => 'The current or super admin account cannot be deleted.',

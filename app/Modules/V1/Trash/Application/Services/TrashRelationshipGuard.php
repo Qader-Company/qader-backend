@@ -27,10 +27,6 @@ class TrashRelationshipGuard
         'talents' => [
             ['talent_applications', 'talent_id'], ['workspace_talent_selections', 'talent_id'],
             ['hiring_request_items', 'talent_id'], ['job_form_submissions', 'converted_talent_id'],
-            ['talent_languages', 'talent_id'], ['talent_skills', 'talent_id'],
-            ['talent_tools', 'talent_id'], ['talent_experiences', 'talent_id'],
-            ['talent_projects', 'talent_id'], ['talent_work_types', 'talent_id'],
-            ['talent_work_modes', 'talent_id'], ['talent_industries', 'talent_id'],
         ],
         'clients' => [['workspaces', 'owner_client_id'], ['workspace_members', 'client_id']],
         'countries' => [
@@ -75,7 +71,6 @@ class TrashRelationshipGuard
             'workspace-roles' => $this->guardWorkspaceRole($model),
             'workspaces' => $this->guardWorkspace($model),
             'team' => $this->guardMember($model),
-            'job-forms' => $this->guardJobForm($model),
             'form-submissions' => $this->guardSubmission($model),
             default => [__('trash.has_dependencies'), []],
         };
@@ -145,19 +140,6 @@ class TrashRelationshipGuard
         }
 
         return [__('trash.member_has_dependencies'), $dependencies];
-    }
-
-    /** @return array{0: string, 1: array<string, int>} */
-    private function guardJobForm(Model $jobForm): array
-    {
-        $count = Schema::hasTable('job_form_versions') && Schema::hasTable('job_form_submissions')
-            ? DB::table('job_form_versions')
-            ->join('job_form_submissions', 'job_form_submissions.form_version_id', '=', 'job_form_versions.id')
-            ->where('job_form_versions.job_posting_id', $jobForm->getKey())
-            ->count()
-            : 0;
-
-        return [__('trash.job_form_has_submissions'), $count > 0 ? ['job_form_submissions' => $count] : []];
     }
 
     /** @return array{0: string, 1: array<string, int>} */

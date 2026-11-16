@@ -4,9 +4,14 @@ namespace Tests\Feature;
 
 use App\Modules\V1\Admins\Domain\Models\Admin;
 use App\Modules\V1\Clients\Domain\Models\Client;
+use App\Modules\V1\JobForms\Domain\Models\JobFormSubmission;
+use App\Modules\V1\JobForms\Domain\Models\JobFormVersion;
+use App\Modules\V1\JobForms\Domain\Models\JobPosting;
+use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
 use App\Modules\V1\PlatformSettings\Application\Services\PlatformSettingsService;
 use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
 use App\Modules\V1\Skills\Domain\Models\Skill;
+use App\Modules\V1\TalentApplications\Domain\Models\TalentApplication;
 use App\Modules\V1\Tools\Domain\Models\Tool;
 use App\Modules\V1\Trash\Application\Services\TrashService;
 use App\Modules\V1\Trash\Domain\Exceptions\TrashDependenciesException;
@@ -16,6 +21,7 @@ use App\Settings\HiringSettings;
 use App\Settings\TrashSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class TrashAndPlatformSettingsTest extends TestCase
@@ -77,7 +83,7 @@ class TrashAndPlatformSettingsTest extends TestCase
             ]);
     }
 
-    public function test_relationship_guard_reports_dependency_names_and_counts(): void
+    public function test_profile_relations_do_not_block_talent_soft_deletion(): void
     {
         $user = User::query()->create([
             'first_name' => 'Blocked',
@@ -92,15 +98,88 @@ class TrashAndPlatformSettingsTest extends TestCase
         $secondSkill = Skill::query()->create(['name' => 'Laravel', 'is_active' => true]);
         $talent->skills()->attach([$firstSkill->id, $secondSkill->id]);
 
+        app(TrashService::class)->softDelete('talents', $talent->id);
+
+        $this->assertSoftDeleted('talents', ['id' => $talent->id]);
+        $this->assertDatabaseCount('talent_skills', 2);
+    }
+
+    public function test_operational_relations_still_block_talent_soft_deletion(): void
+    {
+        $user = User::query()->create([
+            'first_name' => 'Operational',
+            'last_name' => 'Talent',
+            'email' => 'operational-talent@example.test',
+            'password' => 'Password123!',
+            'type' => PortalTypeEnum::TALENT,
+            'is_active' => true,
+        ]);
+        $talent = $user->talent()->create();
+        TalentApplication::query()->create([
+            'talent_id' => $talent->id,
+            'submitted_at' => now(),
+        ]);
+
         try {
             app(TrashService::class)->softDelete('talents', $talent->id);
-            $this->fail('Deleting a talent with dependencies should fail.');
+            $this->fail('Deleting a talent with operational dependencies should fail.');
         } catch (TrashDependenciesException $exception) {
-            $this->assertSame(['talent_skills' => 2], $exception->dependencies);
+            $this->assertSame(['talent_applications' => 1], $exception->dependencies);
             $this->assertSame(__('trash.has_dependencies'), $exception->getMessage());
         }
 
         $this->assertNotSoftDeleted('talents', ['id' => $talent->id]);
+    }
+
+    public function test_job_form_with_submissions_can_be_soft_deleted_without_losing_history(): void
+    {
+        $user = User::query()->create([
+            'first_name' => 'Job',
+            'last_name' => 'Admin',
+            'email' => 'job-admin@example.test',
+            'password' => 'Password123!',
+            'type' => PortalTypeEnum::ADMIN,
+            'is_active' => true,
+        ]);
+        $admin = Admin::query()->create(['user_id' => $user->id]);
+        $field = ProfessionalField::query()->create(['is_active' => true]);
+        $jobTitle = JobTitle::query()->create(['name' => 'QA Engineer', 'is_active' => true]);
+        $posting = JobPosting::query()->create([
+            'professional_field_id' => $field->id,
+            'job_title_id' => $jobTitle->id,
+            'title' => 'QA Engineer',
+            'slug' => 'qa-engineer-test',
+            'summary' => 'Summary',
+            'about_role' => 'About role',
+            'work_type' => 'full_time',
+            'work_mode' => 'remote',
+            'status' => 'published',
+            'is_active' => true,
+            'published_at' => now(),
+            'created_by_admin_id' => $admin->id,
+        ]);
+        $version = JobFormVersion::query()->create([
+            'job_posting_id' => $posting->id,
+            'version_number' => 1,
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+        $submission = JobFormSubmission::query()->create([
+            'form_version_id' => $version->id,
+            'applicant_name' => 'Applicant',
+            'email' => 'applicant@example.test',
+            'phone_country_code' => '+20',
+            'phone_number' => '1000000000',
+            'idempotency_key' => (string) Str::uuid(),
+            'consent_at' => now(),
+            'submitted_at' => now(),
+        ]);
+
+        app(TrashService::class)->softDelete('job-forms', $posting->id);
+
+        $this->assertSoftDeleted('job_postings', ['id' => $posting->id]);
+        $this->assertDatabaseHas('job_form_versions', ['id' => $version->id]);
+        $this->assertDatabaseHas('job_form_submissions', ['id' => $submission->id]);
     }
 
     public function test_record_is_restored_then_removed_from_trash_without_database_deletion(): void

@@ -40,19 +40,12 @@ class ProfessionalFieldFormValidationFactory implements ApplicationFormValidatio
             $professionalFieldId,
             $step,
         );
-        $requiredFields = $this->requiredFields(
-            $step,
-            $policy->visibleFields,
-            $policy->requiredFields,
-            $context,
-        );
-
         return $this->applyFieldPolicy(
             rules: $rules,
             step: $step,
             prefix: $prefix,
             visibleFields: $policy->visibleFields,
-            requiredFields: $requiredFields,
+            requiredFields: $policy->requiredFields,
             enforceRequiredFields: $enforceRequiredFields,
         );
     }
@@ -361,24 +354,6 @@ class ProfessionalFieldFormValidationFactory implements ApplicationFormValidatio
                 Rule::exists('currencies', 'id')->where('is_active', true),
             ],
         ];
-    }
-
-    private function requiredFields(
-        OnboardingStepEnum $step,
-        array $visibleFields,
-        array $requiredFields,
-        array $context,
-    ): array {
-        $experiencesField = ProfessionalFormFieldEnum::EXPERIENCES->value;
-        $experiencesAreRequired = $step === OnboardingStepEnum::SKILLS_AND_EXPERIENCES
-            && (int) ($context['years_of_experience'] ?? 0) > 0
-            && in_array($experiencesField, $visibleFields, true);
-
-        if ($experiencesAreRequired) {
-            $requiredFields[] = $experiencesField;
-        }
-
-        return array_values(array_unique($requiredFields));
     }
 
     private function applyFieldPolicy(

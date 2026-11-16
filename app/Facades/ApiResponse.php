@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static JsonResponse created(mixed $data = null, ?string $message = null)
  * @method static JsonResponse deleted(?string $message = null)
  * @method static JsonResponse updated(mixed $data = null, ?string $message = null)
- * @method static JsonResponse tooManyRequests(int $retryAfterSeconds)
+ * @method static JsonResponse tooManyRequests(int $retryAfterSeconds, ?string $message = null)
  *
  * @see ApiResponseLogic
  */
