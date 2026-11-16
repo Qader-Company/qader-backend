@@ -9,11 +9,13 @@ use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
 use App\Modules\V1\Skills\Domain\Models\Skill;
 use App\Modules\V1\Tools\Domain\Models\Tool;
 use App\Modules\V1\Trash\Application\Services\TrashService;
+use App\Modules\V1\Trash\Domain\Exceptions\TrashDependenciesException;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use App\Settings\HiringSettings;
 use App\Settings\TrashSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class TrashAndPlatformSettingsTest extends TestCase
@@ -50,6 +52,55 @@ class TrashAndPlatformSettingsTest extends TestCase
         $this->assertDatabaseHas('talent_tools', ['talent_id' => $talent->id, 'tool_id' => $tool->id]);
         $this->assertDatabaseHas('professional_field_skill', ['professional_field_id' => $field->id, 'skill_id' => $skill->id]);
         $this->assertDatabaseHas('professional_field_tool', ['professional_field_id' => $field->id, 'tool_id' => $tool->id]);
+    }
+
+    public function test_dependency_conflict_response_lists_the_blocking_relations(): void
+    {
+        Route::get('/api/test-trash-dependencies', function (): never {
+            throw new TrashDependenciesException(
+                __('trash.has_dependencies'),
+                ['workspaces' => 1, 'workspace_members' => 2],
+            );
+        });
+
+        $this->getJson('/api/test-trash-dependencies')
+            ->assertConflict()
+            ->assertJson([
+                'success' => false,
+                'message' => __('trash.has_dependencies'),
+                'errors' => [
+                    'dependencies' => [
+                        'workspaces' => 1,
+                        'workspace_members' => 2,
+                    ],
+                ],
+            ]);
+    }
+
+    public function test_relationship_guard_reports_dependency_names_and_counts(): void
+    {
+        $user = User::query()->create([
+            'first_name' => 'Blocked',
+            'last_name' => 'Talent',
+            'email' => 'blocked-talent@example.test',
+            'password' => 'Password123!',
+            'type' => PortalTypeEnum::TALENT,
+            'is_active' => true,
+        ]);
+        $talent = $user->talent()->create();
+        $firstSkill = Skill::query()->create(['name' => 'PHP', 'is_active' => true]);
+        $secondSkill = Skill::query()->create(['name' => 'Laravel', 'is_active' => true]);
+        $talent->skills()->attach([$firstSkill->id, $secondSkill->id]);
+
+        try {
+            app(TrashService::class)->softDelete('talents', $talent->id);
+            $this->fail('Deleting a talent with dependencies should fail.');
+        } catch (TrashDependenciesException $exception) {
+            $this->assertSame(['talent_skills' => 2], $exception->dependencies);
+            $this->assertSame(__('trash.has_dependencies'), $exception->getMessage());
+        }
+
+        $this->assertNotSoftDeleted('talents', ['id' => $talent->id]);
     }
 
     public function test_record_is_restored_then_removed_from_trash_without_database_deletion(): void

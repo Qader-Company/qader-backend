@@ -2,10 +2,10 @@
 
 namespace App\Modules\V1\Trash\Application\Services;
 
+use App\Modules\V1\Trash\Domain\Exceptions\TrashDependenciesException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class TrashRelationshipGuard
 {
@@ -59,42 +59,55 @@ class TrashRelationshipGuard
 
     public function ensureCanRemove(string $key, Model $model): void
     {
+        $dependencies = [];
+
         foreach ($this->dependencies[$key] ?? [] as [$table, $column]) {
-            if (Schema::hasTable($table) && Schema::hasColumn($table, $column)
-                && DB::table($table)->where($column, $model->getKey())->exists()) {
-                throw new ConflictHttpException(__('trash.has_dependencies'));
+            if (Schema::hasTable($table) && Schema::hasColumn($table, $column)) {
+                $count = DB::table($table)->where($column, $model->getKey())->count();
+                if ($count > 0) {
+                    $dependencies[$table] = $count;
+                }
             }
         }
 
-        match ($key) {
+        [$message, $specialDependencies] = match ($key) {
             'roles' => $this->guardAdminRole($model),
             'workspace-roles' => $this->guardWorkspaceRole($model),
             'workspaces' => $this->guardWorkspace($model),
             'team' => $this->guardMember($model),
             'job-forms' => $this->guardJobForm($model),
             'form-submissions' => $this->guardSubmission($model),
-            default => null,
+            default => [__('trash.has_dependencies'), []],
         };
-    }
 
-    private function guardAdminRole(Model $role): void
-    {
-        if (DB::table('model_has_roles')->where('role_id', $role->getKey())->exists()) {
-            throw new ConflictHttpException(__('trash.role_has_members'));
+        $dependencies = array_merge($dependencies, $specialDependencies);
+        if ($dependencies !== []) {
+            throw new TrashDependenciesException($message, $dependencies);
         }
     }
 
-    private function guardWorkspaceRole(Model $role): void
+    /** @return array{0: string, 1: array<string, int>} */
+    private function guardAdminRole(Model $role): array
     {
-        if (DB::table('workspace_member_roles')->where('workspace_role_id', $role->getKey())->exists()) {
-            throw new ConflictHttpException(__('trash.role_has_members'));
-        }
+        $count = DB::table('model_has_roles')->where('role_id', $role->getKey())->count();
+
+        return [__('trash.role_has_members'), $count > 0 ? ['users' => $count] : []];
     }
 
-    private function guardWorkspace(Model $workspace): void
+    /** @return array{0: string, 1: array<string, int>} */
+    private function guardWorkspaceRole(Model $role): array
+    {
+        $count = DB::table('workspace_member_roles')->where('workspace_role_id', $role->getKey())->count();
+
+        return [__('trash.role_has_members'), $count > 0 ? ['workspace_members' => $count] : []];
+    }
+
+    /** @return array{0: string, 1: array<string, int>} */
+    private function guardWorkspace(Model $workspace): array
     {
         $id = $workspace->getKey();
         $owner = $workspace->getAttribute('owner_client_id');
+        $dependencies = [];
         $checks = [
             ['workspace_members', 'workspace_id', fn ($query) => $query->where('client_id', '!=', $owner)],
             ['workspace_roles', 'workspace_id', fn ($query) => $query->where('key', '!=', 'owner')],
@@ -108,35 +121,51 @@ class TrashRelationshipGuard
             }
             $query = DB::table($table)->where($column, $id);
             $scope?->__invoke($query);
-            if ($query->exists()) {
-                throw new ConflictHttpException(__('trash.workspace_not_empty'));
+            $count = $query->count();
+            if ($count > 0) {
+                $dependencies[$table] = $count;
             }
         }
+
+        return [__('trash.workspace_not_empty'), $dependencies];
     }
 
-    private function guardMember(Model $member): void
+    /** @return array{0: string, 1: array<string, int>} */
+    private function guardMember(Model $member): array
     {
+        $dependencies = [];
+
         foreach ([['hiring_requests', 'created_by_member_id'], ['help_requests', 'created_by_member_id'], ['workspace_talent_selections', 'added_by_member_id']] as [$table, $column]) {
-            if (Schema::hasTable($table) && Schema::hasColumn($table, $column)
-                && DB::table($table)->where($column, $member->getKey())->exists()) {
-                throw new ConflictHttpException(__('trash.member_has_dependencies'));
+            if (Schema::hasTable($table) && Schema::hasColumn($table, $column)) {
+                $count = DB::table($table)->where($column, $member->getKey())->count();
+                if ($count > 0) {
+                    $dependencies[$table] = $count;
+                }
             }
         }
+
+        return [__('trash.member_has_dependencies'), $dependencies];
     }
 
-    private function guardJobForm(Model $jobForm): void
+    /** @return array{0: string, 1: array<string, int>} */
+    private function guardJobForm(Model $jobForm): array
     {
-        if (Schema::hasTable('job_form_versions') && DB::table('job_form_versions')
+        $count = Schema::hasTable('job_form_versions') && Schema::hasTable('job_form_submissions')
+            ? DB::table('job_form_versions')
             ->join('job_form_submissions', 'job_form_submissions.form_version_id', '=', 'job_form_versions.id')
-            ->where('job_form_versions.job_posting_id', $jobForm->getKey())->exists()) {
-            throw new ConflictHttpException(__('trash.job_form_has_submissions'));
-        }
+            ->where('job_form_versions.job_posting_id', $jobForm->getKey())
+            ->count()
+            : 0;
+
+        return [__('trash.job_form_has_submissions'), $count > 0 ? ['job_form_submissions' => $count] : []];
     }
 
-    private function guardSubmission(Model $submission): void
+    /** @return array{0: string, 1: array<string, int>} */
+    private function guardSubmission(Model $submission): array
     {
-        if ($submission->getAttribute('converted_talent_id') !== null) {
-            throw new ConflictHttpException(__('trash.submission_converted'));
-        }
+        return [
+            __('trash.submission_converted'),
+            $submission->getAttribute('converted_talent_id') !== null ? ['converted_talent' => 1] : [],
+        ];
     }
 }

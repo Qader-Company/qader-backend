@@ -19,4 +19,18 @@ class DeleteClientRequest extends FormRequest
     {
         return ['confirmation.accepted' => __('clients.deletion_confirmation_required')];
     }
+
+    public function bodyParameters(): array
+    {
+        return [
+            'reason' => [
+                'description' => 'Reason for deleting the empty client account.',
+                'example' => 'The account was created by mistake.',
+            ],
+            'confirmation' => [
+                'description' => 'Must be true to confirm deleting the client account.',
+                'example' => true,
+            ],
+        ];
+    }
 }

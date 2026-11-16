@@ -6,6 +6,7 @@ use App\Http\Middleware\CheckScopedPermission;
 use App\Http\Middleware\CheckScopedRole;
 use App\Http\Middleware\SetLocale;
 use App\Modules\V1\TalentApplications\Domain\Exceptions\InterviewScheduleConflictException;
+use App\Modules\V1\Trash\Domain\Exceptions\TrashDependenciesException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -56,6 +57,14 @@ return Application::configure(basePath: dirname(__DIR__))
                 'slots' => [$e->getMessage()],
                 'conflicts' => $e->conflicts,
             ]);
+        });
+
+        $exceptions->render(function (TrashDependenciesException $e, $request) {
+            return ApiResponse::failed(
+                ['dependencies' => $e->dependencies],
+                $e->getMessage(),
+                $e->getStatusCode(),
+            );
         });
 
         $exceptions->render(function (UnauthorizedException $e, $request) {
