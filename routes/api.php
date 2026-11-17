@@ -13,4 +13,5 @@ Route::post('/maintenance/{command}', MaintenanceCommandController::class)
         'create-api-key',
         'queue-work',
         'queue-restart',
+        'storage-link'
     ]);

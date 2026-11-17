@@ -55,6 +55,7 @@ class MaintenanceCommandController extends Controller
                 ],
             ],
             'queue-restart' => ['queue:restart', []],
+            'storage-link' => ['storage:link', []],
             default => throw new HttpException(422, 'Unsupported maintenance command.'),
         };
 
