@@ -184,7 +184,13 @@ class WebsiteMarketingFlowTest extends TestCase
             ->assertJsonPath('data.professional_fields.1.talents.0.seniority_level.value', 'senior')
             ->assertJsonPath('data.professional_fields.1.talents.0.country.name', 'مصر')
             ->assertJsonPath('data.professional_fields.1.talents.0.indicative_salary.minimum', 4500)
-            ->assertJsonMissingPath('data.professional_fields.1.talents.0.id');
+            ->assertJsonMissingPath('data.professional_fields.0.id')
+            ->assertJsonMissingPath('data.professional_fields.1.id')
+            ->assertJsonMissingPath('data.professional_fields.1.talents.0.id')
+            ->assertJsonMissingPath('data.professional_fields.1.talents.0.job_title.id')
+            ->assertJsonMissingPath('data.professional_fields.1.talents.0.country.id')
+            ->assertJsonMissingPath('data.professional_fields.1.talents.0.top_skills.0.id')
+            ->assertJsonMissingPath('data.professional_fields.1.talents.0.indicative_salary.currency.id');
 
         $this->assertStringNotContainsString('showcase-1@example.test', $response->getContent());
         $this->assertStringNotContainsString('Private', $response->getContent());

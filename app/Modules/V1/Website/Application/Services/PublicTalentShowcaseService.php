@@ -17,12 +17,11 @@ class PublicTalentShowcaseService
         private readonly TalentMarketplaceService $marketplace,
     ) {}
 
-    /** @return Collection<int, array{id: ?int, slug: string, name: string, talents: Collection}> */
+    /** @return Collection<int, array{slug: string, name: string, talents: Collection}> */
     public function groups(): Collection
     {
         $groups = collect([
             [
-                'id' => null,
                 'slug' => 'all',
                 'name' => __('website.all_specializations'),
                 'talents' => $this->talents(),
@@ -42,7 +41,6 @@ class PublicTalentShowcaseService
                 }
 
                 $groups->push([
-                    'id' => $field->id,
                     'slug' => $field->slug,
                     'name' => $field->name,
                     'talents' => $talents,

@@ -18,7 +18,6 @@ class PublicTalentShowcaseCardResource extends JsonResource
             'talent_code' => $this->talent_code,
             'image' => asset('images/default-talent-avatar.svg'),
             'job_title' => $this->whenLoaded('jobTitle', fn () => $this->jobTitle ? [
-                'id' => $this->jobTitle->id,
                 'name' => $this->jobTitle->name,
             ] : null),
             'seniority_level' => $seniority === null ? null : [
@@ -27,14 +26,12 @@ class PublicTalentShowcaseCardResource extends JsonResource
             ],
             'years_of_experience' => $this->years_of_experience,
             'country' => $this->whenLoaded('residenceCountry', fn () => $this->residenceCountry ? [
-                'id' => $this->residenceCountry->id,
                 'code' => $this->residenceCountry->code,
                 'name' => $this->residenceCountry->name,
             ] : null),
             'top_skills' => $this->whenLoaded('skills', fn () => $this->skills
                 ->take(3)
                 ->map(fn ($skill): array => [
-                    'id' => $skill->id,
                     'name' => $skill->name,
                 ])
                 ->values()),
@@ -46,7 +43,6 @@ class PublicTalentShowcaseCardResource extends JsonResource
                     ? null
                     : (float) $this->expected_salary_max,
                 'currency' => $this->whenLoaded('expectedCurrency', fn () => $this->expectedCurrency ? [
-                    'id' => $this->expectedCurrency->id,
                     'code' => $this->expectedCurrency->code,
                     'symbol' => $this->expectedCurrency->symbol,
                     'name' => $this->expectedCurrency->name,

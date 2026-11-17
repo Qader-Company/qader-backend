@@ -92,13 +92,12 @@ class PublicWebsiteController extends Controller
     }
 
     /**
-     * @response {"success":true,"data":{"professional_fields":[{"id":null,"slug":"all","name":"All Specializations","talents":[{"talent_code":"QDR-2847","image":"http://localhost:8000/images/default-talent-avatar.svg","job_title":{"id":1,"name":"Full Stack Developer"},"seniority_level":{"value":"senior","label":"Senior"},"years_of_experience":7,"country":{"id":1,"code":"EG","name":"Egypt"},"top_skills":[{"id":1,"name":"React"},{"id":2,"name":"Node.js"},{"id":3,"name":"TypeScript"}],"indicative_salary":{"minimum":4500,"maximum":6000,"currency":{"id":1,"code":"USD","symbol":"$","name":"US Dollar"}}}]},{"id":1,"slug":"software-development-1","name":"Software Development","talents":[]}]}}
+     * @response {"success":true,"data":{"professional_fields":[{"slug":"all","name":"All Specializations","talents":[{"talent_code":"QDR-2847","image":"http://localhost:8000/images/default-talent-avatar.svg","job_title":{"name":"Full Stack Developer"},"seniority_level":{"value":"senior","label":"Senior"},"years_of_experience":7,"country":{"code":"EG","name":"Egypt"},"top_skills":[{"name":"React"},{"name":"Node.js"},{"name":"TypeScript"}],"indicative_salary":{"minimum":4500,"maximum":6000,"currency":{"code":"USD","symbol":"$","name":"US Dollar"}}}]},{"slug":"software-development-1","name":"Software Development","talents":[]}]}}
      */
     public function talentShowcase(PublicTalentShowcaseService $service): JsonResponse
     {
         $professionalFields = $service->groups()
             ->map(fn (array $group): array => [
-                'id' => $group['id'],
                 'slug' => $group['slug'],
                 'name' => $group['name'],
                 'talents' => PublicTalentShowcaseCardResource::collection($group['talents']),
