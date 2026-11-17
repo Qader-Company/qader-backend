@@ -8,4 +8,5 @@ Route::controller(PublicWebsiteController::class)->group(function (): void {
     Route::get('faqs', 'faqs');
     Route::get('partners', 'partners');
     Route::get('testimonials', 'testimonials');
+    Route::get('talent-showcase', 'talentShowcase');
 });

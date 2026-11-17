@@ -132,6 +132,7 @@ class EndpointNames
                 'faqs' => 'List Public Website FAQs',
                 'partners' => 'List Public Website Partners',
                 'testimonials' => 'List Public Website Testimonials',
+                'talentShowcase' => 'List Public Website Talent Showcase',
                 'index' => match (true) {
                     str_contains($route->uri(), '/faqs') => 'List Website FAQs',
                     str_contains($route->uri(), '/partners') => 'List Website Partners',

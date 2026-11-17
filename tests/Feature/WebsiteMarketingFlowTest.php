@@ -6,6 +6,14 @@ use App\Http\Middleware\CheckApiKey;
 use App\Modules\V1\AccessControl\Domain\Models\Role;
 use App\Modules\V1\Admins\Domain\Models\Admin;
 use App\Modules\V1\Countries\Domain\Models\Country;
+use App\Modules\V1\Currencies\Domain\Models\Currency;
+use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
+use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
+use App\Modules\V1\Skills\Domain\Models\Skill;
+use App\Modules\V1\TalentApplications\Domain\Models\TalentApplication;
+use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationStatusEnum;
+use App\Modules\V1\Talents\Domain\Models\Talent;
+use App\Modules\V1\Talents\Domain\ValueObjects\SeniorityLevelEnum;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use App\Modules\V1\Website\Domain\Models\MarketingFaq;
@@ -100,6 +108,88 @@ class WebsiteMarketingFlowTest extends TestCase
         ]);
     }
 
+    public function test_public_talent_showcase_returns_four_anonymous_talents_per_field(): void
+    {
+        $country = Country::query()->create([
+            'code' => 'EG',
+            'is_active' => true,
+            'en' => ['name' => 'Egypt'],
+            'ar' => ['name' => 'مصر'],
+        ]);
+        $currency = Currency::query()->create([
+            'code' => 'USD',
+            'symbol' => '$',
+            'is_active' => true,
+            'en' => ['name' => 'US Dollar'],
+            'ar' => ['name' => 'دولار أمريكي'],
+        ]);
+        $field = ProfessionalField::query()->create([
+            'is_active' => true,
+            'en' => ['name' => 'Software Development'],
+            'ar' => ['name' => 'تطوير البرمجيات'],
+        ]);
+        $jobTitle = JobTitle::query()->create([
+            'name' => 'Full Stack Developer',
+            'is_active' => true,
+        ]);
+        $skills = collect(['React', 'Node.js', 'TypeScript', 'Laravel'])
+            ->map(fn (string $name) => Skill::query()->create([
+                'name' => $name,
+                'is_active' => true,
+            ]));
+
+        foreach (range(1, 5) as $index) {
+            $user = User::query()->create([
+                'first_name' => 'Private',
+                'last_name' => "Talent {$index}",
+                'email' => "showcase-{$index}@example.test",
+                'password' => 'Password123!',
+                'type' => PortalTypeEnum::TALENT,
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ]);
+            $talent = Talent::query()->create([
+                'user_id' => $user->id,
+                'professional_field_id' => $field->id,
+                'job_title_id' => $jobTitle->id,
+                'residence_country_id' => $country->id,
+                'seniority_level' => SeniorityLevelEnum::SENIOR,
+                'years_of_experience' => 7,
+                'expected_salary_min' => 4500,
+                'expected_salary_max' => 6000,
+                'expected_currency_id' => $currency->id,
+            ]);
+            $talent->skills()->attach($skills->pluck('id'));
+            TalentApplication::query()->create([
+                'talent_id' => $talent->id,
+                'status' => TalentApplicationStatusEnum::ACCEPTED,
+                'submitted_at' => now()->subDay(),
+                'review_decided_at' => now()->subMinutes($index),
+                'profile_completion_at_submission' => 100,
+            ]);
+        }
+
+        $response = $this->withHeader('Accept-Language', 'ar')
+            ->getJson('/api/v1/public/website/talent-showcase');
+
+        $response->assertOk()
+            ->assertJsonCount(2, 'data.professional_fields')
+            ->assertJsonPath('data.professional_fields.0.slug', 'all')
+            ->assertJsonPath('data.professional_fields.0.name', 'جميع التخصصات')
+            ->assertJsonCount(4, 'data.professional_fields.0.talents')
+            ->assertJsonPath('data.professional_fields.1.name', 'تطوير البرمجيات')
+            ->assertJsonCount(4, 'data.professional_fields.1.talents')
+            ->assertJsonCount(3, 'data.professional_fields.1.talents.0.top_skills')
+            ->assertJsonPath('data.professional_fields.1.talents.0.job_title.name', 'Full Stack Developer')
+            ->assertJsonPath('data.professional_fields.1.talents.0.seniority_level.value', 'senior')
+            ->assertJsonPath('data.professional_fields.1.talents.0.country.name', 'مصر')
+            ->assertJsonPath('data.professional_fields.1.talents.0.indicative_salary.minimum', 4500)
+            ->assertJsonMissingPath('data.professional_fields.1.talents.0.id');
+
+        $this->assertStringNotContainsString('showcase-1@example.test', $response->getContent());
+        $this->assertStringNotContainsString('Private', $response->getContent());
+    }
+
     public function test_admin_website_get_endpoints_return_html_like_input_definitions(): void
     {
         $this->seed(AdminRoleSeeder::class);
@@ -141,6 +231,24 @@ class WebsiteMarketingFlowTest extends TestCase
         $this->getJson('/api/v1/admin/platform-settings')
             ->assertOk()
             ->assertJsonPath('data.website.inputs.2.key', 'company_founded_year')
+            ->assertJsonPath('data.website.inputs.2.label', 'Company Founded Year')
             ->assertJsonPath('data.website.inputs.2.type', 'number');
+
+        $this->withHeader('Accept-Language', 'ar')
+            ->getJson('/api/v1/admin/platform-settings')
+            ->assertOk()
+            ->assertJsonPath('data.website.inputs.2.key', 'company_founded_year')
+            ->assertJsonPath('data.website.inputs.2.label', 'سنة تأسيس الشركة')
+            ->assertJsonPath('data.website.inputs.2.type', 'number');
+
+        $this->withHeader('Accept-Language', 'en')
+            ->patchJson('/api/v1/admin/platform-settings/website', [
+                'company_founded_year' => 2022,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.inputs.2.key', 'company_founded_year')
+            ->assertJsonPath('data.inputs.2.label', 'Company Founded Year')
+            ->assertJsonPath('data.inputs.2.value', 2022)
+            ->assertJsonPath('data.inputs.2.type', 'number');
     }
 }

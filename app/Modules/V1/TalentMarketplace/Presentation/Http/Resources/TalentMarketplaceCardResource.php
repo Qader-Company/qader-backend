@@ -2,7 +2,6 @@
 
 namespace App\Modules\V1\TalentMarketplace\Presentation\Http\Resources;
 
-use App\Settings\MarketplaceSettings;
 use BackedEnum;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,7 +15,7 @@ class TalentMarketplaceCardResource extends JsonResource
         return [
             'id' => $this->id,
             'talent_code' => $this->talent_code,
-            'image' => app(MarketplaceSettings::class)->anonymous_talent_image,
+            'image' => asset('images/default-talent-avatar.svg'),
             'job_title' => $this->whenLoaded('jobTitle', fn () => $this->jobTitle ? [
                 'id' => $this->jobTitle->id,
                 'name' => $this->jobTitle->name,

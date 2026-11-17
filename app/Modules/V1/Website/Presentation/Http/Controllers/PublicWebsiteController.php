@@ -4,12 +4,14 @@ namespace App\Modules\V1\Website\Presentation\Http\Controllers;
 
 use App\Facades\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Modules\V1\Website\Application\Services\PublicTalentShowcaseService;
 use App\Modules\V1\Website\Domain\Models\MarketingFaq;
 use App\Modules\V1\Website\Domain\Models\MarketingPartner;
 use App\Modules\V1\Website\Domain\Models\MarketingTestimonial;
 use App\Modules\V1\Website\Presentation\Http\Resources\PublicMarketingFaqResource;
 use App\Modules\V1\Website\Presentation\Http\Resources\PublicMarketingPartnerResource;
 use App\Modules\V1\Website\Presentation\Http\Resources\PublicMarketingTestimonialResource;
+use App\Modules\V1\Website\Presentation\Http\Resources\PublicTalentShowcaseCardResource;
 use App\Settings\PlatformSettings;
 use App\Settings\WebsiteSettings;
 use App\Support\Localization\LocalizedValue;
@@ -87,5 +89,24 @@ class PublicWebsiteController extends Controller
             ->get();
 
         return ApiResponse::success(PublicMarketingTestimonialResource::collection($testimonials));
+    }
+
+    /**
+     * @response {"success":true,"data":{"professional_fields":[{"id":null,"slug":"all","name":"All Specializations","talents":[{"talent_code":"QDR-2847","image":"http://localhost:8000/images/default-talent-avatar.svg","job_title":{"id":1,"name":"Full Stack Developer"},"seniority_level":{"value":"senior","label":"Senior"},"years_of_experience":7,"country":{"id":1,"code":"EG","name":"Egypt"},"top_skills":[{"id":1,"name":"React"},{"id":2,"name":"Node.js"},{"id":3,"name":"TypeScript"}],"indicative_salary":{"minimum":4500,"maximum":6000,"currency":{"id":1,"code":"USD","symbol":"$","name":"US Dollar"}}}]},{"id":1,"slug":"software-development-1","name":"Software Development","talents":[]}]}}
+     */
+    public function talentShowcase(PublicTalentShowcaseService $service): JsonResponse
+    {
+        $professionalFields = $service->groups()
+            ->map(fn (array $group): array => [
+                'id' => $group['id'],
+                'slug' => $group['slug'],
+                'name' => $group['name'],
+                'talents' => PublicTalentShowcaseCardResource::collection($group['talents']),
+            ])
+            ->values();
+
+        return ApiResponse::success([
+            'professional_fields' => $professionalFields,
+        ]);
     }
 }

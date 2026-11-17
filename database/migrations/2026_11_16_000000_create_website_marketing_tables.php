@@ -54,7 +54,11 @@ return new class extends Migration
         if (! Schema::hasTable('marketing_testimonial_translations')) {
             Schema::create('marketing_testimonial_translations', function (Blueprint $table): void {
                 $table->id();
-                $table->foreignId('marketing_testimonial_id')->constrained('marketing_testimonials')->cascadeOnDelete();
+                $table->foreignId('marketing_testimonial_id');
+                $table->foreign('marketing_testimonial_id', 'marketing_testimonial_fk')
+                    ->references('id')
+                    ->on('marketing_testimonials')
+                    ->cascadeOnDelete();
                 $table->string('locale', 5)->index();
                 $table->string('name');
                 $table->string('role')->nullable();

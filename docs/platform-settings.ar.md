@@ -51,7 +51,7 @@
 | `website.referral_commission_percentage` | Percentage | `10` | Admin مخول | نسبة برنامج الإحالة الظاهرة في Home |
 | `website.company_location_ar` | Nullable string | `6 أكتوبر، مصر` | Admin مخول | موقع الشركة المعروض بالعربية في About Qader |
 | `website.company_location_en` | Nullable string | `6th of October, Egypt` | Admin مخول | موقع الشركة المعروض بالإنجليزية |
-| `marketplace.anonymous_talent_image` | Nullable string | `null` | Admin مخول | منفذ حاليًا فقط؛ مقرر إلغاؤه لصالح Asset ثابت مع الحفاظ على Response الحالية |
+| `marketplace.anonymous_talent_image` | Nullable string | `null` | Legacy | لم يعد مستخدمًا في كروت المواهب؛ الصورة الافتراضية أصبحت Asset ثابتًا |
 | `paid_services.qader_expert_opinion_price` | Positive decimal | `250` | Admin مخول | سعر فتح Qader Expert Opinion للعميل |
 | `paid_services.qader_expert_opinion_currency` | Currency code | `EGP` | Admin مخول | عملة خدمة Qader Expert Opinion |
 | `paid_services.detailed_rejection_feedback_price` | Positive decimal | `100` | Admin مخول | سعر فتح Detailed Rejection Feedback للموهبة |
@@ -144,8 +144,8 @@ users.is_active = false
 ### 2.6 Footer الموقع وصورة Talent المجهولة
 
 - `footer_copyright_text_*` يقبل placeholder باسم `{year}` ويستبدل بالسنة الحالية عند الإرجاع للواجهة.
-- التنفيذ الحالي يستخدم `marketplace.anonymous_talent_image` من Settings.
-- القرار المعتمد الآن أن صورة Talent المجهولة Asset ثابت داخل المشروع، وليست قيمة يعدلها الأدمن. يلزم عند التنفيذ تحويل `TalentMarketplaceCardResource` إلى الـAsset الثابت وإخراج إعداد `anonymous_talent_image` من شاشة وإدارة Platform Settings، مع بقاء شكل حقل `image` في Response كما هو.
+- كروت المواهب في Client Marketplace وPublic Website تستخدم الآن Asset ثابتًا: `/images/default-talent-avatar.svg`، مع بقاء حقل `image` في الـResponse كما هو.
+- `marketplace.anonymous_talent_image` ما زال موجودًا للتوافق مع البيانات والإعدادات القديمة، لكنه لم يعد مصدر صورة الكارت.
 
 ### 2.7 Website Marketing
 

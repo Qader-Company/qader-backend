@@ -59,6 +59,7 @@ class PlatformSettingsInputFactory
                     $key,
                     $value,
                     $types[$key] ?? 'text',
+                    __("settings.labels.{$key}"),
                 ))
                 ->values()
                 ->all(),
