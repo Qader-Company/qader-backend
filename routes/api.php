@@ -12,4 +12,5 @@ Route::post('/maintenance/{command}', MaintenanceCommandController::class)
         'optimize-clear',
         'create-api-key',
         'queue-work',
+        'queue-restart',
     ]);

@@ -46,6 +46,7 @@ class MaintenanceCommandController extends Controller
             'optimize-clear' => ['optimize:clear', []],
             'create-api-key' => ['apikey:generate', ['name' => $apiKeyName]],
             'queue-work' => ['queue:work', ['--stop-when-empty' => true]],
+            'queue-restart' => ['queue:restart', []],
             default => throw new HttpException(422, 'Unsupported maintenance command.'),
         };
 
