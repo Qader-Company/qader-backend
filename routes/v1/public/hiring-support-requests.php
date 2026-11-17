@@ -5,3 +5,5 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/', [PublicHiringSupportRequestController::class, 'store'])
     ->middleware('throttle:public-hiring-support-requests');
+
+Route::get('/countries', [PublicHiringSupportRequestController::class, 'getCountries']);
