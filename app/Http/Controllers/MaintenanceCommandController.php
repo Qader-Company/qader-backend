@@ -42,10 +42,18 @@ class MaintenanceCommandController extends Controller
             'seed' => ['db:seed', array_filter([
                 '--class' => $seederClass,
                 '--force' => true,
-            ], static fn (mixed $value): bool => $value !== null)],
+            ], static fn(mixed $value): bool => $value !== null)],
             'optimize-clear' => ['optimize:clear', []],
             'create-api-key' => ['apikey:generate', ['name' => $apiKeyName]],
-            'queue-work' => ['queue:work', ['--stop-when-empty' => true]],
+            'queue-work' => [
+                'queue:work',
+                [
+                    '--stop-when-empty' => true,
+                    '--tries' => 1,
+                    '--timeout' => 30,
+                    '--sleep' => 1,
+                ],
+            ],
             'queue-restart' => ['queue:restart', []],
             default => throw new HttpException(422, 'Unsupported maintenance command.'),
         };
