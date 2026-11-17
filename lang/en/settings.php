@@ -23,7 +23,6 @@ return [
         'referral_commission_percentage' => 'Referral Commission Percentage',
         'company_location_ar' => 'Company Location (Arabic)',
         'company_location_en' => 'Company Location (English)',
-        'anonymous_talent_image' => 'Anonymous Talent Image',
         'qader_expert_opinion_price' => 'Qader Expert Opinion Price',
         'qader_expert_opinion_currency' => 'Qader Expert Opinion Currency',
         'detailed_rejection_feedback_price' => 'Detailed Rejection Feedback Price',

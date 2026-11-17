@@ -16,7 +16,6 @@ class PublicTalentShowcaseCardResource extends JsonResource
 
         return [
             'talent_code' => $this->talent_code,
-            'image' => asset('images/default-talent-avatar.svg'),
             'job_title' => $this->whenLoaded('jobTitle', fn () => $this->jobTitle ? [
                 'name' => $this->jobTitle->name,
             ] : null),

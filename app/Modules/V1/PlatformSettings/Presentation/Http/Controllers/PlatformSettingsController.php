@@ -94,16 +94,6 @@ class PlatformSettingsController extends Controller
     }
 
     /**
-     * @bodyParam anonymous_talent_image string Legacy anonymous talent image URL; may be null. Example: http://localhost:8000/images/default-talent-avatar.svg
-     */
-    public function updateMarketplace(Request $request, PlatformSettingsService $service): JsonResponse
-    {
-        return $this->update($request, $service, 'marketplace', [
-            'anonymous_talent_image' => ['nullable', 'string', 'max:2048'],
-        ]);
-    }
-
-    /**
      * @bodyParam qader_expert_opinion_price number Qader Expert Opinion price. Example: 250
      * @bodyParam qader_expert_opinion_currency string Active three-letter currency code. Example: EGP
      * @bodyParam detailed_rejection_feedback_price number Detailed Rejection Feedback price. Example: 100

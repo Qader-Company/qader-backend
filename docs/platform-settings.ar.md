@@ -19,7 +19,7 @@
 | ربط مدد عروض ومقابلات التوظيف وحد عدم الرد بالفلو | منفذ |
 | ربط حدود رفض وإعادة جدولة مقابلة تقييم Talent بالفلو | منفذ |
 | ربط مدة Trash بالإزالة التلقائية واليدوية من صفحة المحذوفات | منفذ |
-| استخدام صورة Talent المجهولة في Marketplace | منفذ حاليًا من Settings؛ تقرر تحويلها إلى Asset ثابت ويحتاج التنفيذ إلى تنظيف الربط الحالي |
+| صورة Talent المجهولة في Client Marketplace | Asset ثابت ولا تدار من Settings؛ Public Website Showcase لا يعيد حقل صورة |
 | تخزين بيانات الدعم والروابط القانونية وFooter | منفذ من جهة Admin Settings |
 | Public API تقرأ Website/Support/Legal settings للـMarketing Website | منفذ |
 | إعدادات بيانات الشركة ونسبة برنامج الإحالة الظاهرة في Website Figma | منفذ عبر Settings migration مستقلة |
@@ -51,7 +51,6 @@
 | `website.referral_commission_percentage` | Percentage | `10` | Admin مخول | نسبة برنامج الإحالة الظاهرة في Home |
 | `website.company_location_ar` | Nullable string | `6 أكتوبر، مصر` | Admin مخول | موقع الشركة المعروض بالعربية في About Qader |
 | `website.company_location_en` | Nullable string | `6th of October, Egypt` | Admin مخول | موقع الشركة المعروض بالإنجليزية |
-| `marketplace.anonymous_talent_image` | Nullable string | `null` | Legacy | لم يعد مستخدمًا في كروت المواهب؛ الصورة الافتراضية أصبحت Asset ثابتًا |
 | `paid_services.qader_expert_opinion_price` | Positive decimal | `250` | Admin مخول | سعر فتح Qader Expert Opinion للعميل |
 | `paid_services.qader_expert_opinion_currency` | Currency code | `EGP` | Admin مخول | عملة خدمة Qader Expert Opinion |
 | `paid_services.detailed_rejection_feedback_price` | Positive decimal | `100` | Admin مخول | سعر فتح Detailed Rejection Feedback للموهبة |
@@ -141,11 +140,11 @@ users.is_active = false
 - روابط Privacy وTerms عامة للمنصة. الشروط الخاصة بنوع عقد أواتفاقية تظل داخل موديول العقود وليست هذه الإعدادات.
 - لا يعرض رابط فارغ في الواجهة عند بقاء القيمة `null`.
 
-### 2.6 Footer الموقع وصورة Talent المجهولة
+### 2.6 Footer الموقع وخصوصية صورة Talent
 
 - `footer_copyright_text_*` يقبل placeholder باسم `{year}` ويستبدل بالسنة الحالية عند الإرجاع للواجهة.
-- كروت المواهب في Client Marketplace وPublic Website تستخدم الآن Asset ثابتًا: `/images/default-talent-avatar.svg`، مع بقاء حقل `image` في الـResponse كما هو.
-- `marketplace.anonymous_talent_image` ما زال موجودًا للتوافق مع البيانات والإعدادات القديمة، لكنه لم يعد مصدر صورة الكارت.
+- كروت المواهب داخل Client Marketplace تستخدم Asset ثابتًا: `/images/default-talent-avatar.svg` للحفاظ على هوية الموهبة.
+- Public Website Talent Showcase لا يعيد حقل `image`، ولا توجد مجموعة Marketplace ضمن Platform Settings.
 
 ### 2.7 Website Marketing
 
@@ -243,7 +242,6 @@ TalentEvaluationSettings => group: talent_evaluation
 TrashSettings            => group: trash
 PlatformSettings         => group: platform
 WebsiteSettings          => group: website
-MarketplaceSettings      => group: marketplace
 PaidServicesSettings     => group: paid_services
 ```
 
@@ -290,8 +288,6 @@ return new class extends SettingsMigration
         // website.company_location_ar = 6 أكتوبر، مصر
         // website.company_location_en = 6th of October, Egypt
         // website.footer_copyright_text_ar = © {year} قادر. جميع الحقوق محفوظة.
-
-        $this->migrator->add('marketplace.anonymous_talent_image', null);
 
         $this->migrator->add('paid_services.qader_expert_opinion_price', 250);
         $this->migrator->add('paid_services.qader_expert_opinion_currency', 'EGP');
@@ -356,7 +352,6 @@ php artisan settings:clear-cache
 | `company_founded_year` | `integer`, من `1900` إلى السنة الحالية |
 | `referral_commission_percentage` | `numeric`, من `0` إلى `100` |
 | `company_location_ar`, `company_location_en` | `nullable`, `string`, `max:255` |
-| `anonymous_talent_image` | `nullable`, Media path أوURL صالح حسب آلية الرفع المعتمدة |
 | أسعار الخدمات المدفوعة | `numeric`, أكبر من `0` |
 | عملات الخدمات المدفوعة | `string`, `size:3`، ويجب أن تطابق كود Currency فعالًا |
 
@@ -441,7 +436,7 @@ GET /api/v1/public/website
 1. `offer_no_response_count` تراكمي حاليًا مدى حياة Talent، ولا يصفر بعد رد ناجح.
 2. إعادة تفعيل حساب Talent بعد وصوله لحد عدم الرد Action يدوي من Admin. تنفيذ Action والصلاحية الخاصة به ما زالا مطلوبين إذا لم يكونا موجودين عند بدء التنفيذ.
 3. بريد الدعم المعتمد `info@qadereg.com`. الهاتف وWhatsApp وروابط Privacy وTerms تظل `null` لأن قيمها غير موجودة في Figma الحالية ولم تعتمد خارجيًا.
-4. صورة Talent المجهولة Asset ثابت داخل المشروع، ولا يديرها الأدمن كـSetting.
+4. صورة Talent المجهولة في Client Marketplace هي Asset ثابت داخل المشروع، ولا يديرها الأدمن كـSetting، ولا يعيد Public Website Showcase حقل صورة.
 5. الأدمن يدير Marketing FAQs وPartners وTestimonials، لذلك تنفذ كجداول قابلة للإضافة والحذف والترتيب والتفعيل، وليست Arrays داخل Spatie Settings.
 
 ### 7.2 قرار Hiring Support Requests المعتمد
@@ -486,7 +481,7 @@ website.company_location_en
 platform.support_email = info@qadereg.com
 ```
 
-وتترك Phone وWhatsApp وPrivacy وTerms بقيمة `null` حتى تعتمد. صورة Talent المجهولة تتحول إلى Asset ثابت مع الحفاظ على حقل `image` في Marketplace responses.
+وتترك Phone وWhatsApp وPrivacy وTerms بقيمة `null` حتى تعتمد. صورة Talent المجهولة تظل Asset ثابتًا داخل Client Marketplace فقط.
 
 ### 8.3 Public Website API المنفذة
 

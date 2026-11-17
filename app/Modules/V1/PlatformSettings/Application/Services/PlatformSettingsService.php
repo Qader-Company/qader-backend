@@ -5,7 +5,6 @@ namespace App\Modules\V1\PlatformSettings\Application\Services;
 use App\Modules\V1\PlatformSettings\Domain\Models\PlatformSettingEvent;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Settings\HiringSettings;
-use App\Settings\MarketplaceSettings;
 use App\Settings\PaidServicesSettings;
 use App\Settings\PlatformSettings;
 use App\Settings\TalentEvaluationSettings;
@@ -22,7 +21,6 @@ class PlatformSettingsService
         private readonly TrashSettings $trash,
         private readonly PlatformSettings $platform,
         private readonly WebsiteSettings $website,
-        private readonly MarketplaceSettings $marketplace,
         private readonly PaidServicesSettings $paidServices,
         private readonly PlatformSettingsInputFactory $inputs,
     ) {}
@@ -35,7 +33,6 @@ class PlatformSettingsService
             'trash' => $this->inputs->make('trash', $this->trash->toArray()),
             'platform' => $this->inputs->make('platform', $this->platform->toArray()),
             'website' => $this->inputs('website', $this->website->toArray()),
-            'marketplace' => $this->inputs->make('marketplace', $this->marketplace->toArray()),
             'paid_services' => $this->inputs->make('paid_services', $this->paidServices->toArray()),
         ];
     }
@@ -84,7 +81,6 @@ class PlatformSettingsService
             'trash' => $this->trash,
             'platform' => $this->platform,
             'website' => $this->website,
-            'marketplace' => $this->marketplace,
             'paid-services' => $this->paidServices,
             default => throw new \InvalidArgumentException(__('settings.invalid_group')),
         };

@@ -23,7 +23,6 @@ return [
         'referral_commission_percentage' => 'نسبة عمولة الإحالة',
         'company_location_ar' => 'موقع الشركة بالعربية',
         'company_location_en' => 'موقع الشركة بالإنجليزية',
-        'anonymous_talent_image' => 'الصورة الافتراضية للمواهب',
         'qader_expert_opinion_price' => 'سعر رأي خبير قادر',
         'qader_expert_opinion_currency' => 'عملة رأي خبير قادر',
         'detailed_rejection_feedback_price' => 'سعر تقرير الرفض التفصيلي',

@@ -15,7 +15,6 @@ Route::middleware(['auth:sanctum', 'abilities:access,admin'])
             Route::patch('trash', 'updateTrash');
             Route::patch('platform', 'updatePlatform');
             Route::patch('website', 'updateWebsite');
-            Route::patch('marketplace', 'updateMarketplace');
             Route::patch('paid-services', 'updatePaidServices');
         });
     });

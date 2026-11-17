@@ -184,6 +184,7 @@ class WebsiteMarketingFlowTest extends TestCase
             ->assertJsonPath('data.professional_fields.1.talents.0.seniority_level.value', 'senior')
             ->assertJsonPath('data.professional_fields.1.talents.0.country.name', 'مصر')
             ->assertJsonPath('data.professional_fields.1.talents.0.indicative_salary.minimum', 4500)
+            ->assertJsonMissingPath('data.professional_fields.1.talents.0.image')
             ->assertJsonMissingPath('data.professional_fields.0.id')
             ->assertJsonMissingPath('data.professional_fields.1.id')
             ->assertJsonMissingPath('data.professional_fields.1.talents.0.id')
@@ -236,6 +237,7 @@ class WebsiteMarketingFlowTest extends TestCase
 
         $this->getJson('/api/v1/admin/platform-settings')
             ->assertOk()
+            ->assertJsonMissingPath('data.marketplace')
             ->assertJsonPath('data.website.inputs.2.key', 'company_founded_year')
             ->assertJsonPath('data.website.inputs.2.label', 'Company Founded Year')
             ->assertJsonPath('data.website.inputs.2.type', 'number');

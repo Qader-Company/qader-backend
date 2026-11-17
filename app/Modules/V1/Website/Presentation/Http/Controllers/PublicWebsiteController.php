@@ -92,7 +92,7 @@ class PublicWebsiteController extends Controller
     }
 
     /**
-     * @response {"success":true,"data":{"professional_fields":[{"slug":"all","name":"All Specializations","talents":[{"talent_code":"QDR-2847","image":"http://localhost:8000/images/default-talent-avatar.svg","job_title":{"name":"Full Stack Developer"},"seniority_level":{"value":"senior","label":"Senior"},"years_of_experience":7,"country":{"code":"EG","name":"Egypt"},"top_skills":[{"name":"React"},{"name":"Node.js"},{"name":"TypeScript"}],"indicative_salary":{"minimum":4500,"maximum":6000,"currency":{"code":"USD","symbol":"$","name":"US Dollar"}}}]},{"slug":"software-development-1","name":"Software Development","talents":[]}]}}
+     * @response {"success":true,"data":{"professional_fields":[{"slug":"all","name":"All Specializations","talents":[{"talent_code":"QDR-2847","job_title":{"name":"Full Stack Developer"},"seniority_level":{"value":"senior","label":"Senior"},"years_of_experience":7,"country":{"code":"EG","name":"Egypt"},"top_skills":[{"name":"React"},{"name":"Node.js"},{"name":"TypeScript"}],"indicative_salary":{"minimum":4500,"maximum":6000,"currency":{"code":"USD","symbol":"$","name":"US Dollar"}}}]},{"slug":"software-development-1","name":"Software Development","talents":[]}]}}
      */
     public function talentShowcase(PublicTalentShowcaseService $service): JsonResponse
     {

@@ -1,7 +1,6 @@
 <?php
 
 use App\Settings\HiringSettings;
-use App\Settings\MarketplaceSettings;
 use App\Settings\PaidServicesSettings;
 use App\Settings\PlatformSettings;
 use App\Settings\TalentEvaluationSettings;
@@ -15,7 +14,6 @@ return [
         TrashSettings::class,
         PlatformSettings::class,
         WebsiteSettings::class,
-        MarketplaceSettings::class,
         PaidServicesSettings::class,
     ],
     'setting_class_path' => app_path('Settings'),

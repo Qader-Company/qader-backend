@@ -36,9 +36,6 @@ class PlatformSettingsInputFactory
             'company_location_ar' => 'text',
             'company_location_en' => 'text',
         ],
-        'marketplace' => [
-            'anonymous_talent_image' => 'file',
-        ],
         'paid_services' => [
             'qader_expert_opinion_price' => 'number',
             'qader_expert_opinion_currency' => 'text',
