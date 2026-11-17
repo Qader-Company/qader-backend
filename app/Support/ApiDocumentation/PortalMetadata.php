@@ -16,13 +16,15 @@ class PortalMetadata extends Strategy
             ['api/v1/auth/logout', 'api/v1/auth/me'],
             true
         );
-        $isPublicJob = ($segments[2] ?? null) === 'public' && ($segments[3] ?? null) === 'jobs';
-        $portal = $isPublicJob ? 'website' : ($isAuth ? ($isSharedAuth ? 'talent' : $segments[3]) : $segments[2]);
-        $module = $isPublicJob ? 'jobs' : ($isAuth ? 'auth' : ($segments[3] ?? 'general'));
+        $isPublic = ($segments[2] ?? null) === 'public';
+        $portal = $isPublic ? 'website' : ($isAuth ? ($isSharedAuth ? 'talent' : $segments[3]) : $segments[2]);
+        $module = $isPublic ? ($segments[3] ?? 'general') : ($isAuth ? 'auth' : ($segments[3] ?? 'general'));
         if ($portal === 'client' && in_array($module, ['workspaces', 'access-control'], true)) {
             $module = match (true) {
+                in_array('trash', $segments, true) => 'trash',
                 in_array('talent-marketplace', $segments, true) => 'talent-marketplace',
                 in_array('talent-selections', $segments, true) => 'talent-selections',
+                in_array('help-requests', $segments, true) => 'help-requests',
                 in_array('hiring-requests', $segments, true) => 'hiring-requests',
                 in_array('hiring-interviews', $segments, true) => 'hiring-interviews',
                 in_array('hiring-request-items', $segments, true) => 'hiring-request-items',

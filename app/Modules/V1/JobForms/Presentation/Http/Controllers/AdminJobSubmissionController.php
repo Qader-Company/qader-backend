@@ -12,6 +12,7 @@ use App\Modules\V1\JobForms\Presentation\Http\Requests\ListJobSubmissionsRequest
 use App\Modules\V1\JobForms\Presentation\Http\Resources\JobSubmissionResource;
 use App\Modules\V1\TalentApplications\Application\Services\AdminApplicationActor;
 use App\Modules\V1\Talents\Application\UseCases\CreateTalentAccountUseCase;
+use App\Modules\V1\Trash\Application\Services\TrashService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -47,11 +48,11 @@ class AdminJobSubmissionController extends Controller
         return Storage::disk($media->disk)->download($media->getPathRelativeToRoot(), $media->file_name);
     }
 
-    public function destroy(JobPosting $jobForm, JobFormSubmission $submission): JsonResponse
+    public function destroy(JobPosting $jobForm, JobFormSubmission $submission, TrashService $trash): JsonResponse
     {
         $this->belongs($jobForm, $submission);
         throw_if($submission->status === JobSubmissionStatusEnum::HIRING_STARTED, ConflictHttpException::class, __('job_forms.cannot_delete_hired'));
-        $submission->delete();
+        $trash->softDelete('form-submissions', (int) $submission->getKey(), request()->user());
 
         return ApiResponse::deleted();
     }

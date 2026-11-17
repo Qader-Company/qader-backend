@@ -14,6 +14,4 @@ Route::controller(TalentHiringController::class)->group(function (): void {
     Route::post('hiring-interviews/{interview}/accept-schedule', 'acceptInterviewSchedule')->whereNumber('interview');
     Route::post('hiring-interviews/{interview}/request-schedule-change', 'requestInterviewScheduleChange')->whereNumber('interview');
     Route::post('hiring-interviews/{interview}/apologize', 'apologizeForInterview')->whereNumber('interview');
-    Route::post('hiring-request-items/{item}/decision', 'decision')->whereNumber('item');
-    Route::delete('hiring-request-items/{item}/decision', 'withdrawDecision')->whereNumber('item');
 });

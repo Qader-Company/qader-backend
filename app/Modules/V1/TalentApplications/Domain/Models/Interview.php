@@ -19,7 +19,8 @@ class Interview extends Model
     protected $fillable = [
         'application_id', 'round_number', 'type', 'status', 'created_by_admin_id',
         'google_calendar_event_id', 'meeting_url', 'rejected_slots_reason',
-        'slot_rejection_count', 'talent_reschedule_used_at', 'started_at', 'completed_at',
+        'slot_rejection_count', 'talent_reschedule_used_at', 'talent_reschedule_count',
+        'started_at', 'completed_at',
     ];
 
     protected function casts(): array
@@ -30,6 +31,7 @@ class Interview extends Model
             'slot_rejection_count' => 'integer',
             'round_number' => 'integer',
             'talent_reschedule_used_at' => 'datetime',
+            'talent_reschedule_count' => 'integer',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
         ];
@@ -59,5 +61,28 @@ class Interview extends Model
     {
         return $this->hasOne(InterviewSlot::class)
             ->where('status', InterviewSlotStatusEnum::SELECTED->value);
+    }
+
+    /**
+     * Every offered slot is already in the past while the talent still had to pick one,
+     * so the talent has nothing to select and the reviewer must offer new times.
+     */
+    public function hasOnlyExpiredSlots(): bool
+    {
+        if ($this->status !== InterviewStatusEnum::AWAITING_SLOT_SELECTION) {
+            return false;
+        }
+
+        $slots = $this->relationLoaded('slots') ? $this->slots : $this->slots()->get();
+
+        return ! $slots->contains(
+            fn (InterviewSlot $slot): bool => $slot->status === InterviewSlotStatusEnum::AVAILABLE && $slot->starts_at->isFuture(),
+        );
+    }
+
+    /** The reviewer can (and must) offer replacement slots. */
+    public function needsReplacementSlots(): bool
+    {
+        return $this->status === InterviewStatusEnum::AWAITING_NEW_SLOTS || $this->hasOnlyExpiredSlots();
     }
 }

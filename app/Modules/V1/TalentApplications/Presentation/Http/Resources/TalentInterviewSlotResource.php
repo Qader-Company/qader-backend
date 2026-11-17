@@ -3,6 +3,7 @@
 namespace App\Modules\V1\TalentApplications\Presentation\Http\Resources;
 
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewSlotStatusEnum;
+use App\Support\ApiMetadata\EnumLabel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,6 +21,7 @@ class TalentInterviewSlotResource extends JsonResource
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
             'status' => $this->status->value,
+            'status_label' => EnumLabel::for($this->status, 'interview_slot_statuses'),
             'is_selectable' => $this->status === InterviewSlotStatusEnum::AVAILABLE
                 && $this->starts_at?->isFuture(),
         ];

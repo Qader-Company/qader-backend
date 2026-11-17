@@ -51,6 +51,7 @@ return [
     'item_held' => 'Hiring item put on hold successfully.',
     'item_resumed' => 'Hiring item resumed successfully.',
     'item_cancelled' => 'Hiring item cancelled successfully.',
+    'held_by_workspace_deactivation' => 'Paused because the workspace was deactivated.',
     'hold_not_allowed' => 'This hiring item cannot be put on hold in the current state.',
     'resume_not_allowed' => 'Only an item on hold can be resumed.',
     'cancel_not_allowed' => 'This hiring item can no longer be cancelled.',

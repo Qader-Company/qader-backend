@@ -26,10 +26,7 @@ return new class extends Migration
             $table->string('client_decision', 16)->nullable()->after('cancellation_reason');
             $table->text('client_decision_reason')->nullable()->after('client_decision');
             $table->timestamp('client_decided_at')->nullable()->after('client_decision_reason');
-            $table->string('talent_decision', 16)->nullable()->after('client_decided_at');
-            $table->text('talent_decision_reason')->nullable()->after('talent_decision');
-            $table->timestamp('talent_decided_at')->nullable()->after('talent_decision_reason');
-            $table->timestamp('decision_due_at')->nullable()->after('talent_decided_at');
+            $table->timestamp('decision_due_at')->nullable()->after('client_decided_at');
         });
 
         Schema::create('hiring_interviews', function (Blueprint $table): void {

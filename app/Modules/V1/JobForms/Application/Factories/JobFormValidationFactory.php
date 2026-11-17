@@ -21,6 +21,7 @@ class JobFormValidationFactory
         return match ($field) {
             ProfessionalFormFieldEnum::YEARS_OF_EXPERIENCE => [$key => ['required', Rule::enum(JobExperienceRangeEnum::class)]],
             ProfessionalFormFieldEnum::SKILLS => [$key => ['required', 'array', 'min:1'], $key.'.*' => ['integer', 'distinct', Rule::exists('skills', 'id')->where('is_active', true), Rule::exists('professional_field_skill', 'skill_id')->where('professional_field_id', $professionalFieldId)]],
+            ProfessionalFormFieldEnum::INDUSTRIES => [$key => ['required', 'array', 'min:1'], $key.'.*' => ['integer', 'distinct', Rule::exists('industries', 'id')->where('is_active', true)]],
             ProfessionalFormFieldEnum::NOTICE_PERIOD => [$key => ['required', 'string', 'max:100']],
             ProfessionalFormFieldEnum::EXPECTED_SALARY => [$key => ['required', 'array:amount,currency_id'], $key.'.amount' => ['required', 'numeric', 'min:0'], $key.'.currency_id' => ['required', 'integer', Rule::exists('currencies', 'id')->where('is_active', true)]],
             ProfessionalFormFieldEnum::PHONE_NUMBER => [$key => ['required', 'string', 'max:24']],

@@ -26,6 +26,7 @@ class TalentApplicationQueryService
                 TalentApplicationStatusEnum::SUBMITTED->value,
                 TalentApplicationStatusEnum::UNDER_REVIEW->value,
                 TalentApplicationStatusEnum::INTERVIEW_REQUIRED->value,
+                TalentApplicationStatusEnum::SCHEDULED->value,
             ])->count(),
             'accepted' => (clone $summaryQuery)->where('status', TalentApplicationStatusEnum::ACCEPTED->value)->count(),
             'rejected' => (clone $summaryQuery)->where('status', TalentApplicationStatusEnum::REJECTED->value)->count(),
@@ -122,6 +123,12 @@ class TalentApplicationQueryService
         if ($status === TalentApplicationStatusEnum::UNDER_REVIEW && $assignedToActor && $application->evaluation !== null && $has(AdminPermissionEnum::TALENT_APPLICATIONS_DECIDE)) {
             $actions[] = 'reject';
             $actions[] = 'schedule_interview';
+        }
+
+        // The talent rejected every slot, or every offered slot passed: the reviewer offers new times.
+        if ($status->isInterviewStage() && $assignedToActor && $has(AdminPermissionEnum::TALENT_APPLICATIONS_DECIDE)
+            && $application->loadMissing('interview.slots')->interview?->needsReplacementSlots()) {
+            $actions[] = 'offer_new_slots';
         }
 
         return $actions;

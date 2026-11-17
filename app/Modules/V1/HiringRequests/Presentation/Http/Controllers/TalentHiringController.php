@@ -4,10 +4,8 @@ namespace App\Modules\V1\HiringRequests\Presentation\Http\Controllers;
 
 use App\Facades\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Modules\V1\HiringRequests\Application\Services\HiringDecisionWorkflow;
 use App\Modules\V1\HiringRequests\Application\Services\HiringInterviewWorkflow;
 use App\Modules\V1\HiringRequests\Application\Services\HiringOfferWorkflow;
-use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringDecisionEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringInterviewResponseEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
@@ -19,7 +17,6 @@ use App\Modules\V1\HiringRequests\Presentation\Http\Resources\HiringRequestItemR
 use App\Support\ApiMetadata\EnumOptions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 /**
  * @group Talent
@@ -83,18 +80,6 @@ class TalentHiringController extends Controller
     public function apologizeForInterview(TalentInterviewReasonRequest $request, int $interview, HiringInterviewWorkflow $workflow): JsonResponse
     {
         return $this->saveInterviewResponse($request, $interview, $workflow, HiringInterviewResponseEnum::APOLOGIZED);
-    }
-
-    public function decision(Request $request, int $item, HiringDecisionWorkflow $workflow): JsonResponse
-    {
-        $data = $request->validate(['decision' => ['required', Rule::enum(HiringDecisionEnum::class)], 'reason' => ['nullable', 'string', 'max:2000']]);
-
-        return ApiResponse::updated(new HiringRequestItemResource($workflow->submitAsTalent($request->user(), $item, HiringDecisionEnum::from($data['decision']), $data['reason'] ?? null)), __('hiring.decision_saved'));
-    }
-
-    public function withdrawDecision(Request $request, int $item, HiringDecisionWorkflow $workflow): JsonResponse
-    {
-        return ApiResponse::updated(new HiringRequestItemResource($workflow->withdrawAsTalent($request->user(), $item)), __('hiring.decision_withdrawn'));
     }
 
     private function saveInterviewResponse(

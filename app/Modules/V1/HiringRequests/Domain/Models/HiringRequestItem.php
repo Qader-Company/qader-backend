@@ -21,7 +21,6 @@ class HiringRequestItem extends Model
         'contract_type', 'contract_type_id', 'contract_configuration_snapshot', 'interview_required', 'status',
         'rejection_reason', 'hold_reason', 'cancellation_reason',
         'client_decision', 'client_decision_reason', 'client_decided_at',
-        'talent_decision', 'talent_decision_reason', 'talent_decided_at',
         'decision_due_at',
     ];
 
@@ -46,9 +45,7 @@ class HiringRequestItem extends Model
             'interview_required' => 'boolean',
             'status' => HiringRequestItemStatusEnum::class,
             'client_decision' => HiringDecisionEnum::class,
-            'talent_decision' => HiringDecisionEnum::class,
             'client_decided_at' => 'datetime',
-            'talent_decided_at' => 'datetime',
             'decision_due_at' => 'datetime',
         ];
     }

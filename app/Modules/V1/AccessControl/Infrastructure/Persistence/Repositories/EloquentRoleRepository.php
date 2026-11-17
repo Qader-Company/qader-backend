@@ -15,6 +15,7 @@ class EloquentRoleRepository implements RoleRepositoryInterface
     {
         $query = DB::table('roles')
             ->where('portal', $portal->value)
+            ->whereNull('deleted_at')
             ->when(
                 $filters['search'] ?? null,
                 fn($query, string $search) => $query->where(
@@ -118,6 +119,7 @@ class EloquentRoleRepository implements RoleRepositoryInterface
         $role = DB::table('roles')
             ->where('id', $roleId)
             ->where('portal', $portal->value)
+            ->whereNull('deleted_at')
             ->first([
                 'id',
                 'name',

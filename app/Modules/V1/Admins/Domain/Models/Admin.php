@@ -3,6 +3,7 @@
 namespace App\Modules\V1\Admins\Domain\Models;
 
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequest;
+use App\Modules\V1\Trash\Domain\Concerns\HasTrashLifecycle;
 use App\Modules\V1\Users\Domain\Models\User;
 use EloquentFilter\Filterable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Admin extends Model
 {
-    use Filterable;
+    use Filterable, HasTrashLifecycle;
 
     protected $table = 'admins';
 

@@ -3,6 +3,7 @@
 namespace App\Modules\V1\TalentApplications\Presentation\Http\Resources;
 
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationStatusEnum;
+use App\Support\ApiMetadata\EnumLabel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,8 +20,10 @@ class AdminTalentResource extends JsonResource
             'id' => $this->talent_id,
             'application_id' => $this->id,
             'application_status' => $applicationStatus,
+            'application_status_label' => EnumLabel::for($applicationStatus, 'application_statuses'),
             'effective_status' => $activeBlacklist ? 'blacklisted' : $applicationStatus,
             'talent' => [
+                'talent_code' => $this->talent?->talent_code,
                 'full_name' => trim(($this->talent?->user?->first_name ?? '').' '.($this->talent?->user?->last_name ?? '')),
                 'email' => $this->talent?->user?->email,
                 'phone_country_code' => $this->talent?->phone_country_code,

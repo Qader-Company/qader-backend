@@ -28,11 +28,20 @@ class WorkspaceAccessService
     public function authorize(User $user, Workspace $workspace, string $permission): WorkspaceMember
     {
         $member = $this->member($user, $workspace);
+        $this->ensureActive($workspace);
         if (! $this->allows($member, $permission)) {
             throw new AuthorizationException(__('workspaces.permission_denied'));
         }
 
         return $member;
+    }
+
+    /** An inactive workspace pauses all its activity: members keep seeing it exists, but every action returns 403. */
+    public function ensureActive(Workspace $workspace): void
+    {
+        if (! $workspace->isActive()) {
+            throw new AuthorizationException(__('workspaces.inactive'));
+        }
     }
 
     public function allows(WorkspaceMember $member, string $permission): bool

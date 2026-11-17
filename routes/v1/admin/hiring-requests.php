@@ -23,6 +23,7 @@ Route::middleware(['auth:sanctum', 'abilities:access,admin'])->group(function ()
         Route::post('offers', 'sendOffer')->middleware(AdminPermissionEnum::HIRING_REQUESTS_HANDLE->middleware());
         Route::post('offers/respond-on-behalf', 'respondOnBehalf')->middleware(AdminPermissionEnum::HIRING_REQUESTS_RESPOND_ON_BEHALF->middleware());
         Route::post('interview/schedule', 'proposeInterview')->middleware(AdminPermissionEnum::HIRING_REQUESTS_HANDLE->middleware());
+        Route::post('interview/respond-on-behalf', 'respondToInterviewOnBehalf')->middleware(AdminPermissionEnum::HIRING_REQUESTS_RESPOND_ON_BEHALF->middleware());
         Route::post('interview/confirm', 'confirmInterview')->middleware(AdminPermissionEnum::HIRING_REQUESTS_HANDLE->middleware());
         Route::post('interview/start', 'startInterview')->middleware(AdminPermissionEnum::HIRING_REQUESTS_HANDLE->middleware());
         Route::post('interview/complete', 'completeInterview')->middleware(AdminPermissionEnum::HIRING_REQUESTS_HANDLE->middleware());

@@ -6,6 +6,10 @@ return [
     'resume_parser_not_configured' => 'Resume parsing is not configured yet.',
     'resume_parser_unavailable' => 'Resume parsing is temporarily unavailable. Please try again shortly.',
     'resume_unmatched_master_data' => 'Some resume values could not be matched to the available options.',
+    'profile' => [
+        'skills_outside_professional_field' => 'All selected skills must belong to your professional field.',
+        'tools_outside_professional_field' => 'All selected tools must belong to your professional field.',
+    ],
     'application' => [
         'not_submitted' => 'No application has been submitted yet.',
     ],
@@ -44,6 +48,7 @@ return [
         'cancelled' => 'Your interview was cancelled. The Qader team will provide new times.',
         'calendar_not_configured' => 'Google Calendar is not configured for online interviews.',
         'calendar_unavailable' => 'Google Calendar is currently unavailable. Please try again shortly.',
+        'meeting_link_unavailable' => 'An online meeting link is not available for this time yet. Please choose another time or contact Qader support.',
         'meeting_not_created' => 'The Google Meet link could not be created. Please try again shortly.',
         'calendar_title' => 'Qader :type interview - :talent',
         'start_not_allowed' => 'The interview cannot be started at this time.',

@@ -2,6 +2,7 @@
 
 namespace App\Modules\V1\TalentApplications\Presentation\Http\Resources;
 
+use App\Support\ApiMetadata\EnumLabel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,17 +15,26 @@ class InterviewResource extends JsonResource
             'round_number' => $this->round_number,
             'type' => $this->type->value,
             'status' => $this->status->value,
+            'status_label' => EnumLabel::for($this->status, 'interview_statuses'),
             'application_id' => $this->application_id,
             'application' => $this->whenLoaded('application', fn () => [
                 'id' => $this->application->id,
                 'status' => $this->application->status->value,
+                'status_label' => EnumLabel::for($this->application->status, 'application_statuses'),
                 'talent' => [
                     'id' => $this->application->talent_id,
+                    'talent_code' => $this->application->talent?->talent_code,
                     'full_name' => trim(
                         ($this->application->talent?->user?->first_name ?? '').' '
                         .($this->application->talent?->user?->last_name ?? ''),
                     ),
                     'email' => $this->application->talent?->user?->email,
+                    'job_title' => $this->application->talent?->jobTitle === null ? null : [
+                        'id' => $this->application->talent->jobTitle->id,
+                        'name' => $this->application->talent->jobTitle->name,
+                    ],
+                    'seniority_level' => $this->application->talent?->seniority_level?->value,
+                    'years_of_experience' => $this->application->talent?->years_of_experience,
                 ],
             ]),
             'interviewers' => AdminSummaryResource::collection($this->whenLoaded('admins')),
@@ -37,6 +47,7 @@ class InterviewResource extends JsonResource
                 'latitude' => $slot->latitude,
                 'longitude' => $slot->longitude,
                 'status' => $slot->status->value,
+                'status_label' => EnumLabel::for($slot->status, 'interview_slot_statuses'),
             ])),
             'google_calendar_event_id' => $this->google_calendar_event_id,
             'meeting_url' => $this->meeting_url,

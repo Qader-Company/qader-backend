@@ -61,13 +61,6 @@ class ClientHiringWorkflowController extends Controller
         return ApiResponse::updated(new HiringRequestItemResource($workflow->submitAsClient($request->user(), $workspace, $item, HiringDecisionEnum::from($data['decision']), $data['reason'] ?? null)), __('hiring.decision_saved'));
     }
 
-    public function withdrawDecision(Request $request, Workspace $workspace, int $item, WorkspaceAccessService $access, HiringDecisionWorkflow $workflow): JsonResponse
-    {
-        $this->authorize($request, $workspace, $access, true);
-
-        return ApiResponse::updated(new HiringRequestItemResource($workflow->withdrawAsClient($request->user(), $workspace, $item)), __('hiring.decision_withdrawn'));
-    }
-
     public function hold(Request $request, Workspace $workspace, int $item, WorkspaceAccessService $access, HiringItemControlWorkflow $workflow): JsonResponse
     {
         $this->authorize($request, $workspace, $access, true);

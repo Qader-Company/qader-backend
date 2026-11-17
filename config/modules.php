@@ -22,6 +22,8 @@ return [
         'public' => [
             ['prefix' => 'auth', 'file' => 'auth.php', 'api_key' => true],
             ['prefix' => 'public/jobs', 'file' => 'jobs.php', 'api_key' => true],
+            ['prefix' => 'public/website', 'file' => 'website.php', 'api_key' => true],
+            ['prefix' => 'public/hiring-support-requests', 'file' => 'hiring-support-requests.php', 'api_key' => true],
         ],
 
         'admin' => [
@@ -43,6 +45,11 @@ return [
             ['prefix' => 'admin/job-forms', 'file' => 'job-forms.php', 'api_key' => true],
             ['prefix' => 'admin/hiring-requests', 'file' => 'hiring-requests.php', 'api_key' => true],
             ['prefix' => 'admin/contract-types', 'file' => 'contract-types.php', 'api_key' => true],
+            ['prefix' => 'admin/help-requests', 'file' => 'help-requests.php', 'api_key' => true],
+            ['prefix' => 'admin/clients', 'file' => 'clients.php', 'api_key' => true],
+            ['prefix' => 'admin/platform-settings', 'file' => 'platform-settings.php', 'api_key' => true],
+            ['prefix' => 'admin/website', 'file' => 'website.php', 'api_key' => true],
+            ['prefix' => 'admin/trash', 'file' => 'trash.php', 'api_key' => true],
         ],
 
         'client' => [
@@ -50,6 +57,9 @@ return [
             ['prefix' => 'client/access-control', 'file' => 'access-control.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
             ['prefix' => 'client/workspaces', 'file' => 'workspaces.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
             ['prefix' => 'client/workspaces', 'file' => 'hiring-requests.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
+            ['prefix' => 'client/workspaces', 'file' => 'help-requests.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
+            ['prefix' => 'client/trash', 'file' => 'trash.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
+            ['prefix' => 'client/workspaces', 'file' => 'workspace-trash.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
         ],
 
         'talent' => [

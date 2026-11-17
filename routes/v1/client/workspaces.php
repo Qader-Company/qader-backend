@@ -5,6 +5,7 @@ use App\Modules\V1\TalentMarketplace\Presentation\Http\Controllers\WorkspaceTale
 use App\Modules\V1\Workspaces\Presentation\Http\Controllers\WorkspaceController;
 use App\Modules\V1\Workspaces\Presentation\Http\Controllers\WorkspaceMemberController;
 use App\Modules\V1\Workspaces\Presentation\Http\Controllers\WorkspaceOptionController;
+use App\Modules\V1\Trash\Presentation\Http\Controllers\ClientTrashController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('options', WorkspaceOptionController::class);
@@ -12,7 +13,9 @@ Route::get('/', [WorkspaceController::class, 'index']);
 Route::post('/', [WorkspaceController::class, 'store']);
 Route::get('{workspace}', [WorkspaceController::class, 'show']);
 Route::patch('{workspace}', [WorkspaceController::class, 'update']);
+Route::delete('{workspace}', [ClientTrashController::class, 'deleteWorkspace']);
 Route::get('{workspace}/dashboard', [WorkspaceController::class, 'dashboard']);
+Route::get('{workspace}/tax-card', [WorkspaceController::class, 'taxCard']);
 Route::get('{workspace}/members', [WorkspaceMemberController::class, 'index']);
 Route::post('{workspace}/members', [WorkspaceMemberController::class, 'store']);
 Route::get('{workspace}/members/{member}', [WorkspaceMemberController::class, 'show']);
@@ -26,4 +29,3 @@ Route::get('{workspace}/talent-marketplace/{talent}', [TalentMarketplaceControll
 Route::get('{workspace}/talent-selections', [WorkspaceTalentSelectionController::class, 'index']);
 Route::post('{workspace}/talent-selections', [WorkspaceTalentSelectionController::class, 'store']);
 Route::delete('{workspace}/talent-selections/{talent}', [WorkspaceTalentSelectionController::class, 'destroy']);
-

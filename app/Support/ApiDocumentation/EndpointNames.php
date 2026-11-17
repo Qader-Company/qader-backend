@@ -53,6 +53,7 @@ class EndpointNames
 
         if ($module === 'application') {
             return match ($route->getActionMethod()) {
+                'options' => 'List Talent Application Options',
                 'show' => 'Get Talent Application Status',
                 'selectInterviewSlot' => 'Confirm Interview Slot',
                 'rejectInterviewSlots' => 'Reject All Interview Slots',
@@ -111,6 +112,82 @@ class EndpointNames
             };
         }
 
+        if ($module === 'platform-settings') {
+            return match ($route->getActionMethod()) {
+                'index' => 'Get Platform Settings',
+                'updateHiring' => 'Update Hiring Settings',
+                'updateTalentEvaluation' => 'Update Talent Evaluation Settings',
+                'updateTrash' => 'Update Trash Settings',
+                'updatePlatform' => 'Update General Platform Settings',
+                'updateWebsite' => 'Update Website Settings',
+                'updateMarketplace' => 'Update Talent Marketplace Settings',
+                'updatePaidServices' => 'Update Paid Services Settings',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'website') {
+            return match ($route->getActionMethod()) {
+                'settings' => 'Get Public Website Settings',
+                'faqs' => 'List Public Website FAQs',
+                'partners' => 'List Public Website Partners',
+                'testimonials' => 'List Public Website Testimonials',
+                'talentShowcase' => 'List Public Website Talent Showcase',
+                'index' => match (true) {
+                    str_contains($route->uri(), '/faqs') => 'List Website FAQs',
+                    str_contains($route->uri(), '/partners') => 'List Website Partners',
+                    default => 'List Website Testimonials',
+                },
+                'show' => match (true) {
+                    str_contains($route->uri(), '/faqs') => 'Get Website FAQ',
+                    str_contains($route->uri(), '/partners') => 'Get Website Partner',
+                    default => 'Get Website Testimonial',
+                },
+                'store' => match (true) {
+                    str_contains($route->uri(), '/faqs') => 'Create Website FAQ',
+                    str_contains($route->uri(), '/partners') => 'Create Website Partner',
+                    default => 'Create Website Testimonial',
+                },
+                'update' => match (true) {
+                    str_contains($route->uri(), '/faqs') => 'Update Website FAQ',
+                    str_contains($route->uri(), '/partners') => 'Update Website Partner',
+                    default => 'Update Website Testimonial',
+                },
+                'destroy' => match (true) {
+                    str_contains($route->uri(), '/faqs') => 'Delete Website FAQ',
+                    str_contains($route->uri(), '/partners') => 'Delete Website Partner',
+                    default => 'Delete Website Testimonial',
+                },
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'hiring-support-requests') {
+            return $route->getActionMethod() === 'store'
+                ? 'Submit Hiring Support Request'
+                : Str::headline($route->getActionMethod());
+        }
+
+        if ($module === 'trash' || in_array('trash', $parts, true)) {
+            $resource = Str::headline((string) ($route->defaults['trashResource'] ?? 'Item'));
+
+            return match ($route->getActionMethod()) {
+                'index' => "List Deleted {$resource}",
+                'restore' => "Restore {$resource}",
+                'remove' => "Remove {$resource} from Trash",
+                'workspaces' => 'List Deleted Workspaces',
+                'restoreWorkspace' => 'Restore Workspace',
+                'removeWorkspace' => 'Remove Workspace from Trash',
+                'team' => 'List Deleted Workspace Members',
+                'restoreMember' => 'Restore Workspace Member',
+                'removeMember' => 'Remove Workspace Member from Trash',
+                'roles' => 'List Deleted Workspace Roles',
+                'restoreRole' => 'Restore Workspace Role',
+                'removeRole' => 'Remove Workspace Role from Trash',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
         if ($module === 'talent-review-faqs') {
             return match ($route->getActionMethod()) {
                 'screenStates' => 'List Talent Review FAQ Screen States',
@@ -124,6 +201,14 @@ class EndpointNames
         }
 
         if ($module === 'workspaces') {
+            if (str_contains($route->uri(), '/help-requests')) {
+                return match ($route->getActionMethod()) {
+                    'options' => 'List Help Request Options',
+                    'store' => 'Request Qader Assistance',
+                    default => Str::headline($route->getActionMethod()),
+                };
+            }
+
             if (str_contains($route->uri(), '/hiring-requests') || str_contains($route->uri(), '/hiring-request-items') || str_contains($route->uri(), '/hiring-interviews')) {
                 return match ($route->getActionMethod()) {
                     'index' => 'List Hiring Requests',
@@ -133,8 +218,7 @@ class EndpointNames
                     'acceptInterviewSchedule' => 'Accept Hiring Interview Time',
                     'requestInterviewScheduleChange' => 'Request a New Hiring Interview Time',
                     'apologizeForInterview' => 'Apologize for Hiring Interview',
-                    'decision' => 'Submit Hiring Decision',
-                    'withdrawDecision' => 'Cancel Hiring Decision',
+                    'decision' => 'Submit Post-Interview Talent Decision',
                     'hold' => 'Hold Hiring Item',
                     'resume' => 'Resume Hiring Item',
                     'cancel' => 'Cancel Hiring Item',
@@ -171,11 +255,48 @@ class EndpointNames
                 'permissions' => 'List Workspace Permissions', 'status' => 'Update Workspace Role Status',
                 'filters' => 'List Talent Marketplace Filters',
                 'dashboard' => 'Get Workspace Dashboard',
+                'taxCard' => 'View or Download Workspace Tax Card',
                 'destroy' => match (true) {
                     str_contains($route->uri(), '/talent-selections/') => 'Remove Talent from Squad',
                     str_contains($route->uri(), '/members/') => 'Remove Workspace Member',
                     default => 'Delete Workspace Role',
                 },
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'clients') {
+            return match ($route->getActionMethod()) {
+                'options' => 'List Client Management Options',
+                'index' => 'List Clients',
+                'show' => 'Get Client',
+                'suspend' => 'Suspend Client',
+                'reactivate' => 'Reactivate Client',
+                'destroy' => 'Delete Client',
+                'workspaces' => 'List Client Workspaces',
+                'workspace' => 'Get Client Workspace',
+                'activateWorkspace' => 'Activate Client Workspace',
+                'deactivateWorkspace' => 'Deactivate Client Workspace',
+                'destroyWorkspace' => 'Delete Client Workspace',
+                'taxCard' => 'View or Download Workspace Tax Card',
+                'members' => 'List Client Workspace Team',
+                'destroyMember' => 'Remove Client Workspace Team Member',
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'help-requests') {
+            return match ($route->getActionMethod()) {
+                'options' => 'List Help Request Options',
+                'index' => 'List Help Requests',
+                'assignees' => 'List Help Request Assignees',
+                'assign' => 'Assign Help Requests',
+                'show' => 'Get Help Request',
+                'reassign' => 'Reassign Help Request',
+                'start' => 'Start Handling Help Request',
+                'storeNote' => 'Add Help Request Internal Note',
+                'hiringRequests' => 'List Hiring Requests for Help Request Closure',
+                'close' => 'Close Help Request',
                 default => Str::headline($route->getActionMethod()),
             };
         }
@@ -192,6 +313,7 @@ class EndpointNames
                 'sendOffer' => 'Send Revised Offer',
                 'respondOnBehalf' => 'Respond to Offer on Behalf',
                 'proposeInterview' => 'Schedule Hiring Interview',
+                'respondToInterviewOnBehalf' => 'Respond to Hiring Interview on Behalf',
                 'confirmInterview' => 'Confirm Hiring Interview',
                 'startInterview' => 'Start Hiring Interview',
                 'completeInterview' => 'Complete Hiring Interview',
@@ -226,8 +348,6 @@ class EndpointNames
                 'acceptInterviewSchedule' => 'Accept Hiring Interview Time',
                 'requestInterviewScheduleChange' => 'Request a New Hiring Interview Time',
                 'apologizeForInterview' => 'Apologize for Hiring Interview',
-                'decision' => 'Submit Hiring Decision',
-                'withdrawDecision' => 'Cancel Hiring Decision',
                 default => Str::headline($route->getActionMethod()),
             };
         }

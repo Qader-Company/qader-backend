@@ -2,6 +2,7 @@
 
 use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminPermissionEnum;
 use App\Modules\V1\Admins\Presentation\Http\Controllers\AdminController;
+use App\Modules\V1\Trash\Presentation\Http\Controllers\AdminTrashDeletionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', 'abilities:access,admin'])
@@ -24,4 +25,9 @@ Route::middleware(['auth:sanctum', 'abilities:access,admin'])
         Route::patch('{admin}/status', 'updateStatus')
             ->whereNumber('admin')
             ->middleware(AdminPermissionEnum::ADMINS_MANAGE->middleware());
+
+        Route::delete('{record}', AdminTrashDeletionController::class)
+            ->whereNumber('record')
+            ->defaults('trashResource', 'admins')
+            ->middleware(AdminPermissionEnum::ADMINS_DELETE->middleware());
     });

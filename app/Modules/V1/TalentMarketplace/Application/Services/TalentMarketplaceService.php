@@ -25,6 +25,7 @@ use App\Modules\V1\Workspaces\Domain\Models\Workspace;
 use App\Modules\V1\Workspaces\Domain\Models\WorkspaceTalentSelection;
 use App\Support\ApiMetadata\EnumOptions;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
@@ -134,7 +135,7 @@ class TalentMarketplaceService
         ];
     }
 
-    /** @return array{paginator: LengthAwarePaginator, contract_types: \Illuminate\Database\Eloquent\Collection} */
+    /** @return array{paginator: LengthAwarePaginator, contract_types: Collection} */
     public function selections(User $user, Workspace $workspace, int $perPage = 12): array
     {
         $member = $this->access->authorize(
@@ -206,14 +207,19 @@ class TalentMarketplaceService
         }
     }
 
-    private function availableQuery(Workspace $workspace): Builder
+    public function eligibleQuery(): Builder
     {
         return Talent::query()
             ->whereHas('user', fn (Builder $query) => $query->where('is_active', true))
             ->whereHas('applications', fn (Builder $query) => $query
                 ->where('status', TalentApplicationStatusEnum::ACCEPTED->value))
             ->whereDoesntHave('blacklistEntries', fn (Builder $query) => $query
-                ->whereNull('removed_at'))
+                ->whereNull('removed_at'));
+    }
+
+    private function availableQuery(Workspace $workspace): Builder
+    {
+        return $this->eligibleQuery()
             ->withExists(['workspaceSelections as is_selected' => fn (Builder $query) => $query
                 ->where('workspace_id', $workspace->id)]);
     }

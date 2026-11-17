@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Facades\ApiResponse;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Routing\UrlRoutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -31,7 +33,16 @@ class RateLimitServiceProvider extends ServiceProvider
             return Limit::perMinutes(
                 $config['decay_minutes'],
                 $config['max_attempts']
-            )->by($request->ip());
+            )
+                ->by($request->ip())
+                ->response(function (Request $request, array $headers) {
+                    $retryAfter = (int) ($headers['Retry-After'] ?? 60);
+
+                    return ApiResponse::tooManyRequests(
+                        $retryAfter,
+                        __('auth.registration_throttle'),
+                    );
+                });
         });
 
         RateLimiter::for('auth-otp-send', function (Request $request) {
@@ -88,8 +99,13 @@ class RateLimitServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('public-job-submissions', function (Request $request) {
+            $job = $request->route('job');
+            $jobKey = $job instanceof UrlRoutable
+                ? (string) $job->getRouteKey()
+                : (string) $job;
+
             return [
-                Limit::perMinute(5)->by('job:'.$request->route('job')?->getKey().'|'.$request->ip()),
+                Limit::perMinute(5)->by('job:'.$jobKey.'|'.$request->ip()),
                 Limit::perHour(30)->by('jobs|'.$request->ip()),
             ];
         });
@@ -101,6 +117,15 @@ class RateLimitServiceProvider extends ServiceProvider
                 $config['decay_minutes'],
                 $config['max_attempts'],
             )->by((string) ($request->user()?->id ?? $request->ip()));
+        });
+
+        RateLimiter::for('public-hiring-support-requests', function (Request $request) {
+            $config = config('rate-limiting.hiring_support_requests');
+
+            return Limit::perMinutes(
+                $config['decay_minutes'],
+                $config['max_attempts'],
+            )->by($request->ip());
         });
     }
 

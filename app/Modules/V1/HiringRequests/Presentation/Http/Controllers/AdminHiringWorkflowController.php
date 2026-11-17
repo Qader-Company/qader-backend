@@ -10,14 +10,16 @@ use App\Modules\V1\HiringRequests\Application\Services\HiringInterviewWorkflow;
 use App\Modules\V1\HiringRequests\Application\Services\HiringItemControlWorkflow;
 use App\Modules\V1\HiringRequests\Application\Services\HiringOfferWorkflow;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringDecisionEnum;
+use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringInterviewResponseEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferStatusEnum;
+use App\Modules\V1\HiringRequests\Presentation\Http\Requests\RespondToHiringInterviewOnBehalfRequest;
+use App\Modules\V1\HiringRequests\Presentation\Http\Requests\RespondToHiringOfferOnBehalfRequest;
 use App\Modules\V1\HiringRequests\Presentation\Http\Requests\SaveHiringOfferRequest;
 use App\Modules\V1\HiringRequests\Presentation\Http\Resources\HiringInterviewResource;
 use App\Modules\V1\HiringRequests\Presentation\Http\Resources\HiringRequestItemResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 /**
  * @group Admin
@@ -31,12 +33,9 @@ class AdminHiringWorkflowController extends Controller
         return ApiResponse::updated(new HiringRequestItemResource($workflow->sendClientOffer($request->user(), $actors->resolve($request->user()), $item, $request->validated())), __('hiring.offer_sent'));
     }
 
-    public function respondOnBehalf(Request $request, int $item, AdminHiringRequestActor $actors, HiringOfferWorkflow $workflow): JsonResponse
+    public function respondOnBehalf(RespondToHiringOfferOnBehalfRequest $request, int $item, AdminHiringRequestActor $actors, HiringOfferWorkflow $workflow): JsonResponse
     {
-        $data = $request->validate(['decision' => ['required', Rule::in(['accepted', 'rejected'])], 'reason' => ['nullable', 'string', 'max:2000']]);
-        if ($data['decision'] === 'rejected' && blank($data['reason'] ?? null)) {
-            throw ValidationException::withMessages(['reason' => [__('hiring.rejection_reason_required')]]);
-        }
+        $data = $request->validated();
 
         return ApiResponse::updated(new HiringRequestItemResource($workflow->respondOnBehalf($request->user(), $actors->resolve($request->user()), $item, HiringOfferStatusEnum::from($data['decision']), $data['reason'] ?? null)), __('hiring.offer_response_saved'));
     }
@@ -46,6 +45,27 @@ class AdminHiringWorkflowController extends Controller
         $data = $request->validate(['starts_at' => ['required', 'date', 'after:now']]);
 
         return ApiResponse::updated(new HiringInterviewResource($workflow->propose($actors->resolve($request->user()), $request->user(), $item, $data['starts_at'])), __('hiring.interview_proposed'));
+    }
+
+    public function respondToInterviewOnBehalf(
+        RespondToHiringInterviewOnBehalfRequest $request,
+        int $item,
+        AdminHiringRequestActor $actors,
+        HiringInterviewWorkflow $workflow,
+    ): JsonResponse {
+        $data = $request->validated();
+
+        return ApiResponse::updated(
+            new HiringInterviewResource($workflow->respondOnBehalf(
+                $actors->resolve($request->user()),
+                $request->user(),
+                $item,
+                $data['party'],
+                HiringInterviewResponseEnum::from($data['response']),
+                $data['reason'] ?? null,
+            )),
+            __('hiring.interview_response_saved'),
+        );
     }
 
     public function confirmInterview(Request $request, int $item, AdminHiringRequestActor $actors, HiringInterviewWorkflow $workflow): JsonResponse
@@ -67,16 +87,14 @@ class AdminHiringWorkflowController extends Controller
 
     public function decisionOnBehalf(Request $request, int $item, AdminHiringRequestActor $actors, HiringDecisionWorkflow $workflow): JsonResponse
     {
-        $data = $request->validate(['party' => ['required', Rule::in(['client', 'talent'])], 'decision' => ['required', Rule::enum(HiringDecisionEnum::class)], 'reason' => ['nullable', 'string', 'max:2000']]);
+        $data = $request->validate(['decision' => ['required', Rule::enum(HiringDecisionEnum::class)], 'reason' => ['nullable', 'string', 'max:2000']]);
 
-        return ApiResponse::updated(new HiringRequestItemResource($workflow->submitOnBehalf($request->user(), $actors->resolve($request->user()), $item, $data['party'], HiringDecisionEnum::from($data['decision']), $data['reason'] ?? null)), __('hiring.decision_saved'));
+        return ApiResponse::updated(new HiringRequestItemResource($workflow->submitOnBehalf($request->user(), $actors->resolve($request->user()), $item, HiringDecisionEnum::from($data['decision']), $data['reason'] ?? null)), __('hiring.decision_saved'));
     }
 
     public function withdrawDecisionOnBehalf(Request $request, int $item, AdminHiringRequestActor $actors, HiringDecisionWorkflow $workflow): JsonResponse
     {
-        $data = $request->validate(['party' => ['required', Rule::in(['client', 'talent'])]]);
-
-        return ApiResponse::updated(new HiringRequestItemResource($workflow->withdrawOnBehalf($request->user(), $actors->resolve($request->user()), $item, $data['party'])), __('hiring.decision_withdrawn'));
+        return ApiResponse::updated(new HiringRequestItemResource($workflow->withdrawOnBehalf($request->user(), $actors->resolve($request->user()), $item)), __('hiring.decision_withdrawn'));
     }
 
     public function hold(Request $request, int $item, AdminHiringRequestActor $actors, HiringItemControlWorkflow $workflow): JsonResponse

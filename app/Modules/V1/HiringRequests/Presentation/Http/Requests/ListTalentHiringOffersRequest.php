@@ -30,7 +30,7 @@ class ListTalentHiringOffersRequest extends FormRequest
             ],
             'status' => [
                 'description' => 'Filter by one or more hiring item statuses.',
-                'example' => [HiringRequestItemStatusEnum::AWAITING_TALENT_RESPONSE->value],
+                'example' => [HiringRequestItemStatusEnum::OFFER->value],
             ],
             'offer_status' => [
                 'description' => 'Filter by one or more latest offer statuses.',

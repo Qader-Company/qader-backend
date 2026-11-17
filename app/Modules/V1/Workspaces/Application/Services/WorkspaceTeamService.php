@@ -10,6 +10,7 @@ use App\Modules\V1\Workspaces\Application\Mail\WorkspaceMemberAccountMail;
 use App\Modules\V1\Workspaces\Domain\Models\Workspace;
 use App\Modules\V1\Workspaces\Domain\Models\WorkspaceMember;
 use App\Modules\V1\Workspaces\Domain\ValueObjects\WorkspaceMemberStatusEnum;
+use App\Modules\V1\Trash\Application\Services\TrashRelationshipGuard;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -18,7 +19,11 @@ use Illuminate\Validation\ValidationException;
 
 class WorkspaceTeamService
 {
-    public function __construct(private readonly WorkspaceAccessService $access, private readonly CreateClientAccountUseCase $createClient) {}
+    public function __construct(
+        private readonly WorkspaceAccessService $access,
+        private readonly CreateClientAccountUseCase $createClient,
+        private readonly TrashRelationshipGuard $trashGuard,
+    ) {}
 
     public function members(User $user, Workspace $workspace)
     {
@@ -72,6 +77,7 @@ class WorkspaceTeamService
             }
 
             if ($member) {
+                $member->forceFill(['removed_from_trash_at' => null])->saveQuietly();
                 $member->restore();
                 $member->update(['status' => WorkspaceMemberStatusEnum::ACTIVE, 'joined_at' => now()]);
             } else {
@@ -125,6 +131,7 @@ class WorkspaceTeamService
     {
         $this->access->authorize($user, $workspace, 'client.members.manage');
         $this->editableMember($workspace, $member);
+        $this->trashGuard->ensureCanRemove('team', $member);
         $member->delete();
     }
 

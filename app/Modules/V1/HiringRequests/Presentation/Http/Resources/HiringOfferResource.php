@@ -3,6 +3,7 @@
 namespace App\Modules\V1\HiringRequests\Presentation\Http\Resources;
 
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferStatusEnum;
+use App\Support\ApiMetadata\EnumLabel;
 use BackedEnum;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -32,6 +33,7 @@ class HiringOfferResource extends JsonResource
             'work_latitude' => $this->work_latitude,
             'work_longitude' => $this->work_longitude,
             'status' => $this->value($this->status),
+            'status_label' => EnumLabel::for($this->status, 'hiring_offer_statuses'),
             'sent_at' => $this->sent_at,
             'response_due_at' => $this->response_due_at,
             'is_overdue' => $this->status === HiringOfferStatusEnum::PENDING

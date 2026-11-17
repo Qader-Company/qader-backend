@@ -38,12 +38,12 @@ class HiringRequest extends Model
 
     public function workspace(): BelongsTo
     {
-        return $this->belongsTo(Workspace::class);
+        return $this->belongsTo(Workspace::class)->withTrashed();
     }
 
     public function createdByMember(): BelongsTo
     {
-        return $this->belongsTo(WorkspaceMember::class, 'created_by_member_id');
+        return $this->belongsTo(WorkspaceMember::class, 'created_by_member_id')->withTrashed();
     }
 
     public function assignedAdmin(): BelongsTo

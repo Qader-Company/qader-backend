@@ -171,7 +171,7 @@ class TalentApplicationReviewWorkflow
             if ($status === TalentApplicationStatusEnum::UNDER_REVIEW) {
                 $this->ensureDecisionAllowed($application, $actor);
                 $roundNumber = 1;
-            } elseif ($status === TalentApplicationStatusEnum::INTERVIEW_REQUIRED) {
+            } elseif ($status->isInterviewStage()) {
                 $lastInterview = $this->ensureInterviewDecisionAllowed($application, $actor);
                 $roundNumber = $lastInterview->round_number + 1;
             } else {
@@ -294,9 +294,14 @@ class TalentApplicationReviewWorkflow
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($interview->status !== InterviewStatusEnum::AWAITING_NEW_SLOTS) {
+            if (! $interview->needsReplacementSlots()) {
                 throw new ConflictHttpException(__('talents.review.replacement_slots_not_allowed'));
             }
+
+            // Slots that passed without being chosen are closed before the new ones are offered.
+            $interview->slots()
+                ->where('status', InterviewSlotStatusEnum::AVAILABLE->value)
+                ->update(['status' => InterviewSlotStatusEnum::EXPIRED->value]);
 
             $interviewerIds = $interview->admins()->pluck('admins.id')->sort()->values();
             Admin::query()->whereIn('id', $interviewerIds)->orderBy('id')->lockForUpdate()->get();
@@ -457,7 +462,7 @@ class TalentApplicationReviewWorkflow
 
     private function ensureInterviewDecisionAllowed(TalentApplication $application, Admin $actor): Interview
     {
-        if ($this->status($application) !== TalentApplicationStatusEnum::INTERVIEW_REQUIRED) {
+        if (! $this->status($application)->isInterviewStage()) {
             throw new ConflictHttpException(__('talents.review.decision_not_allowed'));
         }
 

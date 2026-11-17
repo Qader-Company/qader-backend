@@ -75,10 +75,21 @@ class DocumentationExamples
             $name === 'submitted_to' => '2026-10-31',
             $name === 'scheduled_from' => '2026-11-01',
             $name === 'scheduled_to' => '2026-11-30',
+            $name === 'status' && str_contains($uri, '/help-requests') => ['new'],
+            $name === 'help_type' && str_contains($uri, '/admin/help-requests') => ['technical_issue'],
+            $name === 'help_type' && str_contains($uri, '/help-requests') => 'other',
+            $name === 'help_request_ids' => [1, 2],
+            $name === 'contact_method' => 'email',
+            $name === 'contact_email' => 'client@example.com',
+            $name === 'contact_phone_country_code' => '+966',
+            $name === 'contact_phone_number' => '501234567',
+            $name === 'outcome' && str_contains($uri, '/help-requests') => 'client_request_clarified',
+            $name === 'details' && str_contains($uri, '/help-requests') => 'Walked the client through the onboarding process and confirmed the setup.',
+            $name === 'body' && str_contains($uri, '/help-requests') => 'Client confirmed they need help with 5 employee profiles.',
             $name === 'status' && str_contains($uri, '/talent-applications') => ['submitted'],
             $name === 'status' && str_contains($uri, '/interviews') => ['confirmed'],
             $name === 'status' && str_contains($uri, '/admin/hiring-requests') => ['pending'],
-            $name === 'status' && str_contains($uri, '/talent/hiring-offers') => ['awaiting_talent_response'],
+            $name === 'status' && str_contains($uri, '/talent/hiring-offers') => ['offer'],
             $name === 'offer_status' && str_contains($uri, '/talent/hiring-offers') => ['pending'],
             $name === 'status' && str_contains($uri, '/client/workspaces') && str_contains($uri, '/hiring-requests') => 'pending',
             $name === 'type' && str_contains($uri, '/interviews') => ['technical'],
@@ -159,6 +170,45 @@ class DocumentationExamples
 
     private static function contextual(string $name, string $uri): mixed
     {
+        if (str_contains($uri, '/public/hiring-support-requests')) {
+            return match ($name) {
+                'name' => 'Ahmed Hassan',
+                'email' => 'ahmed@example.com',
+                'description' => 'We need help building a dedicated engineering team.',
+                default => null,
+            };
+        }
+
+        if (str_contains($uri, '/admin/website/faqs')) {
+            return match ($name) {
+                'question_ar' => 'ما الفرق بين خدمات قادر الثلاث؟',
+                'question_en' => 'What is the difference between Qader services?',
+                'answer_ar' => 'تختلف الخدمة حسب احتياج شركتك.',
+                'answer_en' => 'The service depends on your company needs.',
+                default => null,
+            };
+        }
+
+        if (str_contains($uri, '/admin/website/partners')) {
+            return match ($name) {
+                'name' => 'Qader Partner',
+                'url' => 'https://example.com',
+                default => null,
+            };
+        }
+
+        if (str_contains($uri, '/admin/website/testimonials')) {
+            return match ($name) {
+                'name_ar' => 'تميم محمد',
+                'name_en' => 'Tamem Mohamed',
+                'role_ar' => 'مطور باك إند مبتدئ',
+                'role_en' => 'jr.Back End Developer',
+                'quote_ar' => 'أنا سعيد بكوني جزءًا من قادر.',
+                'quote_en' => "I'm happy to be part of Qader.",
+                default => null,
+            };
+        }
+
         if ($name === 'seniority_level' && str_contains($uri, '/talent-marketplace')) {
             return ['mid_level'];
         }

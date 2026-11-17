@@ -3,6 +3,7 @@
 namespace App\Modules\V1\Workspaces\Presentation\Http\Resources;
 
 use App\Modules\V1\AccessControl\Presentation\Http\Resources\WorkspaceRoleResource;
+use App\Support\ApiMetadata\EnumLabel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,6 +13,6 @@ class WorkspaceMemberResource extends JsonResource
     {
         $user = $this->client?->user;
 
-        return ['id' => $this->id, 'client_id' => $this->client_id, 'name' => $user ? trim($user->first_name.' '.$user->last_name) : null, 'email' => $user?->email, 'avatar' => $user?->avatar, 'status' => $this->status->value, 'joined_at' => $this->joined_at, 'roles' => WorkspaceRoleResource::collection($this->whenLoaded('roles'))];
+        return ['id' => $this->id, 'client_id' => $this->client_id, 'name' => $user ? trim($user->first_name.' '.$user->last_name) : null, 'email' => $user?->email, 'avatar' => $user?->avatar, 'status' => $this->status->value, 'status_label' => EnumLabel::for($this->status, 'workspace_member_statuses'), 'joined_at' => $this->joined_at, 'roles' => WorkspaceRoleResource::collection($this->whenLoaded('roles'))];
     }
 }

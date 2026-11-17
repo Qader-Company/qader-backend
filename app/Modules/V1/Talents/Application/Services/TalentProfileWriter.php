@@ -252,7 +252,7 @@ class TalentProfileWriter
         if ($linkedSkillCount !== $skillIds->count()) {
             throw ValidationException::withMessages([
                 'skill_ids' => [
-                    'All selected skills must belong to the professional field.',
+                    __('talents.profile.skills_outside_professional_field'),
                 ],
             ]);
         }
@@ -269,7 +269,7 @@ class TalentProfileWriter
             if ($linkedToolCount !== $toolIds->count()) {
                 throw ValidationException::withMessages([
                     'tool_ids' => [
-                        'All selected tools must belong to the professional field.',
+                        __('talents.profile.tools_outside_professional_field'),
                     ],
                 ]);
             }

@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             IndustrySeeder::class,
             ContractTypeSeeder::class,
             TalentReviewFaqSeeder::class,
+            WebsiteMarketingSeeder::class,
         ]);
     }
 }

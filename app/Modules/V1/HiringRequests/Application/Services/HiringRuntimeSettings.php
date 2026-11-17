@@ -2,21 +2,25 @@
 
 namespace App\Modules\V1\HiringRequests\Application\Services;
 
+use App\Settings\HiringSettings;
+
 class HiringRuntimeSettings
 {
+    public function __construct(private readonly HiringSettings $settings) {}
+
     public function offerResponseHours(): int
     {
-        return max(1, (int) config('hiring.offer_response_duration_hours', 48));
+        return max(1, $this->settings->offer_response_duration_hours);
     }
 
     public function decisionResponseHours(): int
     {
-        return max(1, (int) config('hiring.post_interview_decision_duration_hours', 24));
+        return max(1, $this->settings->post_interview_decision_duration_hours);
     }
 
     public function talentNoResponseLimit(): int
     {
-        return max(1, (int) config('hiring.talent_offer_no_response_limit', 2));
+        return max(1, $this->settings->talent_offer_no_response_limit);
     }
 
     public function interviewDurationMinutes(): int

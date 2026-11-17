@@ -22,6 +22,7 @@ class TalentProfileResource extends JsonResource
                     'key' => $step['key'],
                     'visible_fields' => $step['visible_fields'],
                     'required_fields' => $step['required_fields'],
+                    'conditional_required_fields' => $step['conditional_required_fields'] ?? [],
                     'data' => $step['data'],
                 ])
                 ->values()

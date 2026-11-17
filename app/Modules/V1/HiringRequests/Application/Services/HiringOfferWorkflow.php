@@ -96,7 +96,7 @@ class HiringOfferWorkflow
                 'sent_at' => now(),
                 'response_due_at' => null,
             ]);
-            $item->update(['status' => HiringRequestItemStatusEnum::NEGOTIATING]);
+            $item->update(['status' => HiringRequestItemStatusEnum::OFFER]);
             $this->events->record($item, $user, 'offer_countered', [
                 'previous_offer_id' => $offer->id,
                 'offer_id' => $counter->id,
@@ -112,6 +112,14 @@ class HiringOfferWorkflow
         return DB::transaction(function () use ($user, $admin, $itemId, $terms): HiringRequestItem {
             $item = $this->lockAdminItem($admin, $itemId);
             $latest = $this->lockLatestOffer($item);
+            $workspace = $item->hiringRequest?->workspace;
+            if ($workspace !== null && ($workspace->trashed() || ! $workspace->isActive())) {
+                throw new ConflictHttpException(__('workspaces.inactive'));
+            }
+            // A revised offer is only part of the offer-stage negotiation; it must not revive closed or paused items.
+            if ($item->status !== HiringRequestItemStatusEnum::OFFER) {
+                throw new ConflictHttpException(__('hiring.offer_not_actionable'));
+            }
             if ($latest->status === HiringOfferStatusEnum::PENDING) {
                 $latest->update(['status' => HiringOfferStatusEnum::COUNTERED]);
             }
@@ -129,7 +137,7 @@ class HiringOfferWorkflow
                 'sent_at' => $sentAt,
                 'response_due_at' => $sentAt->copy()->addHours($this->settings->offerResponseHours()),
             ]);
-            $item->update(['status' => HiringRequestItemStatusEnum::AWAITING_TALENT_RESPONSE]);
+            $item->update(['status' => HiringRequestItemStatusEnum::OFFER]);
             $this->events->record($item, $user, 'offer_sent', [
                 'offer_id' => $offer->id,
                 'proposed_by' => HiringOfferPartyEnum::CLIENT->value,
@@ -150,7 +158,15 @@ class HiringOfferWorkflow
         return DB::transaction(function () use ($user, $admin, $itemId, $decision, $reason): HiringRequestItem {
             $item = $this->lockAdminItem($admin, $itemId);
             $offer = $this->lockLatestOffer($item);
-            if (! in_array($offer->status, [HiringOfferStatusEnum::PENDING, HiringOfferStatusEnum::EXPIRED], true)) {
+            $workspace = $item->hiringRequest?->workspace;
+            if ($workspace !== null && ($workspace->trashed() || ! $workspace->isActive())) {
+                throw new ConflictHttpException(__('workspaces.inactive'));
+            }
+            // Only an item still in the offer stage can take an offer answer; cancelled / on-hold / decided items cannot.
+            if (
+                $item->status !== HiringRequestItemStatusEnum::OFFER
+                || ! in_array($offer->status, [HiringOfferStatusEnum::PENDING, HiringOfferStatusEnum::EXPIRED], true)
+            ) {
                 throw new ConflictHttpException(__('hiring.offer_not_actionable'));
             }
             $wasExpired = $offer->status === HiringOfferStatusEnum::EXPIRED;
@@ -193,8 +209,8 @@ class HiringOfferWorkflow
             return;
         }
         $item->update(['status' => $item->interview_required
-            ? HiringRequestItemStatusEnum::AWAITING_INTERVIEW_SLOTS
-            : HiringRequestItemStatusEnum::READY_TO_PROCEED]);
+            ? HiringRequestItemStatusEnum::INTERVIEW
+            : HiringRequestItemStatusEnum::ACCEPTED]);
     }
 
     private function ensureTalentCanRespond(HiringRequestItem $item, HiringOffer $offer): void
@@ -205,7 +221,7 @@ class HiringOfferWorkflow
             $offer->status !== HiringOfferStatusEnum::PENDING
             || $offer->sent_at === null
             || $offer->proposed_by !== HiringOfferPartyEnum::CLIENT
-            || ! in_array($item->status, [HiringRequestItemStatusEnum::AWAITING_TALENT_RESPONSE, HiringRequestItemStatusEnum::NEGOTIATING], true)
+            || $item->status !== HiringRequestItemStatusEnum::OFFER
         ) {
             throw new ConflictHttpException(__('hiring.offer_not_actionable'));
         }

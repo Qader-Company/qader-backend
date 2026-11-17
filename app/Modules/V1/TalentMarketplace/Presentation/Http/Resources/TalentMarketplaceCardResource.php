@@ -15,6 +15,7 @@ class TalentMarketplaceCardResource extends JsonResource
         return [
             'id' => $this->id,
             'talent_code' => $this->talent_code,
+            'image' => asset('images/default-talent-avatar.svg'),
             'job_title' => $this->whenLoaded('jobTitle', fn () => $this->jobTitle ? [
                 'id' => $this->jobTitle->id,
                 'name' => $this->jobTitle->name,

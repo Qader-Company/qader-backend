@@ -13,7 +13,7 @@
 - قائمة All/My Requests وتفاصيل الطلب للأدمن.
 - Assign وReassign للأدمن المسؤول.
 - Start Request مع التعيين التلقائي للأدمن الحالي إذا لم يكن الطلب معينًا.
-- تحويل العناصر إلى `awaiting_talent_response` وإرسال عروضها.
+- تحويل العناصر إلى مرحلة `offer` وإرسال عروضها.
 - تثبيت `sent_at` و`response_due_at` لكل عرض عند الإرسال.
 - مهلة الرد الافتراضية 48 ساعة من `config/hiring.php` حتى تنفيذ Platform Settings.
 - إرجاع `is_overdue` كقيمة محسوبة دون إضافة حالة عرض جديدة.
@@ -33,6 +33,7 @@
 
 ```text
 database/migrations/2026_11_04_000000_create_s05_hiring_request_tables.php
+database/migrations/2026_11_08_000000_simplify_hiring_request_item_statuses.php
 ```
 
 ## الصلاحيات
@@ -119,7 +120,7 @@ POST /api/v1/admin/hiring-requests/{hiringRequest}/start
 3. Submit يعيد التحقق من الاختيار والأهلية وعدم وجود طلب فعال مكرر.
 4. يتحول الطلب والعناصر إلى `pending` وتحذف الاختيارات المستخدمة ذريًا.
 5. الأدمن يعين مسؤولًا أوينفذ المسؤول الحالي Start Request.
-6. Start يحول الطلب إلى `active` والعناصر إلى `awaiting_talent_response`.
+6. Start يحول الطلب إلى `active` والعناصر إلى `offer`.
 7. يثبت لكل عرض `sent_at` وDeadline بعد 48 ساعة حاليًا.
 8. رد Talent والتفاوض والمقابلات تكمل في S06.
 

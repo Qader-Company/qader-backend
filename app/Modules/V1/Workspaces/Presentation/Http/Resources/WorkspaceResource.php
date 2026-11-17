@@ -2,6 +2,8 @@
 
 namespace App\Modules\V1\Workspaces\Presentation\Http\Resources;
 
+use App\Modules\V1\Workspaces\Domain\Models\Workspace;
+use App\Support\ApiMetadata\EnumLabel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,8 +29,12 @@ class WorkspaceResource extends JsonResource
                     'name' => $field->name,
                 ])
                 ->values()),
+            'status' => $this->status?->value,
+            'status_label' => EnumLabel::for($this->status, 'workspace_statuses'),
             'description' => $this->description,
             'is_company' => $this->is_company,
+            'cr_number' => $this->cr_number,
+            'tax_card' => $this->taxCardPayload($request),
             'country' => $this->whenLoaded('country', fn () => [
                 'id' => $this->country->id,
                 'code' => $this->country->code,
@@ -48,6 +54,28 @@ class WorkspaceResource extends JsonResource
                 ])),
             'members_count' => (int) ($this->members_count ?? 0),
             'created_at' => $this->created_at,
+        ];
+    }
+
+    private function taxCardPayload(Request $request): ?array
+    {
+        $media = $this->getFirstMedia(Workspace::TAX_CARD_COLLECTION);
+        if ($media === null) {
+            return null;
+        }
+
+        $isAdmin = str_contains((string) $request->route()?->uri(), '/admin/');
+        $url = $isAdmin
+            ? url('/api/v1/admin/clients/'.$this->owner_client_id.'/workspaces/'.$this->id.'/tax-card')
+            : url('/api/v1/client/workspaces/'.$this->id.'/tax-card');
+
+        return [
+            'id' => $media->id,
+            'file_name' => $media->file_name,
+            'mime_type' => $media->mime_type,
+            'size' => $media->size,
+            'view_url' => $url,
+            'download_url' => $url.'?download=1',
         ];
     }
 }

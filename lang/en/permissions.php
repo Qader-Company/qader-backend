@@ -27,12 +27,19 @@ return [
         'talent-selections' => 'Selected talents',
         'hiring-requests' => 'Hiring requests',
         'contract-types' => 'Contract types',
+        'help-requests' => 'Help requests',
+        'clients' => 'Clients',
         'talent-applications' => 'Talent applications',
         'interviews' => 'Interviews',
         'talents' => 'Talents',
         'job-forms' => 'Job forms',
         'job-form-submissions' => 'Job form submissions',
         'platform' => 'Platform',
+        'platform-settings' => 'Platform settings',
+        'website-faqs' => 'Website FAQs',
+        'website-partners' => 'Website partners',
+        'website-testimonials' => 'Website testimonials',
+        'trash' => 'Trash',
     ],
 
     'admin' => [
@@ -43,6 +50,7 @@ return [
         'admins' => [
             'view' => 'View admins',
             'manage' => 'Manage admins',
+            'delete' => 'Delete empty admin accounts',
         ],
         'countries' => [
             'view' => 'View countries',
@@ -93,11 +101,19 @@ return [
             'view' => 'View accepted, rejected, and blacklisted talents',
             'manage-blacklist' => 'Add and remove talents from the blacklist',
             'manage-reapply' => 'Manage talent reapplication dates',
+            'delete' => 'Delete empty talent accounts',
         ],
         'job-forms' => ['view' => 'View job forms', 'manage' => 'Manage job forms'],
         'job-form-submissions' => ['view' => 'View job form submissions', 'delete' => 'Delete job form submissions', 'start-hiring' => 'Start hiring from submissions'],
         'hiring-requests' => ['view' => 'View hiring requests', 'assign' => 'Assign hiring requests', 'handle' => 'Handle hiring requests', 'respond-on-behalf' => 'Respond on behalf of hiring parties'],
         'contract-types' => ['view' => 'View contract types', 'update' => 'Update contract type configurations', 'toggle-status' => 'Activate and deactivate contract types'],
+        'clients' => ['view' => 'View clients and their workspaces', 'manage' => 'Suspend and reactivate clients and activate or deactivate workspaces', 'delete' => 'Delete clients, workspaces, and workspace members'],
+        'help-requests' => ['view' => 'View help requests', 'assign' => 'Assign help requests', 'handle' => 'Handle and close help requests', 'delete' => 'Delete help requests'],
+        'platform-settings' => ['view' => 'View platform settings', 'update' => 'Update platform settings'],
+        'website-faqs' => ['view' => 'View website FAQs', 'manage' => 'Manage website FAQs'],
+        'website-partners' => ['view' => 'View website partners', 'manage' => 'Manage website partners'],
+        'website-testimonials' => ['view' => 'View website testimonials', 'manage' => 'Manage website testimonials'],
+        'trash' => ['view' => 'View trash', 'restore' => 'Restore deleted items', 'remove' => 'Remove items from trash'],
     ],
 
     'talent' => [
@@ -113,5 +129,7 @@ return [
         'marketplace' => ['view' => 'View the talent marketplace'],
         'talent-selections' => ['view' => 'View selected talents', 'manage' => 'Manage selected talents'],
         'hiring-requests' => ['view' => 'View hiring requests', 'manage' => 'Create and submit hiring requests'],
+        'help-requests' => ['create' => 'Request Qader assistance'],
+        'trash' => ['view' => 'View trash', 'restore' => 'Restore deleted items', 'remove' => 'Remove items from trash'],
     ],
 ];

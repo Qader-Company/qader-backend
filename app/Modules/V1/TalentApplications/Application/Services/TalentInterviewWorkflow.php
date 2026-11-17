@@ -2,6 +2,8 @@
 
 namespace App\Modules\V1\TalentApplications\Application\Services;
 
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
+use Illuminate\Validation\ValidationException;
 use App\Modules\V1\TalentApplications\Application\Contracts\InterviewCalendarGatewayInterface;
 use App\Modules\V1\TalentApplications\Domain\Models\Interview;
 use App\Modules\V1\TalentApplications\Domain\Models\InterviewSlot;
@@ -11,6 +13,7 @@ use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewSlotStatusEnu
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewStatusEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationStatusEnum;
 use App\Modules\V1\Talents\Domain\Models\Talent;
+use App\Settings\TalentEvaluationSettings;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -18,6 +21,7 @@ class TalentInterviewWorkflow
 {
     public function __construct(
         private readonly InterviewCalendarGatewayInterface $calendar,
+        private readonly TalentEvaluationSettings $settings,
     ) {}
 
     public function selectSlot(Talent $talent, int $slotId): Interview
@@ -45,7 +49,8 @@ class TalentInterviewWorkflow
 
             if ($slot->mode === InterviewModeEnum::ONLINE && blank($manualMeetingUrl)) {
                 $interview->loadMissing(['admins.user', 'application.talent.user']);
-                $meeting = $this->calendar->createOnlineMeeting(
+                try {
+                    $meeting = $this->calendar->createOnlineMeeting(
                     $slot,
                     __('talents.interview.calendar_title', [
                         'type' => ucfirst($interview->type->value),
@@ -53,10 +58,14 @@ class TalentInterviewWorkflow
                     ]),
                     $interview->admins->pluck('user.email')
                         ->push($talent->user->email)
-                        ->filter()
-                        ->values()
-                        ->all(),
-                );
+                            ->filter()
+                            ->values()
+                            ->all(),
+                    );
+                } catch (ServiceUnavailableHttpException) {
+                    // No manual meeting link and Google Calendar is unavailable: tell the talent clearly instead of a 503.
+                    throw ValidationException::withMessages(['slot' => [__('talents.interview.meeting_link_unavailable')]]);
+                }
             }
 
             $interview->slots()
@@ -70,6 +79,7 @@ class TalentInterviewWorkflow
                 'meeting_url' => $meeting?->meetingUrl ?? $manualMeetingUrl,
                 'rejected_slots_reason' => null,
             ]);
+            $application->update(['status' => TalentApplicationStatusEnum::SCHEDULED]);
 
             return $this->loadForTalent($interview->refresh());
         });
@@ -88,7 +98,7 @@ class TalentInterviewWorkflow
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($interview->slot_rejection_count >= Interview::MAX_SLOT_REJECTIONS) {
+            if ($interview->slot_rejection_count >= $this->settings->interview_slot_rejection_limit) {
                 throw new ConflictHttpException(__('talents.interview.slot_rejection_limit_reached'));
             }
 
@@ -131,9 +141,9 @@ class TalentInterviewWorkflow
                 ->first();
 
             if (
-                $application->status !== TalentApplicationStatusEnum::INTERVIEW_REQUIRED
+                $application->status !== TalentApplicationStatusEnum::SCHEDULED
                 || $interview->status !== InterviewStatusEnum::CONFIRMED
-                || $interview->talent_reschedule_used_at !== null
+                || $interview->talent_reschedule_count >= $this->settings->confirmed_interview_reschedule_limit
                 || $selectedSlot === null
                 || $selectedSlot->starts_at->isPast()
             ) {
@@ -150,7 +160,9 @@ class TalentInterviewWorkflow
                 'google_calendar_event_id' => null,
                 'meeting_url' => null,
                 'talent_reschedule_used_at' => now(),
+                'talent_reschedule_count' => $interview->talent_reschedule_count + 1,
             ]);
+            $application->update(['status' => TalentApplicationStatusEnum::INTERVIEW_REQUIRED]);
 
             return $this->loadForTalent($interview->refresh());
         });
