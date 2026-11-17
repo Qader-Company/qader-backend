@@ -170,6 +170,45 @@ class DocumentationExamples
 
     private static function contextual(string $name, string $uri): mixed
     {
+        if (str_contains($uri, '/public/hiring-support-requests')) {
+            return match ($name) {
+                'name' => 'Ahmed Hassan',
+                'email' => 'ahmed@example.com',
+                'description' => 'We need help building a dedicated engineering team.',
+                default => null,
+            };
+        }
+
+        if (str_contains($uri, '/admin/website/faqs')) {
+            return match ($name) {
+                'question_ar' => 'ما الفرق بين خدمات قادر الثلاث؟',
+                'question_en' => 'What is the difference between Qader services?',
+                'answer_ar' => 'تختلف الخدمة حسب احتياج شركتك.',
+                'answer_en' => 'The service depends on your company needs.',
+                default => null,
+            };
+        }
+
+        if (str_contains($uri, '/admin/website/partners')) {
+            return match ($name) {
+                'name' => 'Qader Partner',
+                'url' => 'https://example.com',
+                default => null,
+            };
+        }
+
+        if (str_contains($uri, '/admin/website/testimonials')) {
+            return match ($name) {
+                'name_ar' => 'تميم محمد',
+                'name_en' => 'Tamem Mohamed',
+                'role_ar' => 'مطور باك إند مبتدئ',
+                'role_en' => 'jr.Back End Developer',
+                'quote_ar' => 'أنا سعيد بكوني جزءًا من قادر.',
+                'quote_en' => "I'm happy to be part of Qader.",
+                default => null,
+            };
+        }
+
         if ($name === 'seniority_level' && str_contains($uri, '/talent-marketplace')) {
             return ['mid_level'];
         }

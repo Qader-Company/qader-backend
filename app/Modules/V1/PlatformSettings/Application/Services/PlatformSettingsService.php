@@ -24,26 +24,19 @@ class PlatformSettingsService
         private readonly WebsiteSettings $website,
         private readonly MarketplaceSettings $marketplace,
         private readonly PaidServicesSettings $paidServices,
+        private readonly PlatformSettingsInputFactory $inputs,
     ) {}
 
     public function all(): array
     {
-        $website = $this->website->toArray();
-        $year = (string) now()->year;
-        foreach (['footer_copyright_text_ar', 'footer_copyright_text_en'] as $key) {
-            if (is_string($website[$key] ?? null)) {
-                $website[$key] = str_replace('{year}', $year, $website[$key]);
-            }
-        }
-
         return [
-            'hiring' => $this->hiring->toArray(),
-            'talent_evaluation' => $this->talentEvaluation->toArray(),
-            'trash' => $this->trash->toArray(),
-            'platform' => $this->platform->toArray(),
-            'website' => $website,
-            'marketplace' => $this->marketplace->toArray(),
-            'paid_services' => $this->paidServices->toArray(),
+            'hiring' => $this->inputs->make('hiring', $this->hiring->toArray()),
+            'talent_evaluation' => $this->inputs->make('talent_evaluation', $this->talentEvaluation->toArray()),
+            'trash' => $this->inputs->make('trash', $this->trash->toArray()),
+            'platform' => $this->inputs->make('platform', $this->platform->toArray()),
+            'website' => $this->inputs('website', $this->website->toArray()),
+            'marketplace' => $this->inputs->make('marketplace', $this->marketplace->toArray()),
+            'paid_services' => $this->inputs->make('paid_services', $this->paidServices->toArray()),
         ];
     }
 
@@ -66,6 +59,21 @@ class PlatformSettingsService
 
             return $newValues;
         });
+    }
+
+    public function inputs(string $group, array $values): array
+    {
+        $normalizedGroup = str_replace('-', '_', $group);
+
+        if ($normalizedGroup === 'website') {
+            foreach (['footer_copyright_text_ar', 'footer_copyright_text_en'] as $key) {
+                if (is_string($values[$key] ?? null)) {
+                    $values[$key] = str_replace('{year}', (string) now()->year, $values[$key]);
+                }
+            }
+        }
+
+        return $this->inputs->make($normalizedGroup, $values);
     }
 
     private function forGroup(string $group): Settings

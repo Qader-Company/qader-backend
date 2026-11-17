@@ -126,6 +126,47 @@ class EndpointNames
             };
         }
 
+        if ($module === 'website') {
+            return match ($route->getActionMethod()) {
+                'settings' => 'Get Public Website Settings',
+                'faqs' => 'List Public Website FAQs',
+                'partners' => 'List Public Website Partners',
+                'testimonials' => 'List Public Website Testimonials',
+                'index' => match (true) {
+                    str_contains($route->uri(), '/faqs') => 'List Website FAQs',
+                    str_contains($route->uri(), '/partners') => 'List Website Partners',
+                    default => 'List Website Testimonials',
+                },
+                'show' => match (true) {
+                    str_contains($route->uri(), '/faqs') => 'Get Website FAQ',
+                    str_contains($route->uri(), '/partners') => 'Get Website Partner',
+                    default => 'Get Website Testimonial',
+                },
+                'store' => match (true) {
+                    str_contains($route->uri(), '/faqs') => 'Create Website FAQ',
+                    str_contains($route->uri(), '/partners') => 'Create Website Partner',
+                    default => 'Create Website Testimonial',
+                },
+                'update' => match (true) {
+                    str_contains($route->uri(), '/faqs') => 'Update Website FAQ',
+                    str_contains($route->uri(), '/partners') => 'Update Website Partner',
+                    default => 'Update Website Testimonial',
+                },
+                'destroy' => match (true) {
+                    str_contains($route->uri(), '/faqs') => 'Delete Website FAQ',
+                    str_contains($route->uri(), '/partners') => 'Delete Website Partner',
+                    default => 'Delete Website Testimonial',
+                },
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'hiring-support-requests') {
+            return $route->getActionMethod() === 'store'
+                ? 'Submit Hiring Support Request'
+                : Str::headline($route->getActionMethod());
+        }
+
         if ($module === 'trash' || in_array('trash', $parts, true)) {
             $resource = Str::headline((string) ($route->defaults['trashResource'] ?? 'Item'));
 

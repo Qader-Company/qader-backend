@@ -58,6 +58,10 @@ class PlatformSettingsController extends Controller
         return $this->update($request, $service, 'website', [
             'footer_copyright_text_ar' => ['nullable', 'string', 'max:500'],
             'footer_copyright_text_en' => ['nullable', 'string', 'max:500'],
+            'company_founded_year' => ['sometimes', 'integer', 'min:1900', 'max:'.now()->year],
+            'referral_commission_percentage' => ['sometimes', 'numeric', 'min:0', 'max:100'],
+            'company_location_ar' => ['nullable', 'string', 'max:255'],
+            'company_location_en' => ['nullable', 'string', 'max:255'],
         ]);
     }
 
@@ -91,9 +95,8 @@ class PlatformSettingsController extends Controller
             ]);
         }
 
-        return ApiResponse::updated(
-            $service->update($group, $values, $request->user()),
-            __('settings.updated'),
-        );
+        $updated = $service->update($group, $values, $request->user());
+
+        return ApiResponse::updated($service->inputs($group, $updated), __('settings.updated'));
     }
 }

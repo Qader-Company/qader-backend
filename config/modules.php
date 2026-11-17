@@ -22,6 +22,8 @@ return [
         'public' => [
             ['prefix' => 'auth', 'file' => 'auth.php', 'api_key' => true],
             ['prefix' => 'public/jobs', 'file' => 'jobs.php', 'api_key' => true],
+            ['prefix' => 'public/website', 'file' => 'website.php', 'api_key' => true],
+            ['prefix' => 'public/hiring-support-requests', 'file' => 'hiring-support-requests.php', 'api_key' => true],
         ],
 
         'admin' => [
@@ -46,6 +48,7 @@ return [
             ['prefix' => 'admin/help-requests', 'file' => 'help-requests.php', 'api_key' => true],
             ['prefix' => 'admin/clients', 'file' => 'clients.php', 'api_key' => true],
             ['prefix' => 'admin/platform-settings', 'file' => 'platform-settings.php', 'api_key' => true],
+            ['prefix' => 'admin/website', 'file' => 'website.php', 'api_key' => true],
             ['prefix' => 'admin/trash', 'file' => 'trash.php', 'api_key' => true],
         ],
 

@@ -36,6 +36,9 @@ return [
         'job-form-submissions' => 'Job form submissions',
         'platform' => 'Platform',
         'platform-settings' => 'Platform settings',
+        'website-faqs' => 'Website FAQs',
+        'website-partners' => 'Website partners',
+        'website-testimonials' => 'Website testimonials',
         'trash' => 'Trash',
     ],
 
@@ -107,6 +110,9 @@ return [
         'clients' => ['view' => 'View clients and their workspaces', 'manage' => 'Suspend and reactivate clients and activate or deactivate workspaces', 'delete' => 'Delete clients, workspaces, and workspace members'],
         'help-requests' => ['view' => 'View help requests', 'assign' => 'Assign help requests', 'handle' => 'Handle and close help requests', 'delete' => 'Delete help requests'],
         'platform-settings' => ['view' => 'View platform settings', 'update' => 'Update platform settings'],
+        'website-faqs' => ['view' => 'View website FAQs', 'manage' => 'Manage website FAQs'],
+        'website-partners' => ['view' => 'View website partners', 'manage' => 'Manage website partners'],
+        'website-testimonials' => ['view' => 'View website testimonials', 'manage' => 'Manage website testimonials'],
         'trash' => ['view' => 'View trash', 'restore' => 'Restore deleted items', 'remove' => 'Remove items from trash'],
     ],
 

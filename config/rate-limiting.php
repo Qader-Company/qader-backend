@@ -43,4 +43,9 @@ return [
         'decay_minutes' => (int) env('RATE_LIMIT_RESUME_PARSE_DECAY', 1),
     ],
 
+    'hiring_support_requests' => [
+        'max_attempts' => (int) env('RATE_LIMIT_HIRING_SUPPORT_REQUESTS', 5),
+        'decay_minutes' => (int) env('RATE_LIMIT_HIRING_SUPPORT_REQUESTS_DECAY', 60),
+    ],
+
 ];

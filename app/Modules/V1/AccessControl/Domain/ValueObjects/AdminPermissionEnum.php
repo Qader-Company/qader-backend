@@ -89,6 +89,13 @@ enum AdminPermissionEnum: string implements PermissionDefinition
     case PLATFORM_SETTINGS_VIEW = 'admin.platform-settings.view';
     case PLATFORM_SETTINGS_UPDATE = 'admin.platform-settings.update';
 
+    case WEBSITE_FAQS_VIEW = 'admin.website-faqs.view';
+    case WEBSITE_FAQS_MANAGE = 'admin.website-faqs.manage';
+    case WEBSITE_PARTNERS_VIEW = 'admin.website-partners.view';
+    case WEBSITE_PARTNERS_MANAGE = 'admin.website-partners.manage';
+    case WEBSITE_TESTIMONIALS_VIEW = 'admin.website-testimonials.view';
+    case WEBSITE_TESTIMONIALS_MANAGE = 'admin.website-testimonials.manage';
+
     case TRASH_VIEW = 'admin.trash.view';
     case TRASH_RESTORE = 'admin.trash.restore';
     case TRASH_REMOVE = 'admin.trash.remove';
