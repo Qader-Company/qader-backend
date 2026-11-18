@@ -136,4 +136,5 @@ return [
     'client_list_sorts' => ['newest' => 'الأحدث', 'oldest' => 'الأقدم', 'name_asc' => 'الاسم (أ-ي)', 'name_desc' => 'الاسم (ي-أ)'],
     'workspace_statuses' => ['active' => 'نشطة', 'inactive' => 'معطلة'],
     'workspace_social_platforms' => ['linkedin' => 'LinkedIn', 'facebook' => 'Facebook', 'instagram' => 'Instagram', 'x' => 'X', 'youtube' => 'YouTube', 'tiktok' => 'TikTok', 'snapchat' => 'Snapchat', 'threads' => 'Threads', 'pinterest' => 'Pinterest', 'reddit' => 'Reddit', 'telegram' => 'Telegram', 'whatsapp' => 'WhatsApp', 'discord' => 'Discord', 'github' => 'GitHub', 'gitlab' => 'GitLab', 'behance' => 'Behance', 'dribbble' => 'Dribbble', 'medium' => 'Medium', 'stack_overflow' => 'Stack Overflow', 'twitch' => 'Twitch', 'other' => 'أخرى'],
+    'dashboard_periods' => ['day' => 'اليوم', 'week' => 'هذا الأسبوع', 'month' => 'هذا الشهر', 'year' => 'هذه السنة'],
 ];

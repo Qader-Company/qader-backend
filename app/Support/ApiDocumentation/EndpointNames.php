@@ -32,6 +32,16 @@ class EndpointNames
         array_shift($parts); // Portal.
         $module = $parts[0];
 
+        if ($module === 'dashboard') {
+            return str_ends_with($route->uri(), '/options')
+                ? 'List Admin Dashboard Options'
+                : 'Get Admin Dashboard';
+        }
+
+        if ($module === 'search') {
+            return 'Search Admin Portal';
+        }
+
         if ($module === 'profile') {
             if (($parts[1] ?? '') === 'media') {
                 return 'Download Profile Media';

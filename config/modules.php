@@ -27,6 +27,8 @@ return [
         ],
 
         'admin' => [
+            ['prefix' => 'admin/dashboard', 'file' => 'dashboard.php', 'api_key' => true],
+            ['prefix' => 'admin/search', 'file' => 'search.php', 'api_key' => true],
             ['prefix' => 'admin/access-control', 'file' => 'access-control.php', 'api_key' => true],
             ['prefix' => 'admin/admins', 'file' => 'admins.php', 'api_key' => true],
             ['prefix' => 'admin/countries', 'file' => 'countries.php', 'api_key' => true],

@@ -129,4 +129,5 @@ return [
     'client_list_sorts' => ['newest' => 'Newest', 'oldest' => 'Oldest', 'name_asc' => 'Name (A-Z)', 'name_desc' => 'Name (Z-A)'],
     'workspace_statuses' => ['active' => 'Active', 'inactive' => 'Inactive'],
     'workspace_social_platforms' => ['linkedin' => 'LinkedIn', 'facebook' => 'Facebook', 'instagram' => 'Instagram', 'x' => 'X', 'youtube' => 'YouTube', 'tiktok' => 'TikTok', 'snapchat' => 'Snapchat', 'threads' => 'Threads', 'pinterest' => 'Pinterest', 'reddit' => 'Reddit', 'telegram' => 'Telegram', 'whatsapp' => 'WhatsApp', 'discord' => 'Discord', 'github' => 'GitHub', 'gitlab' => 'GitLab', 'behance' => 'Behance', 'dribbble' => 'Dribbble', 'medium' => 'Medium', 'stack_overflow' => 'Stack Overflow', 'twitch' => 'Twitch', 'other' => 'Other'],
+    'dashboard_periods' => ['day' => 'Today', 'week' => 'This Week', 'month' => 'This Month', 'year' => 'This Year'],
 ];
