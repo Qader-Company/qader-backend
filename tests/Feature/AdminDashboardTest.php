@@ -12,6 +12,8 @@ use App\Modules\V1\HiringRequests\Domain\Models\HiringRequest;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequestItem;
 use App\Modules\V1\Industries\Domain\Models\Industry;
 use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
+use App\Modules\V1\TalentApplications\Domain\Models\Interview as TalentEvaluationInterview;
+use App\Modules\V1\TalentApplications\Domain\Models\InterviewSlot;
 use App\Modules\V1\TalentApplications\Domain\Models\TalentApplication;
 use App\Modules\V1\Talents\Domain\Models\Talent;
 use App\Modules\V1\Users\Domain\Models\User;
@@ -58,7 +60,9 @@ class AdminDashboardTest extends TestCase
             ->assertJsonPath('data.hiring_requests.summary.in_review', 0)
             ->assertJsonPath('data.hiring_requests.summary.active', 0)
             ->assertJsonPath('data.hiring_requests.summary.on_hold', 1)
-            ->assertJsonPath('data.upcoming_interviews.0.talent.id', $data['talent']->id)
+            ->assertJsonCount(2, 'data.upcoming_interviews')
+            ->assertJsonFragment(['source' => 'talent_evaluation', 'type' => 'technical'])
+            ->assertJsonFragment(['source' => 'hiring', 'type' => 'hiring'])
             ->assertJsonPath('data.latest_clients.0.id', $data['client']->id)
             ->assertJsonPath('data.help_requests.open_count', 1)
             ->assertJsonPath('data.help_requests.unassigned_count', 1);
@@ -136,10 +140,24 @@ class AdminDashboardTest extends TestCase
             'user_id' => $talentUser->id,
             'job_title_id' => $jobTitle->id,
         ]);
-        TalentApplication::query()->create([
+        $application = TalentApplication::query()->create([
             'talent_id' => $talent->id,
             'status' => 'submitted',
             'submitted_at' => now(),
+        ]);
+        $talentInterview = TalentEvaluationInterview::query()->create([
+            'application_id' => $application->id,
+            'round_number' => 1,
+            'type' => 'technical',
+            'status' => 'confirmed',
+            'created_by_admin_id' => $admin->id,
+        ]);
+        InterviewSlot::query()->create([
+            'interview_id' => $talentInterview->id,
+            'mode' => 'online',
+            'starts_at' => now()->addMinutes(30),
+            'ends_at' => now()->addMinutes(90),
+            'status' => 'selected',
         ]);
         $hiringRequest = HiringRequest::query()->create([
             'workspace_id' => $workspace->id,

@@ -13,7 +13,9 @@ use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringInterviewStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestStatusEnum;
+use App\Modules\V1\TalentApplications\Domain\Models\Interview as TalentEvaluationInterview;
 use App\Modules\V1\TalentApplications\Domain\Models\TalentApplication;
+use App\Modules\V1\TalentApplications\Domain\ValueObjects\InterviewStatusEnum as TalentInterviewStatusEnum;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationStatusEnum;
 use App\Modules\V1\Talents\Domain\Models\Talent;
 use App\Support\ApiMetadata\EnumLabel;
@@ -129,7 +131,7 @@ class AdminDashboardService
 
     private function upcomingInterviews(): array
     {
-        return HiringInterview::query()
+        $hiringInterviews = HiringInterview::query()
             ->with([
                 'item.talent.user',
                 'item.jobTitle',
@@ -149,7 +151,10 @@ class AdminDashboardService
 
                 return [
                     'id' => $interview->id,
+                    'source' => 'hiring',
+                    'type' => 'hiring',
                     'request_item_id' => $item?->id,
+                    'application_id' => null,
                     'start' => $interview->starts_at,
                     'end' => $interview->ends_at,
                     'status' => $interview->status?->value,
@@ -167,7 +172,56 @@ class AdminDashboardService
                         'name' => $item->hiringRequest->workspace->name,
                     ],
                 ];
-            })->values()->all();
+            });
+
+        $talentInterviews = TalentEvaluationInterview::query()
+            ->with([
+                'selectedSlot',
+                'application.talent.user',
+                'application.talent.jobTitle',
+            ])
+            ->whereIn('status', [
+                TalentInterviewStatusEnum::CONFIRMED->value,
+                TalentInterviewStatusEnum::IN_PROGRESS->value,
+            ])
+            ->whereHas('selectedSlot', fn (Builder $query) => $query
+                ->whereBetween('starts_at', [now(), now()->endOfDay()]))
+            ->limit(self::LIST_LIMIT)
+            ->get()
+            ->map(function (TalentEvaluationInterview $interview): array {
+                $application = $interview->application;
+                $talent = $application?->talent;
+                $talentUser = $talent?->user;
+                $slot = $interview->selectedSlot;
+
+                return [
+                    'id' => $interview->id,
+                    'source' => 'talent_evaluation',
+                    'type' => $interview->type?->value,
+                    'request_item_id' => null,
+                    'application_id' => $application?->id,
+                    'start' => $slot?->starts_at,
+                    'end' => $slot?->ends_at,
+                    'status' => $interview->status?->value,
+                    'status_label' => EnumLabel::for($interview->status, 'interview_statuses'),
+                    'talent' => $talentUser === null ? null : [
+                        'id' => $talent->id,
+                        'full_name' => trim($talentUser->first_name.' '.$talentUser->last_name),
+                    ],
+                    'job_title' => $talent?->jobTitle === null ? null : [
+                        'id' => $talent->jobTitle->id,
+                        'name' => $talent->jobTitle->name,
+                    ],
+                    'workspace' => null,
+                ];
+            });
+
+        return $hiringInterviews
+            ->concat($talentInterviews)
+            ->sortBy('start')
+            ->take(self::LIST_LIMIT)
+            ->values()
+            ->all();
     }
 
     private function hiringRequests(): array
