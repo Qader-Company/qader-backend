@@ -23,6 +23,7 @@ return [
     'offer_accepted' => 'Offer accepted successfully.',
     'offer_rejected' => 'Offer rejected successfully.',
     'offer_countered' => 'Counter offer sent successfully.',
+    'counter_offer_accepted' => 'Counter offer accepted successfully.',
     'offer_sent' => 'The revised offer was sent successfully.',
     'offer_response_saved' => 'Offer response saved successfully.',
     'offer_not_actionable' => 'This offer can no longer be actioned.',

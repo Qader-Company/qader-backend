@@ -153,6 +153,34 @@ class HiringOfferWorkflow
         });
     }
 
+    public function acceptTalentCounter(User $user, Admin $admin, int $itemId): HiringRequestItem
+    {
+        return DB::transaction(function () use ($user, $admin, $itemId): HiringRequestItem {
+            $item = $this->lockAdminItem($admin, $itemId);
+            $offer = $this->lockLatestOffer($item);
+            $workspace = $item->hiringRequest?->workspace;
+            if ($workspace !== null && ($workspace->trashed() || ! $workspace->isActive())) {
+                throw new ConflictHttpException(__('workspaces.inactive'));
+            }
+            if (
+                $item->status !== HiringRequestItemStatusEnum::OFFER
+                || $offer->status !== HiringOfferStatusEnum::PENDING
+                || $offer->proposed_by !== HiringOfferPartyEnum::TALENT
+            ) {
+                throw new ConflictHttpException(__('hiring.offer_not_actionable'));
+            }
+
+            $offer->update(['status' => HiringOfferStatusEnum::ACCEPTED]);
+            $this->applyOfferDecision($item, HiringOfferStatusEnum::ACCEPTED, null);
+            $this->events->record($item, $user, 'counter_offer_accepted', [
+                'offer_id' => $offer->id,
+                'proposed_by' => HiringOfferPartyEnum::TALENT->value,
+            ]);
+
+            return $item->refresh()->load(self::ITEM_RELATIONS);
+        });
+    }
+
     public function respondOnBehalf(
         User $user,
         Admin $admin,

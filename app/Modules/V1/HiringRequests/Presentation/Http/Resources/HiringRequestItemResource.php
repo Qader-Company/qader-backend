@@ -112,6 +112,7 @@ class HiringRequestItemResource extends JsonResource
                 && $this->latestOffer?->proposed_by === HiringOfferPartyEnum::CLIENT) {
                 array_push($actions, 'accept_offer', 'reject_offer', 'counter_offer');
             }
+
             return $actions;
         }
 
@@ -140,6 +141,11 @@ class HiringRequestItemResource extends JsonResource
                     && $this->latestOffer?->proposed_by === HiringOfferPartyEnum::TALENT)
                     || $this->latestOffer?->status === HiringOfferStatusEnum::EXPIRED)) {
                 $actions[] = 'send_offer';
+            }
+            if ($status === HiringRequestItemStatusEnum::OFFER
+                && $this->latestOffer?->status === HiringOfferStatusEnum::PENDING
+                && $this->latestOffer?->proposed_by === HiringOfferPartyEnum::TALENT) {
+                $actions[] = 'accept_counter_offer';
             }
             if ($status === HiringRequestItemStatusEnum::INTERVIEW
                 && ! in_array($this->interview?->status, [HiringInterviewStatusEnum::CONFIRMED, HiringInterviewStatusEnum::IN_PROGRESS, HiringInterviewStatusEnum::COMPLETED], true)) {

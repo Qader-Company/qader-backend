@@ -33,6 +33,14 @@ class AdminHiringWorkflowController extends Controller
         return ApiResponse::updated(new HiringRequestItemResource($workflow->sendClientOffer($request->user(), $actors->resolve($request->user()), $item, $request->validated())), __('hiring.offer_sent'));
     }
 
+    public function acceptCounterOffer(Request $request, int $item, AdminHiringRequestActor $actors, HiringOfferWorkflow $workflow): JsonResponse
+    {
+        return ApiResponse::updated(
+            new HiringRequestItemResource($workflow->acceptTalentCounter($request->user(), $actors->resolve($request->user()), $item)),
+            __('hiring.counter_offer_accepted'),
+        );
+    }
+
     public function respondOnBehalf(RespondToHiringOfferOnBehalfRequest $request, int $item, AdminHiringRequestActor $actors, HiringOfferWorkflow $workflow): JsonResponse
     {
         $data = $request->validated();

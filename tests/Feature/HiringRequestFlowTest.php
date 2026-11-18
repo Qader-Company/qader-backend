@@ -245,6 +245,56 @@ class HiringRequestFlowTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_responsible_admin_can_accept_a_talent_counter_offer(): void
+    {
+        $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
+        $admin = $this->adminUser('accept-counter-admin@example.test');
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $itemId = $this->postJson("/api/v1/admin/hiring-requests/{$requestId}/start")
+            ->assertOk()->json('data.items.0.id');
+
+        $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/offers/accept-counter")
+            ->assertConflict();
+
+        Sanctum::actingAs($this->talent->user, ['access', 'talent']);
+        $counterOfferId = $this->postJson("/api/v1/talent/hiring-offers/{$itemId}/counter", [
+            'salary_amount' => 7000,
+            'currency_id' => $this->currency->id,
+            'work_type' => 'full_time',
+            'work_mode' => 'remote',
+            'work_start_day' => 'sunday',
+            'work_end_day' => 'thursday',
+            'work_hours' => 8,
+        ])->assertOk()
+            ->assertJsonPath('data.offer.proposed_by', 'talent')
+            ->assertJsonPath('data.offer.status', 'pending')
+            ->json('data.offer.id');
+
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $adminItem = $this->getJson("/api/v1/admin/hiring-requests/{$requestId}")
+            ->assertOk()
+            ->json('data.items.0');
+        $this->assertContains('accept_counter_offer', $adminItem['available_actions']);
+        $this->assertContains('send_offer', $adminItem['available_actions']);
+
+        $accepted = $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/offers/accept-counter")
+            ->assertOk()
+            ->assertJsonPath('message', 'Counter offer accepted successfully.')
+            ->assertJsonPath('data.status', 'interview')
+            ->assertJsonPath('data.offer.id', $counterOfferId)
+            ->assertJsonPath('data.offer.status', 'accepted')
+            ->json('data');
+
+        $this->assertContains('schedule_interview', $accepted['available_actions']);
+        $this->assertNotContains('accept_counter_offer', $accepted['available_actions']);
+
+        $this->assertDatabaseHas('hiring_request_events', [
+            'request_item_id' => $itemId,
+            'actor_user_id' => $admin->user_id,
+            'action' => 'counter_offer_accepted',
+        ]);
+    }
+
     public function test_two_expired_offers_disable_talent_without_closing_item(): void
     {
         $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');

@@ -21,6 +21,7 @@ Route::middleware(['auth:sanctum', 'abilities:access,admin'])->group(function ()
 
     Route::controller(AdminHiringWorkflowController::class)->prefix('items/{item}')->whereNumber('item')->group(function (): void {
         Route::post('offers', 'sendOffer')->middleware(AdminPermissionEnum::HIRING_REQUESTS_HANDLE->middleware());
+        Route::post('offers/accept-counter', 'acceptCounterOffer')->middleware(AdminPermissionEnum::HIRING_REQUESTS_HANDLE->middleware());
         Route::post('offers/respond-on-behalf', 'respondOnBehalf')->middleware(AdminPermissionEnum::HIRING_REQUESTS_RESPOND_ON_BEHALF->middleware());
         Route::post('interview/schedule', 'proposeInterview')->middleware(AdminPermissionEnum::HIRING_REQUESTS_HANDLE->middleware());
         Route::post('interview/respond-on-behalf', 'respondToInterviewOnBehalf')->middleware(AdminPermissionEnum::HIRING_REQUESTS_RESPOND_ON_BEHALF->middleware());

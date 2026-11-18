@@ -23,6 +23,7 @@ return [
     'offer_accepted' => 'تم قبول العرض بنجاح.',
     'offer_rejected' => 'تم رفض العرض بنجاح.',
     'offer_countered' => 'تم إرسال العرض المقابل بنجاح.',
+    'counter_offer_accepted' => 'تم قبول العرض المقابل بنجاح.',
     'offer_sent' => 'تم إرسال العرض المعدل بنجاح.',
     'offer_response_saved' => 'تم حفظ الرد على العرض بنجاح.',
     'offer_not_actionable' => 'لم يعد من الممكن تنفيذ إجراء على هذا العرض.',
