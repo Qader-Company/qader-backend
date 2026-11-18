@@ -31,8 +31,21 @@ class TalentHiringController extends Controller
     public function options(): JsonResponse
     {
         return ApiResponse::success([
-            'item_statuses' => EnumOptions::make(HiringRequestItemStatusEnum::class, 'hiring_request_item_statuses'),
-            'offer_statuses' => EnumOptions::make(HiringOfferStatusEnum::class, 'hiring_offer_statuses'),
+            'item_statuses' => EnumOptions::make(HiringRequestItemStatusEnum::class, 'hiring_request_item_statuses', [
+                HiringRequestItemStatusEnum::OFFER,
+                HiringRequestItemStatusEnum::INTERVIEW,
+                HiringRequestItemStatusEnum::ACCEPTED,
+                HiringRequestItemStatusEnum::ON_HOLD,
+                HiringRequestItemStatusEnum::REJECTED,
+                HiringRequestItemStatusEnum::CANCELLED,
+                HiringRequestItemStatusEnum::COMPLETED,
+            ]),
+            'offer_statuses' => EnumOptions::make(HiringOfferStatusEnum::class, 'hiring_offer_statuses', [
+                HiringOfferStatusEnum::PENDING,
+                HiringOfferStatusEnum::ACCEPTED,
+                HiringOfferStatusEnum::REJECTED,
+                HiringOfferStatusEnum::EXPIRED,
+            ]),
             'sort_options' => EnumOptions::make(HiringOfferSortEnum::class, 'hiring_offer_sort_options'),
         ]);
     }

@@ -374,12 +374,22 @@ class HiringRequestFlowTest extends TestCase
         $this->postJson("/api/v1/admin/hiring-requests/{$requestId}/start")->assertOk();
 
         Sanctum::actingAs($this->talent->user, ['access', 'talent']);
-        $this->getJson('/api/v1/talent/hiring-offers/options')
+        $options = $this->getJson('/api/v1/talent/hiring-offers/options')
             ->assertOk()
             ->assertJsonFragment(['value' => 'offer'])
             ->assertJsonFragment(['value' => 'pending'])
             ->assertJsonPath('data.sort_options.0.value', 'newest')
-            ->assertJsonPath('data.sort_options.1.value', 'oldest');
+            ->assertJsonPath('data.sort_options.1.value', 'oldest')
+            ->json('data');
+
+        $this->assertSame(
+            ['offer', 'interview', 'accepted', 'on_hold', 'rejected', 'cancelled', 'completed'],
+            array_column($options['item_statuses'], 'value'),
+        );
+        $this->assertSame(
+            ['pending', 'accepted', 'rejected', 'expired'],
+            array_column($options['offer_statuses'], 'value'),
+        );
 
         $this->getJson('/api/v1/talent/hiring-offers?status[]=offer&offer_status[]=pending&search=Hiring')
             ->assertOk()
