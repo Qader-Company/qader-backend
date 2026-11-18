@@ -2,6 +2,7 @@
 
 namespace App\Modules\V1\HiringRequests\Presentation\Http\Requests;
 
+use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferSortEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
 use Illuminate\Foundation\Http\FormRequest;
@@ -17,6 +18,7 @@ class ListTalentHiringOffersRequest extends FormRequest
             'status.*' => [Rule::enum(HiringRequestItemStatusEnum::class)],
             'offer_status' => ['nullable', 'array'],
             'offer_status.*' => [Rule::enum(HiringOfferStatusEnum::class)],
+            'sort' => ['nullable', Rule::enum(HiringOfferSortEnum::class)],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ];
     }
@@ -35,6 +37,10 @@ class ListTalentHiringOffersRequest extends FormRequest
             'offer_status' => [
                 'description' => 'Filter by one or more latest offer statuses.',
                 'example' => [HiringOfferStatusEnum::PENDING->value],
+            ],
+            'sort' => [
+                'description' => 'Sort offers by creation date. Supported values: newest, oldest.',
+                'example' => HiringOfferSortEnum::NEWEST->value,
             ],
             'per_page' => [
                 'description' => 'Number of offers per page.',

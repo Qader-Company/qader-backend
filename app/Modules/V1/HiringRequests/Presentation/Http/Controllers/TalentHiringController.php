@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\V1\HiringRequests\Application\Services\HiringInterviewWorkflow;
 use App\Modules\V1\HiringRequests\Application\Services\HiringOfferWorkflow;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringInterviewResponseEnum;
+use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferSortEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
 use App\Modules\V1\HiringRequests\Presentation\Http\Requests\ListTalentHiringOffersRequest;
@@ -30,6 +31,7 @@ class TalentHiringController extends Controller
         return ApiResponse::success([
             'item_statuses' => EnumOptions::make(HiringRequestItemStatusEnum::class, 'hiring_request_item_statuses'),
             'offer_statuses' => EnumOptions::make(HiringOfferStatusEnum::class, 'hiring_offer_statuses'),
+            'sort_options' => EnumOptions::make(HiringOfferSortEnum::class, 'hiring_offer_sort_options'),
         ]);
     }
 

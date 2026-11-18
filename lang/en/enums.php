@@ -63,6 +63,10 @@ return [
         'newest' => 'Newest',
         'oldest' => 'Oldest',
     ],
+    'hiring_offer_sort_options' => [
+        'newest' => 'Newest',
+        'oldest' => 'Oldest',
+    ],
     'evaluation_tip_priorities' => [
         'low' => 'Low',
         'medium' => 'Medium',

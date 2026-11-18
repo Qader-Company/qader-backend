@@ -6,6 +6,7 @@ use App\Modules\V1\Admins\Domain\Models\Admin;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringOffer;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequestItem;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferPartyEnum;
+use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferSortEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
 use App\Modules\V1\Talents\Domain\Models\Talent;
@@ -32,6 +33,9 @@ class HiringOfferWorkflow
     public function paginateForTalent(User $user, array $filters): LengthAwarePaginator
     {
         $talent = $this->talent($user);
+        $sortDirection = ($filters['sort'] ?? HiringOfferSortEnum::NEWEST->value) === HiringOfferSortEnum::OLDEST->value
+            ? 'asc'
+            : 'desc';
         $this->expiration->synchronizeDue();
 
         return HiringRequestItem::query()
@@ -48,7 +52,8 @@ class HiringOfferWorkflow
                 });
             })
             ->with(self::ITEM_RELATIONS)
-            ->latest()
+            ->orderBy('created_at', $sortDirection)
+            ->orderBy('id', $sortDirection)
             ->paginate((int) ($filters['per_page'] ?? 15));
     }
 

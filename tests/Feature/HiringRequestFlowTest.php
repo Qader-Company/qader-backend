@@ -14,6 +14,7 @@ use App\Modules\V1\HiringRequests\Application\Services\HiringOfferExpirationServ
 use App\Modules\V1\HiringRequests\Domain\Models\HiringInterview;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringOffer;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequest;
+use App\Modules\V1\HiringRequests\Domain\Models\HiringRequestItem;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestStatusEnum;
 use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
@@ -376,12 +377,47 @@ class HiringRequestFlowTest extends TestCase
         $this->getJson('/api/v1/talent/hiring-offers/options')
             ->assertOk()
             ->assertJsonFragment(['value' => 'offer'])
-            ->assertJsonFragment(['value' => 'pending']);
+            ->assertJsonFragment(['value' => 'pending'])
+            ->assertJsonPath('data.sort_options.0.value', 'newest')
+            ->assertJsonPath('data.sort_options.1.value', 'oldest');
 
         $this->getJson('/api/v1/talent/hiring-offers?status[]=offer&offer_status[]=pending&search=Hiring')
             ->assertOk()
             ->assertJsonPath('data.meta.total', 1)
             ->assertJsonPath('data.items.0.company.name', 'Hiring Workspace');
+    }
+
+    public function test_talent_can_sort_hiring_offers_from_oldest_or_newest(): void
+    {
+        $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
+        $admin = $this->adminUser('sort-offers-admin@example.test');
+        Sanctum::actingAs($admin->user, ['access', 'admin']);
+        $this->postJson("/api/v1/admin/hiring-requests/{$requestId}/start")->assertOk();
+
+        $oldestItem = HiringRequestItem::query()->where('hiring_request_id', $requestId)->firstOrFail();
+        $oldestItem->forceFill(['created_at' => now()->subDay()])->saveQuietly();
+
+        $newestRequest = HiringRequest::query()->findOrFail($requestId)
+            ->replicate(['reference', 'created_at', 'updated_at']);
+        $newestRequest->save();
+        $newestItem = $oldestItem->replicate(['reference', 'created_at', 'updated_at']);
+        $newestItem->hiring_request_id = $newestRequest->id;
+        $newestItem->save();
+        $newestOffer = $oldestItem->latestOffer->replicate(['created_at', 'updated_at']);
+        $newestOffer->request_item_id = $newestItem->id;
+        $newestOffer->save();
+
+        Sanctum::actingAs($this->talent->user, ['access', 'talent']);
+
+        $this->getJson('/api/v1/talent/hiring-offers?sort=oldest')
+            ->assertOk()
+            ->assertJsonPath('data.items.0.id', $oldestItem->id)
+            ->assertJsonPath('data.items.1.id', $newestItem->id);
+
+        $this->getJson('/api/v1/talent/hiring-offers?sort=newest')
+            ->assertOk()
+            ->assertJsonPath('data.items.0.id', $newestItem->id)
+            ->assertJsonPath('data.items.1.id', $oldestItem->id);
     }
 
     public function test_offer_salary_must_be_inside_talent_range(): void

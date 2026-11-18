@@ -63,6 +63,10 @@ return [
         'newest' => 'الأحدث',
         'oldest' => 'الأقدم',
     ],
+    'hiring_offer_sort_options' => [
+        'newest' => 'الأحدث',
+        'oldest' => 'الأقدم',
+    ],
     'evaluation_tip_priorities' => [
         'low' => 'منخفضة',
         'medium' => 'متوسطة',
