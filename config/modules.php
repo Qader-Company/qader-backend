@@ -96,6 +96,27 @@ return [
                 'middlewares' => ['auth:sanctum', 'abilities:access,talent'],
             ],
         ],
+
+        'shared' => [
+            [
+                'prefix' => 'talent/notifications',
+                'file' => 'notifications.php',
+                'api_key' => true,
+                'middlewares' => ['auth:sanctum', 'abilities:access,talent'],
+            ],
+            [
+                'prefix' => 'client/notifications',
+                'file' => 'notifications.php',
+                'api_key' => true,
+                'middlewares' => ['auth:sanctum', 'abilities:access,client'],
+            ],
+            [
+                'prefix' => 'admin/notifications',
+                'file' => 'notifications.php',
+                'api_key' => true,
+                'middlewares' => ['auth:sanctum', 'abilities:access,admin'],
+            ],
+        ],
     ],
 
     'providers' => [

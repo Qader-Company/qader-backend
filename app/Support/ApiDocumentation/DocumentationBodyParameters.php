@@ -135,6 +135,10 @@ class DocumentationBodyParameters extends GetFromFormRequest
                 'password' => config('demo_accounts.password'),
                 'password_confirmation' => config('demo_accounts.password'),
             ],
+            str_ends_with($uri, '/device-token') => [
+                'fcm_token' => 'fcm-registration-token-from-the-device',
+                'platform' => 'android',
+            ],
             default => [],
         };
 

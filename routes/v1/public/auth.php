@@ -3,6 +3,7 @@
 use App\Modules\V1\Authentication\Domain\ValueObjects\OtpPurposeEnum;
 use App\Modules\V1\Authentication\Domain\ValueObjects\SocialProviderEnum;
 use App\Modules\V1\Authentication\Domain\ValueObjects\TokenTypeEnum;
+use App\Modules\V1\Authentication\Presentation\Http\Controllers\DeviceTokenController;
 use App\Modules\V1\Authentication\Presentation\Http\Controllers\TokenAuthController;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,10 @@ Route::post('{type}/register', [TokenAuthController::class, 'register'])
 Route::post('{type}/login', [TokenAuthController::class, 'login'])
     ->where('type', $loginPortals)
     ->middleware('throttle:auth-login');
+
+Route::put('{type}/device-token', [DeviceTokenController::class, 'update'])
+    ->where('type', $loginPortals)
+    ->middleware(['auth:sanctum', 'abilities:'.TokenTypeEnum::ACCESS_TOKEN->value, 'throttle:60,1']);
 
 Route::post('{type}/social/{provider}/login', [TokenAuthController::class, 'socialLogin'])
     ->where('type', $publicPortals)

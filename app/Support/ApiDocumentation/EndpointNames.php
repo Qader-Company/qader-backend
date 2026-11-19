@@ -25,6 +25,7 @@ class EndpointNames
                 'verifyEmail' => 'Verify Email',
                 'verifyPasswordReset' => 'Verify Password Reset OTP',
                 'resetPassword' => 'Reset Password',
+                'update' => 'Update Device Token',
                 default => Str::headline($route->getActionMethod()),
             };
         }
@@ -40,6 +41,16 @@ class EndpointNames
 
         if ($module === 'search') {
             return 'Search Admin Portal';
+        }
+
+        if ($module === 'notifications') {
+            return match ($route->getActionMethod()) {
+                'index' => 'List Notifications',
+                'unreadCount' => 'Get Unread Notification Count',
+                'markAsRead' => 'Mark Notification as Read',
+                'markAllAsRead' => 'Mark All Notifications as Read',
+                default => Str::headline($route->getActionMethod()),
+            };
         }
 
         if ($module === 'profile') {
