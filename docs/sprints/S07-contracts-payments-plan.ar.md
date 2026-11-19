@@ -742,15 +742,15 @@ GET /api/v1/client/workspaces/{workspace}/hired-talents/{item}
 
 لا تعيد Resource مستند عقد أوPayment proof أوContract status غير مخزنة.
 
-لا نخزن `start_date` في عمود مستقل. تحسب لكل Hired Talent كالتالي:
+لا نخزن `start_date` في عمود مستقل. تحسب من آخر عرض مقبول كالتالي:
 
 ```text
-start_date = date(hiring_request completed event) + latest_offer.notice_period_days
+start_date = latest_accepted_offer.responded_at + latest_accepted_offer.notice_period_days
 ```
 
 - `notice_period_days` أيام تقويمية.
 - إذا كانت القيمة `0` يكون Start Date هو تاريخ إكمال الطلب نفسه.
-- إذا لم توجد Notice Period مثبتة في العرض تكون `start_date = null` بدل افتراض مدة.
+- إذا لم توجد Notice Period مثبتة في العرض أو لم يسجل `responded_at` تكون `start_date = null` بدل افتراض مدة.
 - تستخدم آخر نسخة عرض نهائية مرتبطة بالعنصر، ولا يعاد الحساب من بيانات Talent profile الحالية إذا تغيرت لاحقًا.
 - الحساب مشتق للعرض فقط ولا ينشئ حالة `waiting_to_start`.
 

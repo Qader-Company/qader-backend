@@ -3,6 +3,7 @@
 namespace App\Modules\V1\HiringRequests\Presentation\Http\Resources;
 
 use App\Modules\V1\AccessControl\Domain\ValueObjects\AdminPermissionEnum;
+use App\Modules\V1\HiringRequests\Application\Services\HiringRuntimeSettings;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringInterviewStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferPartyEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringOfferStatusEnum;
@@ -22,6 +23,8 @@ class HiringRequestItemResource extends JsonResource
         $talent = $this->talent;
         $user = $talent?->user;
         $isAdmin = $this->isAdminRequest($request);
+        $isTalent = str_contains((string) $request->route()?->uri(), '/talent/');
+        $workspace = $this->hiringRequest?->workspace;
         $offer = $this->latestOffer === null
             ? null
             : (new HiringOfferResource($this->latestOffer))->resolve($request);
@@ -34,10 +37,17 @@ class HiringRequestItemResource extends JsonResource
             'contract_type' => $this->value($this->contract_type),
             'contract_configuration' => $this->contractConfiguration($isAdmin),
             'interview_required' => (bool) $this->interview_required,
-            'company' => $this->hiringRequest?->workspace === null ? null : [
-                'id' => $this->hiringRequest->workspace->id,
-                'name' => $this->hiringRequest->workspace->name,
-                'logo_url' => $this->hiringRequest->workspace->getFirstMediaUrl('logo') ?: null,
+            'company' => $workspace === null ? null : [
+                'id' => $workspace->id,
+                'name' => $workspace->name,
+                'logo_url' => $workspace->getFirstMediaUrl('logo') ?: null,
+                'industries' => $workspace->industries->map(fn ($industry): array => [
+                    'id' => $industry->id,
+                    'name' => $industry->name,
+                ])->values(),
+                'location' => collect([$workspace->city?->name, $workspace->country?->name])
+                    ->filter()->implode(', ') ?: null,
+                'website_url' => $workspace->website_url,
             ],
             'talent' => [
                 'id' => $talent?->id,
@@ -63,6 +73,12 @@ class HiringRequestItemResource extends JsonResource
             'client_decision_reason' => $this->client_decision_reason,
             'client_decided_at' => $this->client_decided_at,
             'decision_due_at' => $this->decision_due_at,
+            ...($isTalent ? [
+                'remaining_no_response_chances' => max(
+                    0,
+                    app(HiringRuntimeSettings::class)->talentNoResponseLimit() - (int) ($talent?->offer_no_response_count ?? 0),
+                ),
+            ] : []),
             'available_actions' => $this->available_actions ?? $this->actions($request),
             'rejection_reason' => $this->rejection_reason,
             'hold_reason' => $this->hold_reason,

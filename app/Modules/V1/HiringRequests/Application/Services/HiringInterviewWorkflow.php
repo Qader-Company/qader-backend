@@ -269,8 +269,7 @@ class HiringInterviewWorkflow
         ?string $reason,
         callable $scope,
         bool $subjectIsItem = false,
-    ): HiringInterview
-    {
+    ): HiringInterview {
         return DB::transaction(function () use ($user, $subjectId, $party, $response, $reason, $scope, $subjectIsItem): HiringInterview {
             $query = HiringInterview::query();
             $scope($query);
@@ -298,7 +297,7 @@ class HiringInterviewWorkflow
             ]);
             $interview->refresh();
             if ($response !== HiringInterviewResponseEnum::ACCEPTED) {
-                $interview->update(['status' => HiringInterviewStatusEnum::AWAITING_RESCHEDULE]);
+                $interview->update(['status' => HiringInterviewStatusEnum::CANCELLED]);
                 $interview->item->update(['status' => HiringRequestItemStatusEnum::INTERVIEW]);
             } elseif (
                 $interview->client_response === HiringInterviewResponseEnum::ACCEPTED

@@ -28,6 +28,9 @@ class AdminHiringRequestService
         'items.offers.currency.translations',
         'items.interview',
         'items.hiringRequest.workspace.media',
+        'items.hiringRequest.workspace.industries.translations',
+        'items.hiringRequest.workspace.city.translations',
+        'items.hiringRequest.workspace.country.translations',
         'events.actor',
     ];
 

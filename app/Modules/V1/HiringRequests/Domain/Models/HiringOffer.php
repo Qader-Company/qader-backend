@@ -17,7 +17,7 @@ class HiringOffer extends Model
         'request_item_id', 'proposed_by', 'salary_amount', 'currency_id', 'work_type',
         'work_mode', 'work_start_day', 'work_end_day', 'hybrid_work_days',
         'work_hours', 'notice_period_days', 'work_location', 'work_latitude', 'work_longitude',
-        'status', 'sent_at', 'response_due_at',
+        'status', 'sent_at', 'response_due_at', 'responded_at',
     ];
 
     protected function casts(): array
@@ -36,6 +36,7 @@ class HiringOffer extends Model
             'work_longitude' => 'decimal:7',
             'sent_at' => 'datetime',
             'response_due_at' => 'datetime',
+            'responded_at' => 'datetime',
         ];
     }
 

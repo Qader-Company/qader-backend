@@ -16,7 +16,12 @@ class HiringItemControlWorkflow
 {
     public const WORKSPACE_HOLD_SOURCE = 'workspace_deactivated';
 
-    private const RELATIONS = ['hiringRequest.workspace', 'talent.user', 'jobTitle', 'latestOffer.currency.translations', 'offers.currency.translations', 'interview'];
+    private const RELATIONS = [
+        'hiringRequest.workspace.media', 'hiringRequest.workspace.industries.translations',
+        'hiringRequest.workspace.city.translations', 'hiringRequest.workspace.country.translations',
+        'talent.user', 'jobTitle', 'latestOffer.currency.translations',
+        'offers.currency.translations', 'interview',
+    ];
 
     public function __construct(
         private readonly HiringRuntimeSettings $settings,

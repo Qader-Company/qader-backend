@@ -242,9 +242,9 @@ flowchart TD
 
 - شاشة رفض Talent المباشر (`3670:33590`) لا تحتوي حقل سبب؛ تعرض فقط أن العرض رفض وتاريخ الرفض.
 - مودال رفض Admin بالنيابة (`4292:111785`) يحتوي `Reason for Rejection` كحقل Required، ويوضح أن الإجراء سيسجل بتاريخ ووقت التنفيذ الحاليين.
-- Timeline (`3733:40688`) يعرض `Sent` لكل نسخة عرض، لكنه لا يعرض `responded_at` مستقلًا.
+- Timeline (`3733:40688`) يعرض `Sent` لكل نسخة عرض، ويخزن النظام وقت الرد الفعلي في `responded_at` لدعم الواجهة وحساب تاريخ البداية.
 
-لذلك لا نضيف `responded_at` أو`response_reason` إلى `hiring_offers`. وقت الرد يؤخذ من `hiring_request_events.created_at`، وسبب الرفض يحفظ في Event data وفي `hiring_request_items.rejection_reason` فقط عند رفض الأدمن بالنيابة. رفض Talent المباشر لا يطلب سببًا.
+نضيف `responded_at` إلى `hiring_offers`، ويسجل عند القبول أوالرفض أوإرسال Counter Offer، ويبقى `null` للعروض المعلقة أوالمنتهية دون رد. لا نضيف `response_reason`؛ سبب الرفض يحفظ في Event data وفي `hiring_request_items.rejection_reason` فقط عند رفض الأدمن بالنيابة. رفض Talent المباشر لا يطلب سببًا.
 
 تضاف قيمة `expired` إلى `HiringOfferStatusEnum`. عملية انتهاء العرض يجب أن تكون Idempotent حتى لا تزيد عداد عدم الرد أكثر من مرة عند إعادة تشغيل الـScheduler أوإعادة قراءة العرض.
 
@@ -400,7 +400,7 @@ flowchart TD
 13. Hold يوقف المهلة ويلغي المقابلة المؤكدة، وResume يبدأ مهلة كاملة جديدة.
 14. سبب قرار الرفض بعد المقابلة Optional.
 15. رفض Talent المباشر للعرض لا يطلب سببًا، ورفض Admin بالنيابة يتطلب سببًا وفق Figma.
-16. وقت رد العرض يؤخذ من `hiring_request_events.created_at` دون إضافة `responded_at` إلى العرض.
+16. وقت رد العرض يخزن في `hiring_offers.responded_at` عند القبول أوالرفض أوإرسال Counter Offer، مع استمرار تسجيل الحدث في `hiring_request_events` للأرشفة.
 17. العرض يتحول إلى `expired` عند انتهاء المهلة، يمنع Talent من الرد، ويظل الأدمن قادرًا على الرد بالنيابة أوإرسال عرض جديد.
 18. كل انتهاء دون رد يزيد `talents.offer_no_response_count`، والحد الافتراضي مرتان ويتحكم فيه الأدمن من Platform Settings.
 19. الوصول للحد يعطل حساب المستخدم من خلال `users.is_active = false` مع تسجيل Event.

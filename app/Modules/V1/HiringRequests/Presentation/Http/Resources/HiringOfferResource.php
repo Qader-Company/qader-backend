@@ -36,6 +36,12 @@ class HiringOfferResource extends JsonResource
             'status_label' => EnumLabel::for($this->status, 'hiring_offer_statuses'),
             'sent_at' => $this->sent_at,
             'response_due_at' => $this->response_due_at,
+            'responded_at' => $this->responded_at,
+            'start_date' => $this->status === HiringOfferStatusEnum::ACCEPTED
+                && $this->responded_at !== null
+                && $this->notice_period_days !== null
+                ? $this->responded_at->copy()->addDays($this->notice_period_days)->toDateString()
+                : null,
             'is_overdue' => $this->status === HiringOfferStatusEnum::PENDING
                 && $this->response_due_at !== null
                 && $this->response_due_at->isPast(),

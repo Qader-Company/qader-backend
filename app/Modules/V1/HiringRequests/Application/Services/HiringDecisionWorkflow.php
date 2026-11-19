@@ -15,7 +15,9 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 class HiringDecisionWorkflow
 {
     private const RELATIONS = [
-        'hiringRequest.workspace', 'talent.user', 'talent.jobTitle', 'jobTitle',
+        'hiringRequest.workspace.media', 'hiringRequest.workspace.industries.translations',
+        'hiringRequest.workspace.city.translations', 'hiringRequest.workspace.country.translations',
+        'talent.user', 'talent.jobTitle', 'jobTitle',
         'latestOffer.currency.translations', 'offers.currency.translations', 'interview',
     ];
 

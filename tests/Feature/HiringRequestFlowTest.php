@@ -17,6 +17,7 @@ use App\Modules\V1\HiringRequests\Domain\Models\HiringRequest;
 use App\Modules\V1\HiringRequests\Domain\Models\HiringRequestItem;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
 use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestStatusEnum;
+use App\Modules\V1\Industries\Domain\Models\Industry;
 use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
 use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
 use App\Modules\V1\TalentApplications\Domain\Models\TalentApplication;
@@ -62,6 +63,11 @@ class HiringRequestFlowTest extends TestCase
             'is_active' => true,
             'en' => ['name' => 'Software'], 'ar' => ['name' => 'برمجيات'],
         ]);
+        $industry = Industry::query()->create([
+            'slug' => 'technology',
+            'is_active' => true,
+            'en' => ['name' => 'Technology'], 'ar' => ['name' => 'التقنية'],
+        ]);
         $jobTitle = JobTitle::query()->create(['name' => 'Backend Developer', 'is_active' => true]);
         $this->currency = Currency::query()->create([
             'code' => 'USD', 'symbol' => '$', 'is_active' => true,
@@ -89,7 +95,9 @@ class HiringRequestFlowTest extends TestCase
             'is_company' => true,
             'country_id' => $country->id,
             'size_band' => '11-50',
+            'website_url' => 'https://hiring-workspace.example.test',
         ]);
+        $this->workspace->industries()->attach($industry);
         $this->member = WorkspaceMember::query()->create([
             'workspace_id' => $this->workspace->id,
             'client_id' => $this->owner->client->id,
@@ -194,6 +202,14 @@ class HiringRequestFlowTest extends TestCase
         $this->assertSame(HiringRequestItemStatusEnum::OFFER, $request->items->first()->status);
         $this->assertNotNull($offer->sent_at);
         $this->assertTrue($offer->sent_at->copy()->addHours(48)->equalTo($offer->response_due_at));
+
+        Sanctum::actingAs($this->talent->user, ['access', 'talent']);
+        $this->getJson("/api/v1/talent/hiring-offers/{$request->items->first()->id}")
+            ->assertOk()
+            ->assertJsonPath('data.company.industries.0.name', 'Technology')
+            ->assertJsonPath('data.company.location', 'Egypt')
+            ->assertJsonPath('data.company.website_url', 'https://hiring-workspace.example.test')
+            ->assertJsonPath('data.remaining_no_response_chances', 2);
     }
 
     public function test_s06_offer_interview_and_client_decision_reaches_accepted(): void
@@ -205,8 +221,12 @@ class HiringRequestFlowTest extends TestCase
         $itemId = $started['items'][0]['id'];
 
         Sanctum::actingAs($this->talent->user, ['access', 'talent']);
-        $this->postJson("/api/v1/talent/hiring-offers/{$itemId}/accept")
-            ->assertOk()->assertJsonPath('data.status', 'interview');
+        $acceptedOffer = $this->postJson("/api/v1/talent/hiring-offers/{$itemId}/accept")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'interview')
+            ->assertJsonPath('data.offer.start_date', now()->addDays(30)->toDateString())
+            ->json('data.offer');
+        $this->assertNotNull($acceptedOffer['responded_at']);
 
         Sanctum::actingAs($admin->user, ['access', 'admin']);
         $interview = $this->postJson("/api/v1/admin/hiring-requests/items/{$itemId}/interview/schedule", [
@@ -325,7 +345,7 @@ class HiringRequestFlowTest extends TestCase
         $this->postJson("/api/v1/talent/hiring-interviews/{$interviewId}/apologize", [
             'reason' => 'I cannot attend the confirmed time.',
         ])->assertOk()
-            ->assertJsonPath('data.status', 'awaiting_reschedule')
+            ->assertJsonPath('data.status', 'cancelled')
             ->assertJsonPath('data.meeting_url', null);
 
         $this->assertDatabaseHas('hiring_request_items', [

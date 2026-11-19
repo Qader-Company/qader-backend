@@ -53,7 +53,8 @@ class HiringInterviewResource extends JsonResource
             return match ($this->status) {
                 HiringInterviewStatusEnum::AWAITING_RESPONSES => ['respond_to_interview_on_behalf', 'reschedule_interview'],
                 HiringInterviewStatusEnum::AWAITING_ADMIN_CONFIRMATION => ['confirm_interview', 'reschedule_interview'],
-                HiringInterviewStatusEnum::AWAITING_RESCHEDULE => ['reschedule_interview'],
+                HiringInterviewStatusEnum::AWAITING_RESCHEDULE,
+                HiringInterviewStatusEnum::CANCELLED => ['reschedule_interview'],
                 HiringInterviewStatusEnum::CONFIRMED => now()->betweenIncluded($this->starts_at, $this->ends_at)
                     ? ['reschedule_interview', 'start_interview']
                     : ['reschedule_interview'],

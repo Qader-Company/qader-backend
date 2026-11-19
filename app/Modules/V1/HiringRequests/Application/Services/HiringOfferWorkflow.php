@@ -20,7 +20,9 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 class HiringOfferWorkflow
 {
     private const ITEM_RELATIONS = [
-        'hiringRequest.workspace.media', 'talent.user', 'talent.jobTitle', 'jobTitle',
+        'hiringRequest.workspace.media', 'hiringRequest.workspace.industries.translations',
+        'hiringRequest.workspace.city.translations', 'hiringRequest.workspace.country.translations',
+        'talent.user', 'talent.jobTitle', 'jobTitle',
         'latestOffer.currency.translations', 'offers.currency.translations', 'interview',
     ];
 
@@ -87,7 +89,10 @@ class HiringOfferWorkflow
             $item = $this->lockTalentItem($talent, $itemId);
             $offer = $this->lockLatestOffer($item);
             $this->ensureTalentCanRespond($item, $offer);
-            $offer->update(['status' => HiringOfferStatusEnum::COUNTERED]);
+            $offer->update([
+                'status' => HiringOfferStatusEnum::COUNTERED,
+                'responded_at' => now(),
+            ]);
             $counter = $item->offers()->create([
                 ...Arr::only($terms, [
                     'salary_amount', 'currency_id', 'work_type', 'work_mode',
@@ -126,6 +131,7 @@ class HiringOfferWorkflow
                 throw new ConflictHttpException(__('hiring.offer_not_actionable'));
             }
             if ($latest->status === HiringOfferStatusEnum::PENDING) {
+                // The offer was superseded by an admin revision; no party responded to it.
                 $latest->update(['status' => HiringOfferStatusEnum::COUNTERED]);
             }
             $sentAt = now();
@@ -170,7 +176,10 @@ class HiringOfferWorkflow
                 throw new ConflictHttpException(__('hiring.offer_not_actionable'));
             }
 
-            $offer->update(['status' => HiringOfferStatusEnum::ACCEPTED]);
+            $offer->update([
+                'status' => HiringOfferStatusEnum::ACCEPTED,
+                'responded_at' => now(),
+            ]);
             $this->applyOfferDecision($item, HiringOfferStatusEnum::ACCEPTED, null);
             $this->events->record($item, $user, 'counter_offer_accepted', [
                 'offer_id' => $offer->id,
@@ -203,7 +212,10 @@ class HiringOfferWorkflow
                 throw new ConflictHttpException(__('hiring.offer_not_actionable'));
             }
             $wasExpired = $offer->status === HiringOfferStatusEnum::EXPIRED;
-            $offer->update(['status' => $decision]);
+            $offer->update([
+                'status' => $decision,
+                'responded_at' => now(),
+            ]);
             $this->applyOfferDecision($item, $decision, $reason);
             $this->events->record($item, $user, 'offer_responded_on_behalf', [
                 'offer_id' => $offer->id,
@@ -224,7 +236,10 @@ class HiringOfferWorkflow
             $item = $this->lockTalentItem($talent, $itemId);
             $offer = $this->lockLatestOffer($item);
             $this->ensureTalentCanRespond($item, $offer);
-            $offer->update(['status' => $decision]);
+            $offer->update([
+                'status' => $decision,
+                'responded_at' => now(),
+            ]);
             $this->applyOfferDecision($item, $decision, null);
             $this->events->record($item, $user, $decision === HiringOfferStatusEnum::ACCEPTED ? 'offer_accepted' : 'offer_rejected', [
                 'offer_id' => $offer->id,

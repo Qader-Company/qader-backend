@@ -295,12 +295,12 @@ available_actions -> [view]
 | `awaiting_responses` | `pending` | `accept_schedule`, `request_schedule_change`, `apologize` |
 | `awaiting_responses` | ردت الموهبة بالفعل | لا توجد أكشنز حتى رد الطرف الآخر أو الأدمن |
 | `awaiting_admin_confirmation` | أي قيمة | لا توجد أكشنز؛ انتظار تأكيد الأدمن |
-| `awaiting_reschedule` | أي قيمة | لا توجد أكشنز؛ انتظار موعد جديد من الأدمن |
+| `cancelled` | `change_requested` أو`apologized` | لا توجد أكشنز للموهبة؛ الأدمن يرسل موعدًا واحدًا جديدًا |
 | `confirmed` وقبل البداية | أي قيمة | `request_schedule_change`, `apologize` |
 | `confirmed` أو `in_progress` وداخل وقت الموعد | أي قيمة | يعتمد زر الدخول على `can_join = true` وليس على Action باسم `join` |
 | `completed` أو `cancelled` | أي قيمة | لا توجد أكشنز |
 
-إذا طلبت الموهبة تغيير الموعد أو اعتذرت، يجب إرسال `reason`، وتنتقل المقابلة إلى `awaiting_reschedule` حتى يحدد الأدمن موعدًا جديدًا.
+إذا طلبت الموهبة تغيير الموعد أو اعتذرت، يجب إرسال `reason`، ويصبح الموعد الحالي `cancelled` مع بقاء عنصر طلب التعيين في مرحلة `interview`. يستطيع الأدمن بعدها إرسال موعد واحد جديد على سجل المقابلة نفسه.
 
 ## 10. ما بعد المقابلة
 
