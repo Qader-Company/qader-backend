@@ -15,6 +15,9 @@ class MaintenanceCommandController extends Controller
     public function __invoke(Request $request, string $command): JsonResponse
     {
         $apiKeyName = null;
+        $fcmUserId = null;
+        $fcmTitle = null;
+        $fcmBody = null;
         $seederClass = null;
 
         if ($command === 'create-api-key') {
@@ -35,6 +38,18 @@ class MaintenanceCommandController extends Controller
             );
         }
 
+        if ($command === 'fcm-test') {
+            $validated = $request->validate([
+                'user_id' => ['required', 'integer', 'exists:users,id'],
+                'title' => ['nullable', 'string', 'max:255'],
+                'body' => ['nullable', 'string', 'max:1000'],
+            ]);
+
+            $fcmUserId = (int) $validated['user_id'];
+            $fcmTitle = $validated['title'] ?? 'Qader';
+            $fcmBody = $validated['body'] ?? 'FCM connection is working.';
+        }
+
         [$artisanCommand, $parameters] = match ($command) {
             'migrate' => ['migrate', ['--force' => true]],
             'migrate-fresh' => ['migrate:fresh', ['--force' => true]],
@@ -42,7 +57,7 @@ class MaintenanceCommandController extends Controller
             'seed' => ['db:seed', array_filter([
                 '--class' => $seederClass,
                 '--force' => true,
-            ], static fn(mixed $value): bool => $value !== null)],
+            ], static fn (mixed $value): bool => $value !== null)],
             'optimize-clear' => ['optimize:clear', []],
             'create-api-key' => ['apikey:generate', ['name' => $apiKeyName]],
             'queue-work' => [
@@ -56,6 +71,14 @@ class MaintenanceCommandController extends Controller
             ],
             'queue-restart' => ['queue:restart', []],
             'storage-link' => ['storage:link', []],
+            'fcm-test' => [
+                'fcm:test',
+                [
+                    'user' => $fcmUserId,
+                    '--title' => $fcmTitle,
+                    '--body' => $fcmBody,
+                ],
+            ],
             default => throw new HttpException(422, 'Unsupported maintenance command.'),
         };
 
@@ -73,6 +96,7 @@ class MaintenanceCommandController extends Controller
             data: [
                 'command' => $artisanCommand,
                 'seeder' => $seederClass,
+                'user_id' => $fcmUserId,
                 'output' => trim(Artisan::output()),
             ],
             message: "The {$artisanCommand} command completed successfully.",

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Modules\V1\Users\Infrastructure\Notifications\FirebaseCloudMessaging;
 use Illuminate\Console\Command;
+use Throwable;
 
 class SendFcmTestNotificationCommand extends Command
 {
@@ -33,12 +34,19 @@ class SendFcmTestNotificationCommand extends Command
             return self::FAILURE;
         }
 
-        $messageName = $messaging->send(
-            $device,
-            (string) $this->option('title'),
-            (string) $this->option('body'),
-            ['source' => 'local-test']
-        );
+        try {
+            $messageName = $messaging->send(
+                $device,
+                (string) $this->option('title'),
+                (string) $this->option('body'),
+                ['source' => 'maintenance-test']
+            );
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->error($exception->getMessage());
+
+            return self::FAILURE;
+        }
 
         $this->info("FCM message sent: {$messageName}");
 

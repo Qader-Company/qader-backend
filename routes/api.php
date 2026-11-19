@@ -3,6 +3,10 @@
 use App\Http\Controllers\MaintenanceCommandController;
 use Illuminate\Support\Facades\Route;
 
+Route::post('/maintenance/fcm-test', MaintenanceCommandController::class)
+    ->defaults('command', 'fcm-test')
+    ->middleware('api.key');
+
 Route::post('/maintenance/{command}', MaintenanceCommandController::class)
     ->whereIn('command', [
         'migrate',
@@ -13,5 +17,5 @@ Route::post('/maintenance/{command}', MaintenanceCommandController::class)
         'create-api-key',
         'queue-work',
         'queue-restart',
-        'storage-link'
+        'storage-link',
     ]);
