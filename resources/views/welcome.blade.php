@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title>Qader</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/qader-logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('storage/images/qader-logo.png') }}">
     <style>
         :root { color-scheme: light; --bg: #ffffff; --muted: #5b6475; }
 
@@ -29,7 +29,7 @@
     </style>
 </head>
 <body>
-    <img src="{{ asset('images/qader-logo.png') }}" alt="Qader">
+    <img src="{{ asset('storage/images/qader-logo.png') }}" alt="Qader">
     <footer>&copy; {{ now()->year }} Qader. All rights reserved.</footer>
 </body>
 </html>

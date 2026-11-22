@@ -150,7 +150,7 @@
                     <tr>
                         <td align="center" style="padding: 0 0 24px;">
                             <img
-                                src="{{ $message->embed(public_path('images/qader-logo.png')) }}"
+                                src="{{ $message->embed(storage_path('app/public/images/qader-logo.png')) }}"
                                 width="156"
                                 alt="{{ config('app.name') }}"
                                 style="width:156px;max-width:100%;height:auto;"

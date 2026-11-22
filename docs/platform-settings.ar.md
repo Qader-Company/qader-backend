@@ -143,7 +143,7 @@ users.is_active = false
 ### 2.6 Footer الموقع وخصوصية صورة Talent
 
 - `footer_copyright_text_*` يقبل placeholder باسم `{year}` ويستبدل بالسنة الحالية عند الإرجاع للواجهة.
-- كروت المواهب داخل Client Marketplace تستخدم Asset ثابتًا: `/images/default-talent-avatar.svg` للحفاظ على هوية الموهبة.
+- كروت المواهب داخل Client Marketplace تستخدم Asset ثابتًا: `/storage/images/default-talent-avatar.svg` للحفاظ على هوية الموهبة.
 - Public Website Talent Showcase لا يعيد حقل `image`، ولا توجد مجموعة Marketplace ضمن Platform Settings.
 
 ### 2.7 Website Marketing
