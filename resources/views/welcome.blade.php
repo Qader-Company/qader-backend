@@ -7,11 +7,7 @@
     <title>Qader</title>
     <link rel="icon" type="image/png" href="{{ asset('images/qader-logo.png') }}">
     <style>
-        :root { --bg: #f4f6fb; --muted: #5b6475; }
-
-        @media (prefers-color-scheme: dark) {
-            :root { --bg: #0b1020; --muted: #a3abbd; }
-        }
+        :root { color-scheme: light; --bg: #ffffff; --muted: #5b6475; }
 
         body {
             margin: 0;
