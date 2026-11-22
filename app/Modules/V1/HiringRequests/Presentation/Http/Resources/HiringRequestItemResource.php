@@ -69,8 +69,9 @@ class HiringRequestItemResource extends JsonResource
             'offer' => $offer,
             'offers' => HiringOfferResource::collection($this->whenLoaded('offers')),
             'interview' => $this->whenLoaded('interview', fn () => new HiringInterviewResource($this->interview)),
-            'interview_status' => $this->whenLoaded('interview', fn () => $this->interviewStatus()),
-            'interview_status_label' => $this->whenLoaded('interview', fn () => EnumLabel::for($this->interviewStatus(), 'hiring_interview_statuses')),
+            // whenLoaded() short-circuits to null for a null relation, so check the relation explicitly.
+            'interview_status' => $this->when($this->resource->relationLoaded('interview'), fn () => $this->interviewStatus()),
+            'interview_status_label' => $this->when($this->resource->relationLoaded('interview'), fn () => EnumLabel::for($this->interviewStatus(), 'hiring_interview_statuses')),
             'client_decision' => $this->value($this->client_decision),
             'client_decision_reason' => $this->client_decision_reason,
             'client_decided_at' => $this->client_decided_at,
