@@ -3,7 +3,7 @@
 namespace App\Modules\V1\Notifications\Application\Support;
 
 /**
- * Notifications store translation keys instead of text, so the same record is shown
+ * Notifications store translation keys and params instead of text, so the same record is shown
  * in the reader's language. This renders the stored payload for one locale.
  */
 class NotificationMessage

@@ -52,10 +52,7 @@ class TalentApplicationNotificationHandler
             return;
         }
 
-        $this->notifier->send(
-            [$application->talent?->user_id], $type, [], [],
-            $application->id, null, $actorUserId,
-        );
+        $this->notifier->send([$application->talent?->user_id], $type, [], [], $application->id, null, $actorUserId);
     }
 
     public function handleTalentAction(int $applicationId, string $action): void

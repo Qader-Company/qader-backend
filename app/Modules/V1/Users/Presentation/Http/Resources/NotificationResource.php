@@ -20,8 +20,8 @@ class NotificationResource extends JsonResource
             'title' => $message['title'],
             'body' => $message['body'],
             'target_id' => $data['target_id'] ?? null,
-            'workspace_id' => $data['workspace_id'] ?? null,
-            'params' => (object) ($data['params'] ?? []),
+            // Only client notifications carry a workspace (/client/{workspace}/notifications).
+            'workspace_id' => $this->when(isset($data['workspace_id']), fn () => $data['workspace_id']),
             'read_at' => $this->read_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

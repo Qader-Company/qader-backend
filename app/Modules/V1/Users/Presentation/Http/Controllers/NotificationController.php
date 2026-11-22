@@ -20,7 +20,7 @@ class NotificationController extends Controller
 
     #[QueryParam('unread_only', 'boolean', 'Return unread notifications only.', required: false, example: true)]
     #[QueryParam('per_page', 'integer', 'Items per page from 1 to 100.', required: false, example: 20)]
-    #[Response('{"success":true,"data":{"notifications":[{"id":"550e8400-e29b-41d4-a716-446655440000","type":"hiring_offer_received","title":"New job offer","body":"You received a job offer from Qader Technology for Backend Developer.","target_id":9,"workspace_id":null,"params":{"reference":"RI-2026-ZHPPYLQH","company":"Qader Technology","job_title":"Backend Developer","talent_code":"QT-1001"},"read_at":null,"created_at":"2026-11-19T14:00:00+00:00"}],"meta":{"current_page":1,"last_page":1,"per_page":20,"total":1}}}')]
+    #[Response('{"success":true,"data":{"notifications":[{"id":"550e8400-e29b-41d4-a716-446655440000","type":"hiring_offer_received","title":"New job offer","body":"You received a job offer from Qader Technology for Backend Developer.","target_id":9,"read_at":null,"created_at":"2026-11-19T14:00:00+00:00"}],"meta":{"current_page":1,"last_page":1,"per_page":20,"total":1}}}')]
     public function index(Request $request): JsonResponse
     {
         return ApiResponse::success($this->inbox->list($request, $request->user()->notifications()));
@@ -42,7 +42,7 @@ class NotificationController extends Controller
     }
 
     #[UrlParam('notification', 'string', 'Notification UUID.', example: '550e8400-e29b-41d4-a716-446655440000')]
-    #[Response('{"success":true,"message":"Notification marked as read successfully.","data":{"id":"550e8400-e29b-41d4-a716-446655440000","type":"hiring_offer_received","title":"New job offer","body":"You received a job offer from Qader Technology for Backend Developer.","target_id":9,"workspace_id":null,"params":{"reference":"RI-2026-ZHPPYLQH","company":"Qader Technology","job_title":"Backend Developer","talent_code":"QT-1001"},"read_at":"2026-11-19T14:05:00+00:00","created_at":"2026-11-19T14:00:00+00:00"}}')]
+    #[Response('{"success":true,"message":"Notification marked as read successfully.","data":{"id":"550e8400-e29b-41d4-a716-446655440000","type":"hiring_offer_received","title":"New job offer","body":"You received a job offer from Qader Technology for Backend Developer.","target_id":9,"read_at":"2026-11-19T14:05:00+00:00","created_at":"2026-11-19T14:00:00+00:00"}}')]
     public function markAsRead(string $notification, Request $request): JsonResponse
     {
         return ApiResponse::updated(

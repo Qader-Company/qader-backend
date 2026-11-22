@@ -60,18 +60,13 @@ class HiringNotificationHandler
         }
 
         $request = $event->hiringRequest;
-        $item = $event->item;
-        $params = $this->params($request, $item);
+        $params = $this->params($request, $event->item);
         $translated = $this->translatedParams($event->action, $data);
 
         foreach ($parties as $party) {
             $recipient = $party === 'assignee'
-                ? [
-                    'ids' => [$this->recipients->admin($data['assigned_admin_id'] ?? null)],
-                    'target_id' => $request->id,
-                    'workspace_id' => null,
-                ]
-                : $this->recipients->hiringParty($party, $request, $item);
+                ? ['ids' => [$this->recipients->admin($data['assigned_admin_id'] ?? null)], 'target_id' => $request->id, 'workspace_id' => null]
+                : $this->recipients->hiringParty($party, $request, $event->item);
 
             $this->notifier->send(
                 $recipient['ids'], $type, $params, $translated,

@@ -33,12 +33,10 @@ class HelpRequestNotificationHandler
         [$type, $party] = self::ACTIONS[$event->action];
         $params = ['reference' => $request->reference];
         $translated = ['help_type' => 'enums.help_request_types.'.($request->help_type?->value ?? $request->help_type)];
-
         if ($party === 'assignee') {
             $this->notifier->send(
                 [$this->recipients->admin($event->data['assigned_admin_id'] ?? $request->assigned_admin_id)],
-                $type, $params, $translated,
-                $request->id, null, $event->actor_user_id,
+                $type, $params, $translated, $request->id, null, $event->actor_user_id,
             );
 
             return;
@@ -46,8 +44,7 @@ class HelpRequestNotificationHandler
 
         $this->notifier->send(
             [$request->createdByMember?->client?->user_id],
-            $type, $params, $translated,
-            $request->id, $request->workspace_id, $event->actor_user_id,
+            $type, $params, $translated, $request->id, $request->workspace_id, $event->actor_user_id,
         );
     }
 }

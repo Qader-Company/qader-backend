@@ -35,26 +35,24 @@ class RecordActivityNotificationHandler
     public function handleTrashEvent(int $eventId): void
     {
         $event = TrashEvent::query()->find($eventId);
-        $definition = $event === null ? null : $this->definitionForType($event->resource_type);
-        if ($definition === null) {
+        $key = $event === null ? null : $this->keyForType($event->resource_type);
+        if ($key === null) {
             return;
         }
 
-        $this->notify($event->action, $definition[0], $definition[1], (int) $event->resource_id, $event->actor_user_id, $event->workspace_id);
+        $this->notify($event->action, $key, (int) $event->resource_id, $event->actor_user_id, $event->workspace_id);
     }
 
     /** @param  class-string<Model>  $class */
     public function handleCreated(string $class, int $id, int $actorUserId, ?int $workspaceId): void
     {
         $key = collect($this->registry->definitions())->search(fn (array $definition): bool => $definition['model'] === $class);
-        if ($key === false) {
-            return;
+        if ($key !== false) {
+            $this->notify('created', $key, $id, $actorUserId, $workspaceId);
         }
-
-        $this->notify('created', $key, $this->registry->definition($key), $id, $actorUserId, $workspaceId);
     }
 
-    private function notify(string $action, string $key, array $definition, int $id, ?int $actorUserId, ?int $workspaceId): void
+    private function notify(string $action, string $key, int $id, ?int $actorUserId, ?int $workspaceId): void
     {
         $actor = $actorUserId === null ? null : User::query()->find($actorUserId);
         if ($actor === null || ! isset(self::TYPES[$action])) {
@@ -62,15 +60,15 @@ class RecordActivityNotificationHandler
         }
 
         $portal = $actor->type instanceof BackedEnum ? $actor->type->value : $actor->type;
-        $model = $this->model($definition, $id);
         if ($key === 'workspaces') {
             $workspaceId = $id;
         }
 
+        $model = $this->model($this->registry->definition($key), $id);
         $params = [
             'actor' => trim($actor->first_name.' '.$actor->last_name),
             'name' => $model === null ? '#'.$id : $this->recordName($model),
-            // Trash Registry key (e.g. `skills`) so the apps know which page `target_id` belongs to.
+            // Trash Registry key (e.g. `skills`), the type of record `target_id` belongs to.
             'resource' => $key,
         ];
         $translated = ['record' => "notifications.records.{$key}"];
@@ -90,18 +88,6 @@ class RecordActivityNotificationHandler
                 $id, $workspaceId, $actor->id,
             );
         }
-    }
-
-    /** @return array{0: string, 1: array}|null */
-    private function definitionForType(?string $resourceType): ?array
-    {
-        foreach ($this->registry->definitions() as $key => $definition) {
-            if (class_basename($definition['model']) === $resourceType) {
-                return [$key, $definition];
-            }
-        }
-
-        return null;
     }
 
     private function model(array $definition, int $id): ?Model
@@ -134,5 +120,16 @@ class RecordActivityNotificationHandler
         }
 
         return '#'.$model->getKey();
+    }
+
+    private function keyForType(?string $resourceType): ?string
+    {
+        foreach ($this->registry->definitions() as $key => $definition) {
+            if (class_basename($definition['model']) === $resourceType) {
+                return $key;
+            }
+        }
+
+        return null;
     }
 }

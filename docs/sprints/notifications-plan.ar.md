@@ -1,6 +1,6 @@
-# خطة نظام الإشعارات
+# نظام الإشعارات
 
-> الحالة: منفذة (تحتاج اختبار يدوي للتدفقات على سيرفر التست).
+> الحالة: البنية الأساسية والأحداث المعتمدة منفذة. تحتاج اختبارًا يدويًا للتدفقات على سيرفر التست، بينما الأحداث المذكورة في قسم «التغطية المعلقة» لم تُربط عمدًا قبل اعتماد مستلميها وقنواتها.
 
 ## 1. القرارات
 
@@ -29,7 +29,8 @@
 ```
 
 - `title` و`body` مفاتيح ترجمة، تُترجم عند القراءة حسب `Accept-Language`.
-- `workspace_id` يُضاف فقط في إشعارات العميل (شاشات العميل تحت `/client/workspaces/{workspace}`).
+- `workspace_id` يُضاف فقط في إشعارات العميل (`/client/{workspace}/notifications`).
+- `params` تُخزَّن وتُستخدم لبناء النص فقط، ولا ترجع في الـresponse.
 - `translated_params` يظهر فقط عندما يكون أحد الـparams نفسه يحتاج ترجمة (نوع السجل، القرار، نوع طلب المساعدة).
 - عمود `type` في جدول `notifications` يخزن القيمة القصيرة.
 
@@ -40,10 +41,10 @@ Endpoints:
 
 الـresponse: `data.notifications` و`data.meta`. و`GET .../notifications/types` يرجع `data.types`: كل الأنواع الممكنة لهذه البوابة `[{value, label}]`.
 
-كل إشعار يرجع: `id`, `type`, `title`, `body` (مترجمة), `target_id`, `workspace_id`, `params`, `read_at`, `created_at`.
+كل إشعار يرجع: `id`, `type`, `title`, `body` (مترجمة), `target_id`, `workspace_id` (للعميل فقط), `read_at`, `created_at`.
 
 ### FCM
-`notification.title/body` مترجمة بلغة المستخدم، و`data`: `notification_id`, `type`, `target_id`, `workspace_id` (كلها strings).
+`notification.title/body` مترجمة بلغة المستخدم، و`data`: `notification_id`, `type`, `target_id`, `workspace_id` (فارغ لغير العميل) — كلها strings.
 
 ## 3. التصميم
 
@@ -107,7 +108,7 @@ Endpoints:
 | استرجاع من المحذوفات | `record_restored` |
 | حذف نهائي من المحذوفات | `record_removed` |
 
-المستلم: السوبر أدمنز لو القائم أدمن، أو مالك الـworkspace لو القائم عضو في الفريق. الـparams: `actor`, `name`، و`record` (اسم نوع السجل مترجم).
+المستلم: السوبر أدمنز لو القائم أدمن، أو مالك الـworkspace لو القائم عضو في الفريق. الـparams: `actor`, `name`, `resource`، و`record` (اسم نوع السجل مترجم).
 
 ### التذكيرات (كل دقيقة عبر الـscheduler)
 | التذكير | المستلمون | type |
@@ -125,7 +126,7 @@ Endpoints:
 - `talent_*`: `target_id` = talent application.
 - `help_request_*`: `target_id` = help request.
 - `workspace_*`: `target_id` = workspace.
-- `record_*`: `target_id` = السجل، ونوعه في `params.resource` (مفتاح Trash Registry مثل `skills`). `record_deleted` و`record_removed` يفتحان صفحة المحذوفات.
+- `record_*`: `target_id` = رقم السجل (بدون نوعه). `record_deleted` و`record_removed` يفتحان صفحة المحذوفات.
 - إشعارات العميل كلها فيها `workspace_id`.
 
 ## 6. التأثير والتشغيل
@@ -133,3 +134,57 @@ Endpoints:
 - **Endpoints:** إشعارات العميل انتقلت إلى `/client/{workspace}/notifications`، وأُضيف `GET .../notifications/types` لكل بوابة.
 - **السيرفر:** `php artisan migrate`، والـcron يشغّل `schedule:run` كل دقيقة و`queue:work`. الـqueue الافتراضية مستخدمة (`NOTIFICATIONS_QUEUE` اختياري).
 - **FCM:** يحتاج `FIREBASE_CREDENTIALS`؛ بدونه تُحفظ الإشعارات في القائمة فقط بدون Push.
+
+## 7. مراجعة التغطية الحالية
+
+### منفذ داخل قائمة الإشعارات وFCM
+
+- دورة Talent Application من إسناد المراجع حتى القبول أوالرفض، ومواعيد مقابلة التقييم.
+- دورة Hiring Request من الإسناد وبدء الطلب حتى العرض والتفاوض والمقابلة والقرار والإيقاف أوالإلغاء.
+- طلبات المساعدة بعد الإسناد: بدء المعالجة والإغلاق.
+- تعطيل وتفعيل الـWorkspace.
+- إنشاء السجلات المسجلة في Trash Registry، وحذفها واستعادتها وإزالتها من التراش.
+- تذكيرات المقابلات ومهلة العرض ومهلة قرار العميل.
+
+### منفذ بقناة أخرى وليس Notification داخل البورتال
+
+| الحدث | القناة الحالية | السبب |
+|---|---|---|
+| OTP والتحقق وإعادة ضبط كلمة المرور | Email | المستخدم قد لا يكون مسجل الدخول أويمتلك Device Token صالحًا. |
+| إنشاء حساب عضو Workspace | Email | الرسالة تحتوي بيانات الدخول الأولية. |
+| تحويل Job Form Submission إلى حساب Talent | Email | الرسالة تحتوي بيانات الدخول أوتوضح أن الحساب موجود بالفعل. |
+| إيقاف حساب Client وإعادة تفعيله | Email | الإيقاف يسحب Tokens ويمنع الوصول إلى Inbox داخل البورتال. |
+
+### أحداث موجودة في السيستم وغير مربوطة حاليًا
+
+هذه ليست أخطاء تنفيذية؛ لم يحدد لها مستلم معتمد حتى الآن، لذلك لا تُرسل لها إشعارات قبل قرار صريح:
+
+| الحدث | المصدر الحالي | المستلم المقترح للنقاش | ملاحظة |
+|---|---|---|---|
+| تقديم Talent Application لأول مرة | `CreateTalentApplicationUseCase` | أدمنز لديهم صلاحية عرض أوإسناد الطلبات | الطلب وقتها غير مُسنَد، لذلك لا يوجد مراجع محدد. |
+| إنشاء Help Request بواسطة العميل | `ClientHelpRequestService::submit` | أدمنز لديهم صلاحية الإسناد | التنفيذ الحالي يبدأ إشعارات الأدمن بعد الإسناد فقط. |
+| وصول Public Job Form Submission | `JobFormWorkflow::submit` | أدمنز لديهم صلاحية عرض Job Form Submissions | النموذج عام ولا يوجد أدمن مسؤول محدد. |
+| وصول Hiring Support Request من Website | `PublicHiringSupportRequestController::store` | جهة دعم أوSuper Admin | لا يوجد حاليًا Workflow إدارة أوإسناد معتمد لهذا الجدول. |
+| إضافة أوتعديل أوحذف عضو Workspace من جانب العميل | `WorkspaceTeamService` | مالك الـWorkspace أوالعضو المتأثر | إنشاء العضو يرسل Email؛ إشعار Inbox لتغييرات العضوية لم يعتمد بعد. |
+| تعديل Role أوصلاحياتها داخل Workspace | `WorkspaceRoleService` | مالك الـWorkspace أوالأعضاء المتأثرون | الحذف والاستعادة يغطيهما Trash؛ تعديل الصلاحيات نفسه غير مغطى. |
+| Blacklist وإزالة Blacklist وتعديل مدة إعادة التقديم | `AdminTalentStateService` | Talent أوAdmin مسؤول | الـBlacklist قد تكون معلومة داخلية؛ لا تُرسل للموهبة بدون قرار منتج واضح. |
+| تعديل Platform Settings أوMaster Data | خدمات الإدارة المختلفة | Super Admins | التغييرات محفوظة في سجلات الإدارة عند توفرها، لكن Push لكل تعديل قد يسبب ضوضاء. |
+
+### أحداث لا تحتاج إشعارًا
+
+- عمليات القراءة والبحث والفلاتر والـoptions والـmaster-data listing.
+- حفظ تقييم أوNotes داخلية ما لم ينتج عنه انتقال حالة أوAction مطلوب من مستخدم آخر.
+- Start/Complete التلقائي للمقابلة؛ التذكير عند الموعد يغطي المستخدم، بينما تغيّر الحالة نفسه لا يحتاج Push إضافيًا.
+- تعديل Draft أوبيانات لا يراها طرف آخر فورًا.
+
+## 8. اختبار القبول المطلوب
+
+يُختبر لكل Event معتمد ما يلي:
+
+1. إنشاء سجل واحد فقط في `notifications` لكل مستلم وعدم إرسال إشعار للقائم بالفعل.
+2. ظهور الإشعار في البوابة والـWorkspace الصحيحين وعدم تسربه إلى Workspace أخرى.
+3. وصول FCM لكل الأجهزة الصالحة للمستخدم، مع عدم فشل باقي الأجهزة بسبب Token غير صالح.
+4. ترجمة `title` و`body` حسب `users.locale`، وترجمة الـAPI حسب `Accept-Language`.
+5. صحة `type`, `target_id`, `workspace_id` وقدرة الفرونت على فتح الصفحة المطلوبة.
+6. عمل `unread-count`, `read`, و`read-all` ضمن النطاق الصحيح.
+7. عدم إرسال الحدث قبل نجاح الـtransaction، وعدم تكراره عند Retry للـqueue أوscheduler.
