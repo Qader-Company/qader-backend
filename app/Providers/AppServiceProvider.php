@@ -39,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
 
                 $version = $route['version'] ?? 'v1';
                 $prefix = $route['prefix'] ?? '';
-                $middlewares = array_merge(['api', 'locale'], $route['middlewares'] ?? []);
+                $middlewares = array_merge(['api', 'locale', 'remember.locale'], $route['middlewares'] ?? []);
 
                 if ($route['api_key'] ?? false) {
                     $middlewares[] = 'api.key';

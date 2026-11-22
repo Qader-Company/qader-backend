@@ -5,6 +5,7 @@ namespace App\Modules\V1\Users\Infrastructure\Notifications;
 use App\Modules\V1\Users\Domain\Models\UserDevice;
 use Google\Auth\Credentials\ServiceAccountCredentials;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -40,11 +41,7 @@ class FirebaseCloudMessaging
             throw new RuntimeException('The Firebase credentials file does not contain project_id.');
         }
 
-        $credentials = new ServiceAccountCredentials(
-            self::SCOPE,
-            $credentialsPath
-        );
-        $accessToken = $credentials->fetchAuthToken()['access_token'] ?? null;
+        $accessToken = $this->accessToken($credentialsPath);
 
         if (! is_string($accessToken) || $accessToken === '') {
             throw new RuntimeException('Firebase access token could not be created.');
@@ -77,6 +74,25 @@ class FirebaseCloudMessaging
         $response->throw();
 
         return (string) $response->json('name');
+    }
+
+    /** Google access tokens live for an hour; reuse one instead of signing a new JWT for every push. */
+    private function accessToken(string $credentialsPath): ?string
+    {
+        $cacheKey = 'fcm.access_token.'.md5($credentialsPath);
+        $cached = Cache::get($cacheKey);
+        if (is_string($cached) && $cached !== '') {
+            return $cached;
+        }
+
+        $token = (new ServiceAccountCredentials(self::SCOPE, $credentialsPath))->fetchAuthToken();
+        $accessToken = $token['access_token'] ?? null;
+        if (is_string($accessToken) && $accessToken !== '') {
+            $ttl = max(60, (int) ($token['expires_in'] ?? 3600) - 300);
+            Cache::put($cacheKey, $accessToken, $ttl);
+        }
+
+        return $accessToken;
     }
 
     private function isUnregistered(Response $response): bool

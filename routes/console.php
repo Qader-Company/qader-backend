@@ -2,6 +2,7 @@
 
 use App\Modules\V1\HiringRequests\Application\Services\HiringInterviewWorkflow;
 use App\Modules\V1\HiringRequests\Application\Services\HiringOfferExpirationService;
+use App\Modules\V1\Notifications\Application\Services\NotificationReminderService;
 use App\Modules\V1\TalentApplications\Application\Services\InterviewStateSynchronizer;
 use App\Modules\V1\Trash\Application\Services\TrashService;
 use Illuminate\Foundation\Inspiring;
@@ -24,6 +25,11 @@ Schedule::call(fn () => app(HiringOfferExpirationService::class)->synchronizeDue
 
 Schedule::call(fn () => app(HiringInterviewWorkflow::class)->synchronizeDue())
     ->name('hiring-interviews:synchronize')
+    ->everyMinute()
+    ->withoutOverlapping();
+
+Schedule::call(fn () => app(NotificationReminderService::class)->sendDue())
+    ->name('notifications:reminders')
     ->everyMinute()
     ->withoutOverlapping();
 

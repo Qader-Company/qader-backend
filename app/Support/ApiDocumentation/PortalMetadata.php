@@ -19,6 +19,9 @@ class PortalMetadata extends Strategy
         $isPublic = ($segments[2] ?? null) === 'public';
         $portal = $isPublic ? 'website' : ($isAuth ? ($isSharedAuth ? 'talent' : $segments[3]) : $segments[2]);
         $module = $isPublic ? ($segments[3] ?? 'general') : ($isAuth ? 'auth' : ($segments[3] ?? 'general'));
+        if ($portal === 'client' && $module === '{workspace}' && ($segments[4] ?? null) === 'notifications') {
+            $module = 'notifications';
+        }
         if ($portal === 'client' && in_array($module, ['workspaces', 'access-control'], true)) {
             $module = match (true) {
                 in_array('trash', $segments, true) => 'trash',

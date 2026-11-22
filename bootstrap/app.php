@@ -4,6 +4,7 @@ use App\Facades\ApiResponse;
 use App\Http\Middleware\CheckApiKey;
 use App\Http\Middleware\CheckScopedPermission;
 use App\Http\Middleware\CheckScopedRole;
+use App\Http\Middleware\RememberUserLocale;
 use App\Http\Middleware\SetLocale;
 use App\Modules\V1\TalentApplications\Domain\Exceptions\InterviewScheduleConflictException;
 use App\Modules\V1\Trash\Domain\Exceptions\TrashDependenciesException;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
             'locale' => SetLocale::class,
+            'remember.locale' => RememberUserLocale::class,
             'role' => CheckScopedRole::class,
             'permission' => CheckScopedPermission::class,
             'api.key' => CheckApiKey::class,

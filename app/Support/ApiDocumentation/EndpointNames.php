@@ -32,6 +32,9 @@ class EndpointNames
 
         array_shift($parts); // Portal.
         $module = $parts[0];
+        if ($module === '{workspace}' && ($parts[1] ?? null) === 'notifications') {
+            $module = 'notifications'; // Client notifications: /client/{workspace}/notifications.
+        }
 
         if ($module === 'dashboard') {
             return str_ends_with($route->uri(), '/options')
@@ -47,6 +50,7 @@ class EndpointNames
             return match ($route->getActionMethod()) {
                 'index' => 'List Notifications',
                 'unreadCount' => 'Get Unread Notification Count',
+                'types' => 'List Notification Types',
                 'markAsRead' => 'Mark Notification as Read',
                 'markAllAsRead' => 'Mark All Notifications as Read',
                 default => Str::headline($route->getActionMethod()),

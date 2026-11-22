@@ -5,5 +5,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [NotificationController::class, 'index']);
 Route::get('unread-count', [NotificationController::class, 'unreadCount']);
+Route::get('types', [NotificationController::class, 'types']);
 Route::patch('read-all', [NotificationController::class, 'markAllAsRead']);
 Route::patch('{notification}/read', [NotificationController::class, 'markAsRead']);

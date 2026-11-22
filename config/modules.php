@@ -10,6 +10,7 @@ use App\Modules\V1\HiringRequests\Infrastructure\Providers\HiringRequestModuleSe
 use App\Modules\V1\Industries\Infrastructure\Providers\IndustryModuleServiceProvider;
 use App\Modules\V1\JobTitles\Infrastructure\Providers\JobTitleModuleServiceProvider;
 use App\Modules\V1\Languages\Infrastructure\Providers\LanguageModuleServiceProvider;
+use App\Modules\V1\Notifications\Infrastructure\Providers\NotificationModuleServiceProvider;
 use App\Modules\V1\ProfessionalFields\Infrastructure\Providers\ProfessionalFieldModuleServiceProvider;
 use App\Modules\V1\Skills\Infrastructure\Providers\SkillModuleServiceProvider;
 use App\Modules\V1\TalentApplications\Infrastructure\Providers\TalentApplicationModuleServiceProvider;
@@ -62,6 +63,8 @@ return [
             ['prefix' => 'client/workspaces', 'file' => 'help-requests.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
             ['prefix' => 'client/trash', 'file' => 'trash.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
             ['prefix' => 'client/workspaces', 'file' => 'workspace-trash.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
+            // Client notifications are per workspace: /client/{workspace}/notifications.
+            ['prefix' => 'client', 'file' => 'notifications.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
         ],
 
         'talent' => [
@@ -105,12 +108,6 @@ return [
                 'middlewares' => ['auth:sanctum', 'abilities:access,talent'],
             ],
             [
-                'prefix' => 'client/notifications',
-                'file' => 'notifications.php',
-                'api_key' => true,
-                'middlewares' => ['auth:sanctum', 'abilities:access,client'],
-            ],
-            [
                 'prefix' => 'admin/notifications',
                 'file' => 'notifications.php',
                 'api_key' => true,
@@ -130,6 +127,7 @@ return [
         IndustryModuleServiceProvider::class,
         HiringRequestModuleServiceProvider::class,
         LanguageModuleServiceProvider::class,
+        NotificationModuleServiceProvider::class,
         ProfessionalFieldModuleServiceProvider::class,
         SkillModuleServiceProvider::class,
         TalentApplicationModuleServiceProvider::class,

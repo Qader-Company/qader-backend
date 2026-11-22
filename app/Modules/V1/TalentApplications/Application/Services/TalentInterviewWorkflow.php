@@ -2,8 +2,7 @@
 
 namespace App\Modules\V1\TalentApplications\Application\Services;
 
-use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
-use Illuminate\Validation\ValidationException;
+use App\Modules\V1\Notifications\Application\Jobs\DispatchDomainNotification;
 use App\Modules\V1\TalentApplications\Application\Contracts\InterviewCalendarGatewayInterface;
 use App\Modules\V1\TalentApplications\Domain\Models\Interview;
 use App\Modules\V1\TalentApplications\Domain\Models\InterviewSlot;
@@ -15,7 +14,9 @@ use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationStatu
 use App\Modules\V1\Talents\Domain\Models\Talent;
 use App\Settings\TalentEvaluationSettings;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 class TalentInterviewWorkflow
 {
@@ -51,13 +52,13 @@ class TalentInterviewWorkflow
                 $interview->loadMissing(['admins.user', 'application.talent.user']);
                 try {
                     $meeting = $this->calendar->createOnlineMeeting(
-                    $slot,
-                    __('talents.interview.calendar_title', [
-                        'type' => ucfirst($interview->type->value),
-                        'talent' => $talent->user->first_name.' '.$talent->user->last_name,
-                    ]),
-                    $interview->admins->pluck('user.email')
-                        ->push($talent->user->email)
+                        $slot,
+                        __('talents.interview.calendar_title', [
+                            'type' => ucfirst($interview->type->value),
+                            'talent' => $talent->user->first_name.' '.$talent->user->last_name,
+                        ]),
+                        $interview->admins->pluck('user.email')
+                            ->push($talent->user->email)
                             ->filter()
                             ->values()
                             ->all(),
@@ -80,6 +81,7 @@ class TalentInterviewWorkflow
                 'rejected_slots_reason' => null,
             ]);
             $application->update(['status' => TalentApplicationStatusEnum::SCHEDULED]);
+            $this->notifyReviewer($application, 'slot_selected');
 
             return $this->loadForTalent($interview->refresh());
         });
@@ -118,6 +120,7 @@ class TalentInterviewWorkflow
                 'rejected_slots_reason' => $reason,
                 'slot_rejection_count' => $interview->slot_rejection_count + 1,
             ]);
+            $this->notifyReviewer($application, 'slots_rejected');
 
             return $this->loadForTalent($interview->refresh());
         });
@@ -163,9 +166,19 @@ class TalentInterviewWorkflow
                 'talent_reschedule_count' => $interview->talent_reschedule_count + 1,
             ]);
             $application->update(['status' => TalentApplicationStatusEnum::INTERVIEW_REQUIRED]);
+            $this->notifyReviewer($application, 'slot_cancelled');
 
             return $this->loadForTalent($interview->refresh());
         });
+    }
+
+    /** Talent-side slot actions write no application event, so the reviewer is notified explicitly (after commit). */
+    private function notifyReviewer(TalentApplication $application, string $action): void
+    {
+        DispatchDomainNotification::dispatch('talent_interview_action', [
+            'application_id' => $application->id,
+            'action' => $action,
+        ]);
     }
 
     /** @return array{TalentApplication, Interview} */
