@@ -69,6 +69,8 @@ class HiringRequestItemResource extends JsonResource
             'offer' => $offer,
             'offers' => HiringOfferResource::collection($this->whenLoaded('offers')),
             'interview' => $this->whenLoaded('interview', fn () => new HiringInterviewResource($this->interview)),
+            'interview_status' => $this->whenLoaded('interview', fn () => $this->interviewStatus()),
+            'interview_status_label' => $this->whenLoaded('interview', fn () => EnumLabel::for($this->interviewStatus(), 'hiring_interview_statuses')),
             'client_decision' => $this->value($this->client_decision),
             'client_decision_reason' => $this->client_decision_reason,
             'client_decided_at' => $this->client_decided_at,
@@ -191,6 +193,19 @@ class HiringRequestItemResource extends JsonResource
         }
 
         return array_values(array_unique($actions));
+    }
+
+    /**
+     * The interview record is created only when the admin schedules it, so an item in the
+     * interview stage without a record is reported as `awaiting_scheduling`.
+     */
+    private function interviewStatus(): ?string
+    {
+        if ($this->interview !== null) {
+            return $this->value($this->interview->status);
+        }
+
+        return $this->status === HiringRequestItemStatusEnum::INTERVIEW ? 'awaiting_scheduling' : null;
     }
 
     private function isOperational(HiringRequestItemStatusEnum $status): bool

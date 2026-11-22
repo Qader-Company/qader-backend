@@ -111,7 +111,7 @@ return [
     'hiring_contract_types' => ['managed' => 'مُدار', 'one_time' => 'عمولة لمرة واحدة'],
     'hiring_offer_statuses' => ['pending' => 'قيد الانتظار', 'accepted' => 'مقبول', 'rejected' => 'مرفوض', 'countered' => 'عرض مقابل', 'expired' => 'منتهي'],
     'hiring_offer_parties' => ['client' => 'العميل', 'talent' => 'الموهبة'],
-    'hiring_interview_statuses' => ['awaiting_responses' => 'في انتظار الردود', 'awaiting_admin_confirmation' => 'في انتظار تأكيد الأدمن', 'awaiting_reschedule' => 'في انتظار إعادة الجدولة', 'confirmed' => 'مؤكدة', 'in_progress' => 'جارية', 'completed' => 'مكتملة', 'cancelled' => 'ملغاة'],
+    'hiring_interview_statuses' => ['awaiting_scheduling' => 'في انتظار تحديد موعد المقابلة', 'awaiting_responses' => 'في انتظار الردود', 'awaiting_admin_confirmation' => 'في انتظار تأكيد الأدمن', 'awaiting_reschedule' => 'في انتظار إعادة الجدولة', 'confirmed' => 'مؤكدة', 'in_progress' => 'جارية', 'completed' => 'مكتملة', 'cancelled' => 'ملغاة'],
     'hiring_interview_responses' => ['pending' => 'قيد الانتظار', 'accepted' => 'موافق', 'change_requested' => 'طلب تغيير', 'apologized' => 'اعتذر'],
     'hiring_decisions' => ['proceed' => 'متابعة', 'reject' => 'رفض'],
     'work_days' => ['sunday' => 'الأحد', 'monday' => 'الاثنين', 'tuesday' => 'الثلاثاء', 'wednesday' => 'الأربعاء', 'thursday' => 'الخميس', 'friday' => 'الجمعة', 'saturday' => 'السبت'],

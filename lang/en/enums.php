@@ -111,7 +111,7 @@ return [
     'hiring_contract_types' => ['managed' => 'Managed', 'one_time' => 'One-Time Commission'],
     'hiring_offer_statuses' => ['pending' => 'Pending', 'accepted' => 'Accepted', 'rejected' => 'Rejected', 'countered' => 'Countered', 'expired' => 'Expired'],
     'hiring_offer_parties' => ['client' => 'Client', 'talent' => 'Talent'],
-    'hiring_interview_statuses' => ['awaiting_responses' => 'Awaiting Responses', 'awaiting_admin_confirmation' => 'Awaiting Admin Confirmation', 'awaiting_reschedule' => 'Awaiting Reschedule', 'confirmed' => 'Confirmed', 'in_progress' => 'In Progress', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
+    'hiring_interview_statuses' => ['awaiting_scheduling' => 'Awaiting Scheduling', 'awaiting_responses' => 'Awaiting Responses', 'awaiting_admin_confirmation' => 'Awaiting Admin Confirmation', 'awaiting_reschedule' => 'Awaiting Reschedule', 'confirmed' => 'Confirmed', 'in_progress' => 'In Progress', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
     'hiring_interview_responses' => ['pending' => 'Pending', 'accepted' => 'Accepted', 'change_requested' => 'Change Requested', 'apologized' => 'Apologized'],
     'hiring_decisions' => ['proceed' => 'Proceed', 'reject' => 'Reject'],
     'work_days' => ['sunday' => 'Sunday', 'monday' => 'Monday', 'tuesday' => 'Tuesday', 'wednesday' => 'Wednesday', 'thursday' => 'Thursday', 'friday' => 'Friday', 'saturday' => 'Saturday'],
