@@ -13,6 +13,7 @@ class RejectBrowserApiRequests
     {
         if (
             ! $request->isMethod('OPTIONS')
+            && ! $request->is('api/maintenance/*')
             && $request->acceptsHtml()
             && ! $request->expectsJson()
         ) {
