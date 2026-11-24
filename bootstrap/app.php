@@ -4,6 +4,7 @@ use App\Facades\ApiResponse;
 use App\Http\Middleware\CheckApiKey;
 use App\Http\Middleware\CheckScopedPermission;
 use App\Http\Middleware\CheckScopedRole;
+use App\Http\Middleware\RejectBrowserApiRequests;
 use App\Http\Middleware\RememberUserLocale;
 use App\Http\Middleware\SetLocale;
 use App\Modules\V1\TalentApplications\Domain\Exceptions\InterviewScheduleConflictException;
@@ -32,6 +33,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->api(append: [
+            RejectBrowserApiRequests::class,
+        ]);
+
         $middleware->alias([
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
@@ -83,7 +88,11 @@ return Application::configure(basePath: dirname(__DIR__))
             return ApiResponse::forbidden($message);
         });
 
-        $exceptions->render(function (NotFoundHttpException|ModelNotFoundException $e, $request) {
+        $exceptions->render(function (NotFoundHttpException|ModelNotFoundException $e, Request $request) {
+            if ($request->acceptsHtml() && ! $request->expectsJson()) {
+                return response()->view('errors.404', status: 404);
+            }
+
             return ApiResponse::notFound($e->getMessage());
         });
 
