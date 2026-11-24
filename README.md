@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/qader-logo.svg" width="180" alt="Qader logo">
+  <img src="public/images/qader-logo.png" width="180" alt="Qader logo">
 </p>
 
 <h1 align="center">Qader Backend</h1>
