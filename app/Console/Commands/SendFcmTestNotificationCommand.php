@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Modules\V1\Users\Infrastructure\Notifications\FirebaseCloudMessaging;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 use Throwable;
 
 class SendFcmTestNotificationCommand extends Command
@@ -34,12 +35,37 @@ class SendFcmTestNotificationCommand extends Command
             return self::FAILURE;
         }
 
+        $title = (string) $this->option('title');
+        $body = (string) $this->option('body');
+        $notificationId = (string) Str::uuid();
+
+        $user->notifications()->create([
+            'id' => $notificationId,
+            'type' => 'fcm_test',
+            'data' => [
+                'type' => 'fcm_test',
+                'title' => $title,
+                'body' => $body,
+                'params' => [],
+                'target_id' => null,
+                'source' => 'maintenance-test',
+            ],
+        ]);
+
+        $this->info("Notification stored: {$notificationId}");
+
         try {
             $messageName = $messaging->send(
                 $device,
-                (string) $this->option('title'),
-                (string) $this->option('body'),
-                ['source' => 'maintenance-test']
+                $title,
+                $body,
+                [
+                    'notification_id' => $notificationId,
+                    'type' => 'fcm_test',
+                    'target_id' => '',
+                    'workspace_id' => '',
+                    'source' => 'maintenance-test',
+                ]
             );
         } catch (Throwable $exception) {
             report($exception);
