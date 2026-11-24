@@ -62,6 +62,10 @@ class EndpointNames
                 return 'Download Profile Media';
             }
 
+            if (($parts[1] ?? '') === 'evaluation') {
+                return 'Get Talent Evaluation';
+            }
+
             return $method === 'GET' ? 'Get Profile' : 'Update Profile';
         }
 
@@ -279,6 +283,7 @@ class EndpointNames
                 },
                 'permissions' => 'List Workspace Permissions', 'status' => 'Update Workspace Role Status',
                 'filters' => 'List Talent Marketplace Filters',
+                'expertOpinion' => 'Get Qader Expert Opinion',
                 'dashboard' => 'Get Workspace Dashboard',
                 'taxCard' => 'View or Download Workspace Tax Card',
                 'destroy' => match (true) {

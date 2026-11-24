@@ -44,10 +44,6 @@ class TalentApplicationResource extends JsonResource
                     ]),
                 ],
             ),
-            'evaluation' => $this->whenLoaded(
-                'evaluation',
-                fn () => $this->evaluation ? new TalentEvaluationResource($this->evaluation) : null,
-            ),
             'interview' => $this->whenLoaded(
                 'interview',
                 fn () => $this->interview ? new TalentInterviewResource($this->interview) : null,

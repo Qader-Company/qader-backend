@@ -24,6 +24,7 @@ Route::delete('{workspace}/members/{member}', [WorkspaceMemberController::class,
 
 Route::get('{workspace}/talent-marketplace/filters', [TalentMarketplaceController::class, 'filters']);
 Route::get('{workspace}/talent-marketplace', [TalentMarketplaceController::class, 'index']);
+Route::get('{workspace}/talent-marketplace/{talent}/expert-opinion', [TalentMarketplaceController::class, 'expertOpinion']);
 Route::get('{workspace}/talent-marketplace/{talent}', [TalentMarketplaceController::class, 'show']);
 
 Route::get('{workspace}/talent-selections', [WorkspaceTalentSelectionController::class, 'index']);

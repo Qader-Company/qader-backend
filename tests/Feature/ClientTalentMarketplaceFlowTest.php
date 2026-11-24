@@ -13,6 +13,7 @@ use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
 use App\Modules\V1\Skills\Domain\Models\Skill;
 use App\Modules\V1\TalentApplications\Domain\Models\TalentApplication;
 use App\Modules\V1\TalentApplications\Domain\Models\TalentBlacklistEntry;
+use App\Modules\V1\TalentApplications\Domain\Models\TalentEvaluation;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationStatusEnum;
 use App\Modules\V1\Talents\Domain\Models\Talent;
 use App\Modules\V1\Talents\Domain\ValueObjects\SeniorityLevelEnum;
@@ -130,11 +131,54 @@ class ClientTalentMarketplaceFlowTest extends TestCase
         $details = $this->getJson($this->marketplaceUrl('/'.$accepted->id));
         $details->assertOk()
             ->assertJsonPath('data.id', $accepted->id)
-            ->assertJsonPath('data.expert_opinion', null)
+            ->assertJsonPath('data.expert_opinion_is_available', false)
+            ->assertJsonMissingPath('data.expert_opinion')
             ->assertJsonMissingPath('data.email')
             ->assertJsonMissingPath('data.first_name')
             ->assertJsonMissingPath('data.phone_number')
             ->assertJsonMissingPath('data.cv');
+    }
+
+    public function test_client_can_open_an_available_expert_opinion_without_payment_for_now(): void
+    {
+        $talent = $this->talent('expert-opinion@example.test', true, true);
+        $application = TalentApplication::query()
+            ->where('talent_id', $talent->id)
+            ->firstOrFail();
+        $adminUser = User::query()->create([
+            'first_name' => 'Expert',
+            'last_name' => 'Reviewer',
+            'email' => 'expert-reviewer@example.test',
+            'password' => 'Password123!',
+            'type' => PortalTypeEnum::ADMIN,
+            'is_active' => true,
+            'email_verified_at' => now(),
+        ]);
+        $admin = Admin::query()->create(['user_id' => $adminUser->id]);
+        TalentEvaluation::query()->create([
+            'application_id' => $application->id,
+            'evaluator_admin_id' => $admin->id,
+            'technical_skills_rating' => 4,
+            'communication_skills_rating' => 5,
+            'problem_solving_rating' => 4,
+            'soft_skills_rating' => 5,
+            'hr_report' => 'Strong leadership and collaboration.',
+            'technical_report' => 'Advanced technical proficiency.',
+            'psychology_report' => 'Adaptable and calm under pressure.',
+        ]);
+
+        $this->getJson($this->marketplaceUrl('/'.$talent->id))
+            ->assertOk()
+            ->assertJsonPath('data.expert_opinion_is_available', true);
+
+        $this->getJson($this->marketplaceUrl('/'.$talent->id.'/expert-opinion'))
+            ->assertOk()
+            ->assertJsonPath('data.talent_code', $talent->talent_code)
+            ->assertJsonPath('data.ratings.technical_skills', 4)
+            ->assertJsonPath('data.average_rating', 4.5)
+            ->assertJsonPath('data.reports.hr', 'Strong leadership and collaboration.')
+            ->assertJsonPath('data.final_feedback', null)
+            ->assertJsonPath('data.tips', []);
     }
 
     public function test_owner_can_build_a_workspace_scoped_squad_without_duplicates(): void
@@ -212,10 +256,12 @@ class ClientTalentMarketplaceFlowTest extends TestCase
 
     public function test_workspace_membership_is_not_leaked_to_outsiders(): void
     {
+        $talent = $this->talent('private-opinion@example.test', true, true);
         $outsider = $this->clientUser('outsider@example.test');
         Sanctum::actingAs($outsider, ['access', 'client']);
 
         $this->getJson($this->marketplaceUrl())->assertNotFound();
+        $this->getJson($this->marketplaceUrl('/'.$talent->id.'/expert-opinion'))->assertNotFound();
     }
 
     private function talent(string $email, bool $accepted, bool $active): Talent

@@ -50,10 +50,6 @@ class TalentInterviewResource extends JsonResource
             'join_window_ends_at' => $joinWindowEndsAt,
             'started_at' => $this->started_at,
             'completed_at' => $this->completed_at,
-            'evaluation' => $this->whenLoaded(
-                'evaluation',
-                fn () => $this->evaluation ? new InterviewEvaluationResource($this->evaluation) : null,
-            ),
             'slot_rejections' => [
                 'used' => $this->slot_rejection_count,
                 'maximum' => $slotRejectionLimit,

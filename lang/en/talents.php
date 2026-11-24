@@ -13,6 +13,10 @@ return [
     'application' => [
         'not_submitted' => 'No application has been submitted yet.',
     ],
+    'evaluation' => [
+        'not_available' => 'Your evaluation is not available yet.',
+        'payment_required' => 'Payment is required to view your evaluation.',
+    ],
     'review' => [
         'invalid_applications' => 'One or more selected applications are invalid.',
         'assigned_to_another_reviewer' => 'This application is assigned to another reviewer. Reassign it before evaluating.',

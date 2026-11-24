@@ -8,7 +8,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class TalentProfileResource extends JsonResource
 {
-    public function __construct(Talent $resource, private readonly array $progress)
+    public function __construct(
+        Talent $resource,
+        private readonly array $progress,
+        private readonly bool $evaluationIsAvailable,
+    )
     {
         parent::__construct($resource);
     }
@@ -17,6 +21,7 @@ class TalentProfileResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'evaluation_is_available' => $this->evaluationIsAvailable,
             'sections' => collect($this->progress['steps'])
                 ->map(fn (array $step): array => [
                     'key' => $step['key'],

@@ -58,7 +58,7 @@ class TalentMarketplaceDetailsResource extends TalentMarketplaceCardResource
                         'url' => $media->getUrl(),
                     ])->values(),
                 ])->values()),
-            'expert_opinion' => null,
+            'expert_opinion_is_available' => (bool) ($this->expert_opinion_is_available ?? false),
         ];
     }
 }

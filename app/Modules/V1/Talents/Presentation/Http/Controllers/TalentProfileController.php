@@ -4,6 +4,7 @@ namespace App\Modules\V1\Talents\Presentation\Http\Controllers;
 
 use App\Facades\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Modules\V1\TalentApplications\Application\Services\TalentEvaluationAccessService;
 use App\Modules\V1\Talents\Application\Services\TalentProfileProgressService;
 use App\Modules\V1\Talents\Application\UseCases\GetTalentProfileUseCase;
 use App\Modules\V1\Talents\Application\UseCases\UpdateTalentProfileUseCase;
@@ -18,10 +19,15 @@ class TalentProfileController extends Controller
         Request $request,
         GetTalentProfileUseCase $profiles,
         TalentProfileProgressService $progress,
+        TalentEvaluationAccessService $evaluationAccess,
     ): JsonResponse {
         $profile = $profiles->execute($request->user()->id);
         $onboardingState = $progress->calculate($profile);
-        $resource = new TalentProfileResource($profile, $onboardingState);
+        $resource = new TalentProfileResource(
+            $profile,
+            $onboardingState,
+            $evaluationAccess->status($profile)['can_view'],
+        );
 
         return ApiResponse::success($resource);
     }
@@ -30,6 +36,7 @@ class TalentProfileController extends Controller
         UpdateTalentProfileRequest $request,
         GetTalentProfileUseCase $profiles,
         UpdateTalentProfileUseCase $updateProfile,
+        TalentEvaluationAccessService $evaluationAccess,
     ): JsonResponse {
         $userId = $request->user()->id;
         $profile = $profiles->execute($userId);
@@ -38,6 +45,7 @@ class TalentProfileController extends Controller
         $resource = new TalentProfileResource(
             $result['profile'],
             $result['state'],
+            $evaluationAccess->status($result['profile'])['can_view'],
         );
 
         return ApiResponse::updated($resource->resolve($request));

@@ -4,6 +4,8 @@ return [
     'selection_added' => 'تمت إضافة الموهبة إلى الفريق المختار.',
     'selection_removed' => 'تمت إزالة الموهبة من الفريق المختار.',
     'already_selected' => 'الموهبة موجودة بالفعل ضمن اختيارات مساحة العمل.',
+    'expert_opinion_not_available' => 'مراجعة الخبراء غير متاحة حتى الآن.',
+    'expert_opinion_payment_required' => 'يجب شراء مراجعة الخبراء لعرض هذا التقرير.',
     'validation' => [
         'currency_required_for_salary' => 'يجب اختيار العملة عند فلترة الراتب أوترتيبه.',
         'city_country_mismatch' => 'يجب أن تتبع المدينة المختارة الدولة المحددة.',

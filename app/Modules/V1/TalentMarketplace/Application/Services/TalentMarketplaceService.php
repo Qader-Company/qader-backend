@@ -29,6 +29,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class TalentMarketplaceService
 {
@@ -52,7 +54,10 @@ class TalentMarketplaceService
         'projects.media',
     ];
 
-    public function __construct(private readonly WorkspaceAccessService $access) {}
+    public function __construct(
+        private readonly WorkspaceAccessService $access,
+        private readonly TalentExpertOpinionAccessService $expertOpinionAccess,
+    ) {}
 
     /** @return array{paginator: LengthAwarePaginator, selected_talents_count: int} */
     public function list(User $user, Workspace $workspace, array $filters): array
@@ -98,8 +103,37 @@ class TalentMarketplaceService
             ->with(self::DETAIL_RELATIONS)
             ->findOrFail($talent->getKey());
         $this->decorate(collect([$talent]), $canManage);
+        $talent->setAttribute(
+            'expert_opinion_is_available',
+            $this->expertOpinionAccess->isAvailable($workspace, $talent),
+        );
 
         return $talent;
+    }
+
+    public function expertOpinion(User $user, Workspace $workspace, Talent $talent): TalentApplication
+    {
+        $talent = $this->details($user, $workspace, $talent);
+        $application = $this->expertOpinionAccess->reportApplication($talent);
+
+        if ($application === null) {
+            throw new NotFoundHttpException(
+                __('marketplace.expert_opinion_not_available'),
+            );
+        }
+
+        if ($this->expertOpinionAccess->isLocked($workspace, $talent)) {
+            throw new AccessDeniedHttpException(
+                __('marketplace.expert_opinion_payment_required'),
+            );
+        }
+
+        return $application->load([
+            'talent',
+            'evaluation.tips',
+            'evaluation.currency.translations',
+            'interviews.evaluation',
+        ]);
     }
 
     public function filters(User $user, Workspace $workspace): array

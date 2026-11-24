@@ -13,6 +13,10 @@ return [
     'application' => [
         'not_submitted' => 'لم يتم تقديم ملفك للمراجعة حتى الآن.',
     ],
+    'evaluation' => [
+        'not_available' => 'تقييمك غير متاح حتى الآن.',
+        'payment_required' => 'يجب إتمام الدفع لعرض تقييمك.',
+    ],
     'review' => [
         'invalid_applications' => 'طلب واحد أو أكثر من الطلبات المحددة غير صالح.',
         'assigned_to_another_reviewer' => 'الطلب معين لمراجع آخر. يجب إعادة تعيينه قبل بدء التقييم.',
