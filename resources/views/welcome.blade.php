@@ -24,13 +24,34 @@
             font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         }
 
-        img { height: 64px; width: auto; }
+        .brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-logo {
+            width: min(420px, 82vw);
+            height: auto;
+        }
+
+        .brand-tagline {
+            margin: 0;
+            color: #386be8;
+            font-size: clamp(22px, 4vw, 34px);
+            font-weight: 700;
+            line-height: 1.4;
+        }
 
         footer { color: var(--muted); font-size: 13px; }
     </style>
 </head>
 <body>
-    <img src="{{ asset('storage/images/qader-logo.png') }}" alt="Qader">
+    <div class="brand">
+        <img class="brand-logo" src="{{ asset('storage/images/qader-logo.png') }}" alt="Qader">
+        <p class="brand-tagline" lang="ar" dir="rtl">كفاءات بلا حدود</p>
+    </div>
     <footer>&copy; {{ now()->year }} Qader. All rights reserved.</footer>
 </body>
 </html>
