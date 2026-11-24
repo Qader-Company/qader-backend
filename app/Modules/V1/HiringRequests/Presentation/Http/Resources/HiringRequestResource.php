@@ -2,6 +2,7 @@
 
 namespace App\Modules\V1\HiringRequests\Presentation\Http\Resources;
 
+use App\Modules\V1\HiringRequests\Domain\ValueObjects\HiringRequestItemStatusEnum;
 use App\Modules\V1\TalentApplications\Presentation\Http\Resources\AdminSummaryResource;
 use App\Support\ApiMetadata\EnumLabel;
 use BackedEnum;
@@ -35,6 +36,7 @@ class HiringRequestResource extends JsonResource
             ] : []),
             'assigned_admin' => $this->assignedAdmin === null ? null : new AdminSummaryResource($this->assignedAdmin),
             'items_count' => isset($this->items_count) ? (int) $this->items_count : $items->count(),
+            'progress' => $this->progress($items),
             'status_counts' => $items->isEmpty()
                 ? (object) []
                 : $items->groupBy(fn ($item) => $item->status instanceof BackedEnum ? $item->status->value : $item->status)
@@ -65,5 +67,25 @@ class HiringRequestResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
+    }
+
+    private function progress($items): int
+    {
+        $itemsCount = isset($this->items_count) ? (int) $this->items_count : $items->count();
+        if ($itemsCount === 0) {
+            return 0;
+        }
+
+        $finalizedItemsCount = isset($this->finalized_items_count)
+            ? (int) $this->finalized_items_count
+            : $items->filter(function ($item): bool {
+                $status = $item->status instanceof HiringRequestItemStatusEnum
+                    ? $item->status
+                    : HiringRequestItemStatusEnum::tryFrom((string) $item->status);
+
+                return $status?->isFinal() ?? false;
+            })->count();
+
+        return (int) round(($finalizedItemsCount / $itemsCount) * 100);
     }
 }

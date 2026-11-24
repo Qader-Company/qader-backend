@@ -38,7 +38,14 @@ class AdminHiringRequestService
     {
         $paginator = HiringRequest::query()
             ->with(['workspace', 'createdByMember.client.user', 'assignedAdmin.user'])
-            ->withCount('items')
+            ->withCount([
+                'items',
+                'items as finalized_items_count' => fn (Builder $query) => $query->whereIn('status', [
+                    HiringRequestItemStatusEnum::REJECTED->value,
+                    HiringRequestItemStatusEnum::CANCELLED->value,
+                    HiringRequestItemStatusEnum::COMPLETED->value,
+                ]),
+            ])
             ->when(($filters['scope'] ?? HiringRequestListScopeEnum::ALL->value) === HiringRequestListScopeEnum::MINE->value, fn (Builder $query) => $query->where('assigned_admin_id', $actor->id))
             ->when($filters['status'] ?? null, fn (Builder $query, array $statuses) => $query->whereIn('status', $statuses))
             ->when($filters['assigned_admin_id'] ?? null, fn (Builder $query, int $adminId) => $query->where('assigned_admin_id', $adminId))

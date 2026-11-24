@@ -50,7 +50,14 @@ class ClientHiringRequestService
         $paginator = HiringRequest::query()
             ->where('workspace_id', $workspace->id)
             ->with(['assignedAdmin.user'])
-            ->withCount('items')
+            ->withCount([
+                'items',
+                'items as finalized_items_count' => fn (Builder $query) => $query->whereIn('status', [
+                    HiringRequestItemStatusEnum::REJECTED->value,
+                    HiringRequestItemStatusEnum::CANCELLED->value,
+                    HiringRequestItemStatusEnum::COMPLETED->value,
+                ]),
+            ])
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status))
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query->where('reference', 'like', '%'.addcslashes($search, '%_\\').'%'))
             ->latest()

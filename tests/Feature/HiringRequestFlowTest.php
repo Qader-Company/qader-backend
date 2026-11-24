@@ -144,6 +144,7 @@ class HiringRequestFlowTest extends TestCase
         $submitted = $this->postJson($this->clientUrl(), $this->draftBody())
             ->assertCreated()
             ->assertJsonPath('data.status', 'pending')
+            ->assertJsonPath('data.progress', 0)
             ->assertJsonPath('data.items.0.offer.notice_period_days', 30)
             ->assertJsonPath('data.items.0.offer.work_hours', 8)
             ->assertJsonPath('data.items.0.contract_configuration.name', 'Managed Contract')
@@ -162,6 +163,23 @@ class HiringRequestFlowTest extends TestCase
             'hiring_request_id' => $submitted['id'],
             'action' => 'submitted',
         ]);
+    }
+
+    public function test_client_hiring_request_list_returns_progress_out_of_one_hundred(): void
+    {
+        $requestId = $this->postJson($this->clientUrl(), $this->draftBody())->json('data.id');
+        $request = HiringRequest::query()->with('items')->findOrFail($requestId);
+        $firstItem = $request->items->firstOrFail();
+        $firstItem->update(['status' => HiringRequestItemStatusEnum::COMPLETED]);
+
+        $this->getJson($this->clientUrl())
+            ->assertOk()
+            ->assertJsonPath('data.requests.0.items_count', 1)
+            ->assertJsonPath('data.requests.0.progress', 100);
+
+        $this->getJson($this->clientUrl("/{$requestId}"))
+            ->assertOk()
+            ->assertJsonPath('data.progress', 100);
     }
 
     public function test_same_talent_cannot_be_submitted_twice_while_request_is_active(): void
