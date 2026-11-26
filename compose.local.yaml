@@ -28,6 +28,32 @@ services:
       - runtime_storage:/var/www/html/storage
       - private_files:/var/www/html/storage/app/private
       - bootstrap_cache:/var/www/html/bootstrap/cache
+  test:
+    image: qader-backend-local-app
+    working_dir: /var/www/html
+    env_file: .env
+    environment:
+      APP_ENV: testing
+      APP_DEBUG: "false"
+      APP_CONFIG_CACHE: /tmp/qader-backend-phpunit-config.php
+      APP_ROUTES_CACHE: /tmp/qader-backend-phpunit-routes-v7.php
+      APP_EVENTS_CACHE: /tmp/qader-backend-phpunit-events.php
+      CACHE_STORE: array
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ":memory:"
+      DB_URL: ""
+      FILESYSTEM_DISK: local
+      MAIL_MAILER: array
+      PAYMENT_GATEWAY: fake
+      PAYMENT_FAKE_WEBHOOK_SECRET: test-payment-secret
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array
+    entrypoint: ["/bin/sh", "/var/www/html/docker/php/run-tests.sh"]
+    profiles: [test]
+    volumes:
+      - .:/var/www/html
+      - test_runtime_storage:/var/www/html/storage
+      - test_bootstrap_cache:/var/www/html/bootstrap/cache
   nginx:
     build:
       context: .
@@ -52,3 +78,5 @@ volumes:
   scribe_markdown: {}
   scribe_views: {}
   scribe_assets: {}
+  test_runtime_storage: {}
+  test_bootstrap_cache: {}

@@ -1,10 +1,19 @@
 services:
   app:
     image: ghcr.io/qader-company/qader-backend-app:${IMAGE_TAG:-develop}
+    environment:
+      APP_ENV: testing
+      APP_DEBUG: "false"
   queue:
     image: ghcr.io/qader-company/qader-backend-app:${IMAGE_TAG:-develop}
+    environment:
+      APP_ENV: testing
+      APP_DEBUG: "false"
   scheduler:
     image: ghcr.io/qader-company/qader-backend-app:${IMAGE_TAG:-develop}
+    environment:
+      APP_ENV: testing
+      APP_DEBUG: "false"
   nginx:
     image: ghcr.io/qader-company/qader-backend-nginx:${IMAGE_TAG:-develop}
     ports:

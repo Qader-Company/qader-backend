@@ -2,6 +2,7 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
+         cacheDirectory="/tmp/qader-backend-phpunit-cache"
          colors="true"
 >
     <testsuites>
@@ -19,6 +20,9 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_CONFIG_CACHE" value="/tmp/qader-backend-phpunit-config.php" force="true"/>
+        <env name="APP_ROUTES_CACHE" value="/tmp/qader-backend-phpunit-routes-v7.php" force="true"/>
+        <env name="APP_EVENTS_CACHE" value="/tmp/qader-backend-phpunit-events.php" force="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

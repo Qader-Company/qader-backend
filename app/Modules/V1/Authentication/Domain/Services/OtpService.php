@@ -6,48 +6,32 @@ use App\Modules\V1\Authentication\Application\Mail\OtpMail;
 use App\Modules\V1\Authentication\Domain\ValueObjects\OtpPurposeEnum;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use Carbon\Carbon;
-use Ichtrojan\Otp\Otp;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 class OtpService
 {
-    /*
-    public function generate(
-        string $email,
-        OtpPurposeEnum $purpose,
-        PortalTypeEnum $portal
-    ): string {
-        $otp = (new Otp)->generate(
-            $this->identifier($email, $purpose, $portal),
-            'numeric',
-            6,
-            (int) config('sanctum.OTP_TTL'),
-        );
-
-        return $otp->token;
-    }
-    */
-
     public function generate(
         string $email,
         OtpPurposeEnum $purpose,
         PortalTypeEnum $portal
     ): string {
         $identifier = $this->identifier($email, $purpose, $portal);
-        $fixedCode = '123456';
+        $code = app()->environment(['local', 'testing'])
+            ? '123456'
+            : str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         DB::table('otps')->where('identifier', $identifier)->delete();
         DB::table('otps')->insert([
             'identifier' => $identifier,
-            'token' => $fixedCode,
+            'token' => $code,
             'validity' => (int) config('sanctum.OTP_TTL'),
             'valid' => true,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        return $fixedCode;
+        return $code;
     }
 
     public function generateAndSend(
@@ -71,20 +55,6 @@ class OtpService
         PortalTypeEnum $portal
     ): bool {
         $identifier = $this->identifier($email, $purpose, $portal);
-
-        /*
-         * Disabled because ichtrojan/laravel-otp passes the database value of
-         * `validity` to Carbon 3 as a string, causing a TypeError on validation.
-         * Keep this block until the package handles the value as an integer.
-         *
-        $otpCheck = (new Otp)->validate($identifier, $token);
-        if (! $otpCheck->status) {
-            return false;
-        }
-        DB::table('otps')->where('identifier', $identifier)->delete();
-
-        return true;
-        */
 
         return DB::transaction(function () use ($identifier, $token): bool {
             $otp = DB::table('otps')
