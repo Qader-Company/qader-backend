@@ -1,7 +1,9 @@
 # S07 — العقود والمدفوعات
 
-الحالة: **جاهزة للتنفيذ المرحلي بعد مراجعة السكيما النهائية**
-تاريخ آخر قرار: 10 نوفمبر 2026
+> حالة التنفيذ بتاريخ 25 نوفمبر 2026: تم تنفيذ أساس دفع الخدمات الرقمية المستقل عن المزود، والجداول الثلاثة، ومسارات Checkout والحالة والـWebhook، وربط فتح التقارير بالدفع. ما زال Adapter بوابة Production مؤجلًا لحين اختيار البوابة. التفاصيل في `S07-contracts-payments-implementation.ar.md`.
+
+الحالة: **تم تبسيط تصميم الدفع وأصبح جاهزًا للتنفيذ بعد اختيار المزود**
+تاريخ آخر قرار: 25 نوفمبر 2026
 النطاق العام: التعاقد والدفع والحالات الظاهرة في تصميم البورتالات.
 
 ## 1. قاعدة هذه الخطة
@@ -21,7 +23,7 @@
 - دفع التعاقد الحالي يتم خارج البورتال بالتنسيق المباشر مع العميل.
 - شاشات التحويل البنكي ورفع الإيصال الظاهرة في Figma لا تنفذ ضمن التدفق الحالي.
 - المدفوعات الأخرى داخل النظام تنفذ عبر Payments module محايد للمزود؛ مزود Production لم يحدد بعد.
-- لا يضاف Checkout أومزود دفع فعلي أوInvoice أوRefund لدفع التعاقد الخارجي. الخدمات الرقمية الثلاث تستخدم الأساس العام و`FakePaymentGateway` محليًا إلى أن يحدد مزود Production.
+- لا يضاف Checkout أومزود دفع فعلي أوInvoice أوRefund لدفع التعاقد الخارجي. الخدمات الرقمية الثلاث تستخدم موديول الدفع المبسط ومزودًا يحدد من Environment.
 - الأدمن هو المسؤول عن التأكد من اكتمال التوقيع والدفع الخارجيين.
 - لا يحفظ النظام حالة مستقلة للتوقيع أوالدفع، ولا يؤكد الأدمن كل حدث منهما من خلال Action منفصلة.
 - بعد اكتمال التوقيع والدفع خارجيًا، ينفذ الأدمن Action واحدة لتحديث طلب التعيين إلى `completed`.
@@ -151,7 +153,7 @@
 
 ## 4. الخدمات المدفوعة الأخرى الظاهرة في Figma
 
-الخدمات الثلاث الظاهرة في التصميم معتمدة. يمكن تنفيذ الأساس العام والأسعار وصلاحيات الوصول و`FakePaymentGateway` قبل اختيار مزود Production؛ يضاف Adapter المزود الفعلي لاحقًا دون تغيير Business workflow.
+الخدمات الثلاث الظاهرة في التصميم معتمدة. الأسعار وصلاحيات الوصول منفصلة عن مزود الدفع، ويضاف Adapter المزود المختار دون تغيير Business workflow.
 
 ### 4.1 Client — Qader Expert Opinion
 
@@ -189,7 +191,7 @@
 
 لا نضيف Report authoring workflow جديدًا ضمن الدفع. تستخدم الصفحات بيانات التقييم الموجودة بالفعل:
 
-- `Qader Expert Opinion` للعميل يعرض تقييم Qader للموهبة بعد شراء الـWorkspace صلاحية الوصول: المعايير والتقييمات وتقارير HR وTechnical وPsychology من `talent_evaluations` والتقييمات المرتبطة بالمقابلات عند الحاجة.
+- `Qader Expert Opinion` للعميل يعرض تقييم Qader للموهبة بعد شراء حساب مالك الـWorkspaces صلاحية الوصول: المعايير والتقييمات وتقارير HR وTechnical وPsychology من `talent_evaluations` والتقييمات المرتبطة بالمقابلات عند الحاجة.
 - `Detailed Rejection Feedback` للموهبة المرفوضة يفتح تفاصيل التقييم والرفض الموجودة، ولا يعدل `reapply_at` ولا يتجاوز سياسة إعادة التقديم.
 - `Profile Expert Review` يظهر للموهبة المقبولة، ويعرض Recommended Salary وEvaluation Criteria وInterview Evaluations وPersonalized Tips وتقارير HR وTechnical وPsychology و`final_feedback` الموجودة بالفعل.
 - `Detailed Rejection Feedback` و`Profile Expert Review` يعرضان نفس بنية بيانات التقرير، ويختلف اسم الخدمة والسعر وحالة الطلب التي تسمح بشرائها: الأولى للطلب المرفوض والثانية للطلب المقبول.
@@ -202,10 +204,10 @@
 
 ### 4.5 تجهيز الدفع دون ربط مزود محدد
 
-- يبنى موديول الدفع مستقبلًا خلف `PaymentGatewayInterface`، ولا ترتبط الـUse Cases باسم مزود بعينه.
+- بُني موديول الدفع خلف `PaymentGatewayInterface`، ولا ترتبط الـUse Cases باسم مزود بعينه.
 - كل مزود يضاف من خلال Adapter مستقل، ويختار المزود النشط من Config/Environment وليس من Business workflow.
 - تحفظ معاملات الشراء ومراجع المزود والحالة بصيغة موحدة داخل النظام، مع الاحتفاظ بالـpayload اللازم للتتبع دون تخزين بيانات دفع حساسة.
-- شراء Qader Expert Opinion تكون صلاحية الوصول فيه للـWorkspace ومربوطة بصف Talent الذي يمثل الـJob Profile، بينما شراء تقريري Talent يكون للمستخدم نفسه ومربوطًا بـ`talent_application_id`.
+- شراء Qader Expert Opinion تكون صلاحية الوصول فيه لمالك الـWorkspaces ومربوطة بصف Talent الذي يمثل الـJob Profile، بينما شراء تقريري Talent يكون للمستخدم نفسه ومربوطًا بـ`talent_application_id`.
 - نجاح دفع تقرير Talent لا يفتح إلا الطلب المحدد في معاملة الدفع، حتى لو كانت للموهبة طلبات سابقة أولاحقة.
 - يمر تأكيد الدفع عبر Gateway contract وWebhook verification خاص بالمزود؛ لا تثق المنصة في نجاح يعيده الـFrontend وحده.
 - شكل Redirect أوCheckout أوClient Secret يحدد عند اختيار أول مزود، ولا تفترض الخطة شاشة دفع غير موجودة في Figma.
@@ -237,10 +239,10 @@ flowchart TD
 - Contract Configuration Snapshot على Hiring Request Item.
 - Media Library يمكن استخدامها عند اعتماد أي Flow رفع ظاهر أوصريح.
 
-غير موجود حاليًا:
+غير موجود حاليًا بعد تنفيذ أساس الدفع:
 
 - Contract lifecycle منفذ.
-- Payments foundation للخدمات الرقمية؛ يمكن تنفيذها الآن، بينما Adapter بوابة Production مؤجل لحين تحديد المزود.
+- Adapter بوابة Production؛ أساس الدفع العام للخدمات الرقمية منفذ، والمزود الحقيقي مؤجل لحين تحديده.
 - Receipt upload مرتبط بطلب تعيين.
 - ربط Hired Talents بالعناصر المقبولة من طلب تعيين مكتمل.
 - شراء الخدمات المدفوعة الظاهرة في Figma.
@@ -297,358 +299,409 @@ flowchart TD
 4. بناء بيانات Hired Talents من العناصر المقبولة التابعة لطلب مكتمل، من غير الاعتماد على `Contract Fully Executed` أو`Waiting to Start`.
 5. مراجعة الـAPI والسكيما المقترحتين قبل إنشاء أي Migration، وعدم إضافة مستندات أوحالات أوجداول للعقد والدفع خارج النطاق المعتمد.
 
-## 10. خطة موديول الدفع للخدمات المدفوعة
+## 10. هيكل الدفع المبسط المعتمد
 
-هذه الخطة تخص شراء الخدمات الرقمية الثلاث فقط، ولا تشمل دفع التعاقد الخارجي الخاص بطلبات التعيين.
+هذا القسم هو المرجع المعتمد لتنفيذ دفع الخدمات الرقمية، ويستخدم ثلاثة جداول فقط: `payments` لعملية الشراء، و`payment_attempts` لمحاولات بوابات الدفع، و`payment_webhook_events` لمنع تكرار معالجة إشعارات المزود.
 
-### 10.1 حدود الموديول
+### 10.1 النطاق
 
-- الخدمات المدعومة هي:
-  - `qader_expert_opinion`.
-  - `detailed_rejection_feedback`.
-  - `profile_expert_review`.
-- لا يوجد Refund في المرحلة الحالية.
-- لا يوجد Invoice أوPartial Payment أوSubscription.
-- لا يرتبط الـBusiness workflow باسم بوابة دفع محددة.
-- سعر الخدمة وعملتها يقرآن من `PaidServicesSettings`، ثم يحفظان Snapshot داخل معاملة الدفع حتى لا يؤثر تعديل الأدمن على معاملة بدأت بالفعل.
-- مفاتيح وأسرار بوابة الدفع تحفظ في Environment فقط، ولا تعرض ضمن Platform Settings.
+الدفع داخل النظام يخص ثلاث خدمات فقط:
 
-### 10.2 هيكل الموديول
+1. `qader_expert_opinion`: يشتريها العميل لعرض مراجعة الخبراء لموهبة.
+2. `detailed_rejection_feedback`: تشتريها الموهبة لعرض مراجعة طلب مرفوض.
+3. `profile_expert_review`: تشتريها الموهبة لعرض مراجعة طلب مقبول.
+
+دفع التعاقد الخاص بطلبات التعيين يظل خارج البورتال، ولا يدخل في هذا الموديول.
+
+لا يتضمن النطاق الحالي:
+
+- اشتراكات.
+- دفع جزئي.
+- Refund.
+- فواتير أوتفاصيل فواتير.
+- جداول Refund أوDisputes أوSettlements.
+- حفظ وسائل الدفع أوبيانات البطاقة.
+- نظام Idempotency خارج الجداول الثلاثة المعتمدة.
+
+### 10.2 ملكية شراء العميل
+
+شراء `qader_expert_opinion` لا يتبع Workspace بعينها.
+
+- الشراء يتبع `owner_client_id` الخاص بمالك الـWorkspace التي بدأت منها العملية.
+- الـWorkspace الموجودة في مسار الـAPI تستخدم لتحديد سياق العضوية والصلاحيات فقط.
+- إذا اشترى عضو الخدمة من Workspace، تصبح المراجعة مشتراة لحساب مالك هذه الـWorkspace.
+- يمكن رؤية المراجعة من أي Workspace أخرى يملكها نفس `owner_client_id`.
+- لا يستطيع المستخدم فتح Workspace ليس عضوًا فيها.
+- داخل كل Workspace يجب أن يمتلك المستخدم صلاحية العرض حتى يرى المراجعة.
+- العضو الذي يمتلك صلاحية الدفع يستطيع بدء الدفع، حتى لو لم يكن هو مالك الحساب.
+- المستخدم الذي بدأ الدفع يحفظ في `payer_user_id` لأغراض التتبع، لكنه ليس مالك صلاحية الوصول.
+
+مثال:
+
+```text
+Owner Client 10
+├── Workspace A
+│   └── Member X اشترى Expert Opinion للموهبة 25
+└── Workspace B
+    └── Member Y يستطيع عرضها إذا كان لديه صلاحية السوق
+```
+
+إذا كانت Workspace B تتبع مالكًا آخر، فلا تستفيد من عملية الشراء.
+
+### 10.3 صلاحيات العميل
+
+تستخدم صلاحية السوق الحالية فقط:
+
+```text
+client.marketplace.view
+```
+
+- Role المالك `owner` يستمر في امتلاك كل الصلاحيات تلقائيًا وفق النظام الحالي.
+- العضو الذي يمنحه المالك صلاحية السوق يستطيع تصفح المواهب وبدء الدفع وعرض المراجعات المدفوعة.
+- عملية الشراء تفتح التقرير لحساب المالك، وليس للمستخدم الذي دفع أوللـWorkspace التي بدأ منها الدفع فقط.
+- كل عضو يحمل صلاحية السوق في أي Workspace تتبع نفس `owner_client_id` يستطيع عرض التقرير المدفوع.
+
+### 10.4 شراء الموهبة
+
+- الدفع يتبع `payer_user_id` الخاص بحساب الموهبة.
+- الهدف هو `talent_application_id` المحدد.
+- حالة الطلب تحدد الخدمة تلقائيًا:
+  - `rejected` ⟵ `detailed_rejection_feedback`.
+  - `accepted` ⟵ `profile_expert_review`.
+- شراء تقرير Application قديمة لا يفتح تقرير Application جديدة.
+- بيانات التقرير يجب أن تكون موجودة قبل السماح ببدء الدفع.
+
+### 10.5 الجداول المعتمدة
+
+#### 10.5.1 جدول `payments`
+
+يمثل عملية شراء الخدمة داخل Qader، ولا يحتوي تفاصيل خاصة بمزود بعينه:
+
+| العمود | النوع | الغرض |
+| --- | --- | --- |
+| `id` | bigint | المعرف الداخلي |
+| `reference` | uuid/string unique | مرجع آمن يعاد للـFrontend |
+| `idempotency_key` | uuid | مفتاح يرسله الـFrontend لمنع تكرار إنشاء عملية الشراء |
+| `request_fingerprint` | char(64) | بصمة الحقول المؤثرة لكشف إعادة استخدام المفتاح مع طلب مختلف |
+| `payer_user_id` | FK users | المستخدم الذي بدأ عملية الدفع |
+| `owner_client_id` | nullable FK clients | مالك حساب العميل عند شراء Expert Opinion |
+| `talent_id` | nullable FK talents | الموهبة المستهدفة في Expert Opinion |
+| `talent_application_id` | nullable FK talent_applications | محاولة التقديم المستهدفة في خدمات الموهبة |
+| `service` | varchar | نوع الخدمة المدفوعة |
+| `amount` | decimal(18,4) | السعر وقت بدء الدفع |
+| `currency` | char(3) | كود العملة وقت بدء الدفع |
+| `status` | varchar | حالة الدفع |
+| `paid_at` | nullable timestamp | وقت نجاح الدفع |
+| timestamps | timestamps | الإنشاء والتحديث |
+
+قواعد البيانات:
+
+- `owner_client_id` و`talent_id` يمتلئان مع `qader_expert_opinion` فقط.
+- `talent_application_id` يمتلئ مع خدمتي الموهبة فقط.
+- السعر والعملة لا يستقبلهما الـBackend من الـFrontend؛ يقرآن من `PaidServicesSettings` ويحفظان كما كانا وقت بدء الدفع.
+- لا تخزن بيانات بطاقة أوCVV أوأسرار المزود.
+- يطبق Unique مركب على `payer_user_id + idempotency_key`.
+- إذا تكرر المفتاح مع `request_fingerprint` نفسها يعاد نفس الدفع، وإذا اختلفت البصمة يعاد `409 Conflict`.
+- وجود صف `paid` مطابق هو إثبات أن التقرير مفتوح.
+
+#### 10.5.2 جدول `payment_attempts`
+
+يمثل محاولة واحدة لدى بوابة دفع، ويسمح بإعادة المحاولة أواستخدام مزود آخر دون الكتابة فوق تاريخ المحاولة السابقة:
+
+| العمود | النوع | الغرض |
+| --- | --- | --- |
+| `id` | bigint | المعرف الداخلي |
+| `payment_id` | FK payments | عملية الشراء التابعة لها المحاولة |
+| `gateway_request_id` | uuid unique | مفتاح ثابت لإعادة طلب إنشاء نفس المحاولة بأمان عند Timeout أو`5xx` |
+| `provider` | varchar | اسم مزود الدفع |
+| `provider_reference` | nullable varchar | المعرف الرئيسي للعملية عند المزود |
+| `attempt_status` | varchar | الحالة الموحدة للمحاولة |
+| `checkout_mode` | varchar | `redirect` أو`embedded` أو`sdk` |
+| `checkout_url` | nullable text | رابط Checkout أو3DS عند إعادته من المزود |
+| `client_token` | nullable text encrypted | Token مؤقت تحتاجه واجهة المزود، ولا يكون Secret Key |
+| `provider_data` | nullable json | المعرفات الإضافية اللازمة للمزود دون إضافة أعمدة خاصة به |
+| `failure_reason` | nullable text | سبب الفشل المنقح دون بيانات حساسة |
+| `expires_at` | nullable timestamp | وقت انتهاء الجلسة أوToken عند وجوده |
+| `completed_at` | nullable timestamp | وقت وصول المحاولة لحالة نهائية |
+| timestamps | timestamps | الإنشاء والتحديث |
+
+قواعد المحاولات:
+
+- إعادة الاتصال بالمزود بعد Timeout أوNetwork error أو`5xx` تستخدم نفس `gateway_request_id`.
+- فشل نهائي واضح أومحاولة جديدة من المستخدم ينشئ صفًا جديدًا ومفتاحًا جديدًا.
+- لا تحفظ بيانات البطاقة داخل `provider_data`، وتحفظ فقط المعرفات والحالة اللازمة للتتبع.
+- يطبق Index على `provider + provider_reference` للبحث عن المحاولة من Webhook.
+
+#### 10.5.3 جدول `payment_webhook_events`
+
+يستقبل الحدث مرة واحدة ويتيح معالجته في Queue بأمان:
+
+| العمود | النوع | الغرض |
+| --- | --- | --- |
+| `id` | bigint | المعرف الداخلي |
+| `payment_attempt_id` | FK payment_attempts | المحاولة المطابقة للحدث بعد التحقق من المزود والمرجع |
+| `event_id` | varchar | معرف الحدث الفريد لدى المزود |
+| `event_type` | varchar | نوع الحدث لدى المزود |
+| `payload` | text encrypted | الـPayload اللازم للمعالجة بعد تنقيته من البيانات غير المطلوبة |
+| `processing_status` | varchar | `received`, `processed` أو`failed` |
+| `processed_at` | nullable timestamp | وقت انتهاء المعالجة |
+| `processing_error` | nullable text | سبب فشل معالجة الحدث داخليًا بعد تنقيحه |
+| timestamps | timestamps | الإنشاء والتحديث |
+
+قواعد أحداث Webhook:
+
+- يحدد Adapter المزود من مسار الـWebhook، ويتحقق من التوقيع ويطابق المرجع مع `payment_attempts` قبل حفظ الحدث؛ لذلك لا يكرر `provider` داخل جدول الأحداث.
+- يطبق Unique على `payment_attempt_id + event_id` لمنع معالجة نفس الحدث مرتين داخل المحاولة.
+- يتحقق Adapter من توقيع المزود قبل تسجيل أي تغيير في الدفع.
+- تكرار حدث مسجل يعيد `2xx` دون إعادة فتح التقرير أوإرسال الإشعار.
+- لا يعتمد النظام على Redirect أوالنتيجة القادمة من الـFrontend لتسجيل نجاح الدفع.
+
+### 10.6 ملفات موديول الدفع
+
+يتبع الموديول نفس طبقات المشروع، ولا تنشأ ملفات لمزود فعلي قبل اختياره:
 
 ```text
 app/Modules/V1/Payments/
 ├── Application/
-│   ├── Contracts/PaymentGatewayInterface.php
-│   ├── Data/CheckoutSessionData.php
-│   ├── Data/PaymentWebhookData.php
+│   ├── Contracts/
+│   │   └── PaymentGatewayInterface.php
+│   ├── Data/
+│   │   ├── CheckoutSessionData.php
+│   │   ├── GatewayPaymentData.php
+│   │   └── PaymentWebhookData.php
+│   ├── Jobs/
+│   │   └── ProcessPaymentWebhookJob.php
 │   └── Services/
 │       ├── CreatePaymentCheckoutService.php
 │       ├── ProcessPaymentWebhookService.php
-│       └── PaidServiceAccessService.php
+│       ├── PaidServiceAccessService.php
+│       └── ReconcilePendingPaymentsService.php
 ├── Domain/
 │   ├── Models/
 │   │   ├── Payment.php
-│   │   └── PaymentAttempt.php
+│   │   ├── PaymentAttempt.php
+│   │   └── PaymentWebhookEvent.php
 │   └── ValueObjects/
+│       ├── CheckoutModeEnum.php
 │       ├── PaidServiceEnum.php
+│       ├── PaymentAttemptStatusEnum.php
 │       ├── PaymentStatusEnum.php
-│       └── PaymentAttemptStatusEnum.php
+│       └── PaymentWebhookStatusEnum.php
 ├── Infrastructure/
-│   ├── Gateways/FakePaymentGateway.php
-│   └── Providers/PaymentModuleServiceProvider.php
-└── Presentation/Http/Controllers/
+│   ├── Gateways/
+│   │   ├── PaymentGatewayManager.php
+│   │   └── {SelectedProvider}PaymentGateway.php
+│   └── Providers/
+│       └── PaymentModuleServiceProvider.php
+└── Presentation/
+    └── Http/
+        ├── Controllers/
+        │   ├── ClientPaymentController.php
+        │   ├── TalentPaymentController.php
+        │   └── PaymentWebhookController.php
+        ├── Requests/
+        │   └── CreatePaymentCheckoutRequest.php
+        └── Resources/
+            ├── PaymentCheckoutResource.php
+            └── PaymentResource.php
 ```
 
-عند اختيار مزود فعلي يضاف Adapter جديد فقط، مثل:
+الملفات الداعمة خارج الموديول:
 
 ```text
-PaymobPaymentGateway
-StripePaymentGateway
-TapPaymentGateway
+app/Console/Commands/ReconcilePendingPaymentsCommand.php
+app/Modules/V1/AccessControl/Domain/ValueObjects/ClientPermissionEnum.php
+app/Support/ApiDocumentation/EndpointNames.php
+app/Support/ApiDocumentation/PortalExports.php
+config/payments.php
+config/modules.php
+database/migrations/{timestamp}_create_payment_tables.php
+routes/v1/client/payments.php
+routes/v1/talent/payments.php
+routes/v1/webhooks/payments.php
+lang/ar/payments.php
+lang/en/payments.php
+lang/ar/permissions.php
+lang/en/permissions.php
+tests/Feature/PaymentFoundationTest.php
+tests/Feature/ClientTalentMarketplaceFlowTest.php
+tests/Feature/TalentEvaluationReadTest.php
 ```
 
-لا تثبت SDK خاصة بمزود قبل اختياره. يستخدم الـAdapter لاحقًا SDK الرسمية للمزود أوLaravel HTTP Client حسب توثيقه الرسمي.
+مسؤوليات الملفات الأساسية:
 
-### 10.3 الحالات والقيم
+- `CreatePaymentCheckoutService`: ينشئ أويعيد Payment بالـIdempotency، ثم ينشئ Attempt ويطلب جلسة الدفع من الـAdapter خارج Database transaction الطويلة.
+- `ProcessPaymentWebhookService`: يقفل Payment وAttempt، ويتحقق من المبلغ والعملة وانتقال الحالة، ويسجل النجاح مرة واحدة.
+- `PaidServiceAccessService`: يحدد `is_purchased`, `can_purchase`, و`can_view` من Payment مدفوعة والصلاحيات الحالية.
+- `ReconcilePendingPaymentsService`: يستعلم من المزود عن المحاولات العالقة عند فقد Webhook أوحدوث Timeout.
+- `ProcessPaymentWebhookJob`: يعالج الحدث المخزن بعد أن يعيد Controller استجابة ناجحة وسريعة للمزود.
+- `PaymentGatewayManager`: يختار Adapter المسجل في `config/payments.php`، ولا يحتوي Business rules.
+- `{SelectedProvider}PaymentGateway`: الملف الوحيد الذي يعرف Payload وحالات وتوقيع المزود المختار.
+- `PaymentWebhookController`: يتحقق عبر Adapter، يطابق Attempt، يسجل الحدث مرة واحدة، ثم يرسل Job؛ ولا ينفذ منح الوصول داخله.
+- `FakePaymentGateway`: يستخدم في `local` و`testing` فقط، ويرفضه النظام في Production.
 
-`PaidServiceEnum`:
+لا ننشئ Adapter لكل من Paymob وMoyasar وStripe معًا؛ ينفذ Adapter المزود المعتمد فقط، وتستخدم المقارنة بينها لإثبات أن العقد والجداول لا يحتاجان تغييرًا عند استبدال المزود.
 
-```text
-qader_expert_opinion
-detailed_rejection_feedback
-profile_expert_review
-```
-
-`PaymentStatusEnum`:
+### 10.7 الحالات
 
 ```text
 pending
-paid
-cancelled
-```
-
-- `paid` هي الحالة الوحيدة التي تمنح الوصول.
-- لا تنتقل معاملة `paid` إلى حالة أخرى في النطاق الحالي لعدم وجود Refund.
-- تكرار Webhook النجاح لا يعيد تنفيذ منح الوصول أوالإشعارات.
-
-`PaymentAttemptStatusEnum`:
-
-```text
-pending
+processing
 paid
 failed
 cancelled
 expired
 ```
 
-### 10.4 جدول `payments`
+- `pending`: تم إنشاء عملية الدفع ولم يصل تأكيد نجاحها.
+- `processing`: توجد محاولة دفع بدأت ولم تصل نتيجتها النهائية.
+- `paid`: الدفع مؤكد والتقرير متاح.
+- `failed`: بوابة الدفع أبلغت بالفشل.
+- `cancelled`: العملية ألغيت.
+- `expired`: انتهت جلسة الدفع قبل النجاح.
 
-| العمود | النوع المقترح | الغرض |
-| --- | --- | --- |
-| `id` | bigint | المعرف الداخلي |
-| `reference` | uuid/string unique | مرجع آمن يعاد للـFrontend بدل ID قابل للتخمين |
-| `purchase_key` | string unique | مفتاح ثابت يمنع شراء الخدمة نفسها لنفس المستفيد والهدف أكثر من مرة |
-| `payer_user_id` | FK users | المستخدم الذي بدأ الدفع |
-| `workspace_id` | nullable FK workspaces | يمتلئ عند شراء Client لخدمة Qader Expert Opinion |
-| `service` | varchar | قيمة من `PaidServiceEnum` |
-| `subject_type` | varchar | Morph alias صريح: `talent` أو`talent_application` |
-| `subject_id` | bigint | Talent profile أوTalent Application التي يفتح التقرير لها |
-| `amount` | decimal(18,4) | Snapshot للسعر وقت بدء المعاملة |
-| `currency` | char(3) | Snapshot لكود العملة |
-| `status` | varchar | قيمة من `PaymentStatusEnum` |
-| `paid_at` | nullable timestamp | وقت تأكيد الدفع من Webhook |
-| timestamps | timestamps | الإنشاء والتحديث |
+### 10.8 بوابة الدفع
 
-الفهارس والقيود:
-
-- Unique على `reference`.
-- Unique على `purchase_key`.
-- Index على `payer_user_id + status`.
-- Index على `service + subject_type + subject_id`.
-
-`purchase_key` يكون حسب نطاق الوصول:
-
-```text
-Qader Expert Opinion:
-workspace:{workspace_id}:qader_expert_opinion:talent:{talent_id}
-
-Talent report:
-user:{user_id}:{service}:talent_application:{application_id}
-```
-
-إذا كانت العملية `paid` يعاد نجاح الشراء الحالي بدل إنشاء دفع جديد. سجل `payments` يمثل عملية الشراء وصلاحية الوصول المستقرة، بينما كل اتصال ببوابة الدفع يحفظ في Attempt مستقل حتى لا يضيع تاريخ المحاولات أوتستبدل مراجع المزود.
-
-### 10.5 جدول `payment_attempts`
-
-| العمود | النوع المقترح | الغرض |
-| --- | --- | --- |
-| `id` | bigint | المعرف |
-| `payment_id` | FK payments | عملية الشراء المستقرة |
-| `provider` | varchar | اسم Adapter المستخدم |
-| `provider_reference` | nullable varchar | مرجع جلسة/عملية الدفع لدى المزود |
-| `status` | varchar | قيمة من `PaymentAttemptStatusEnum` |
-| `failure_reason` | nullable text | سبب تقني منقح دون بيانات حساسة |
-| `expires_at` | nullable timestamp | انتهاء جلسة الدفع إن أعاده المزود |
-| `paid_at` | nullable timestamp | وقت نجاح هذه المحاولة |
-| timestamps | timestamps | الإنشاء والتحديث |
-
-- Unique على `provider + provider_reference` عندما يوجد المرجع.
-- يسمح بمحاولة Pending واحدة فقط لكل Payment داخل Business service وTransaction lock.
-- لا يستبدل Provider reference لمحاولة قديمة عند إعادة المحاولة؛ ينشأ Attempt جديد بعد فشل أوإلغاء أوانتهاء السابقة.
-- وصول نجاح متأخر لمحاولة قديمة يعالج Idempotently ويحول Payment الأساسية إلى `paid` مرة واحدة.
-
-### 10.6 جدول `payment_webhook_events`
-
-| العمود | النوع المقترح | الغرض |
-| --- | --- | --- |
-| `id` | bigint | المعرف |
-| `provider` | varchar | اسم المزود |
-| `provider_event_id` | varchar | معرف Event عند المزود |
-| `payment_attempt_id` | nullable FK payment_attempts | المحاولة بعد مطابقة مرجع المزود |
-| `event_type` | nullable varchar | نوع الحدث عند المزود |
-| `payload` | nullable json/text | Payload منقح أوEncrypted عند الحاجة، دون أسرار أوبيانات بطاقات |
-| `status` | varchar | `received`, `processed`, أو`failed` |
-| `processed_at` | nullable timestamp | وقت نجاح المعالجة |
-| `failure_reason` | nullable text | سبب فشل المعالجة |
-| timestamps | timestamps | الإنشاء والتحديث |
-
-- Unique على `provider + provider_event_id` لضمان Idempotency.
-- لا تخزن بيانات بطاقة أوCVV أوأسرار توقيع داخل الجدول أوLogs.
-
-### 10.7 عقد بوابة الدفع
+يبقى الكود غير مرتبط باسم مزود محدد:
 
 ```php
 interface PaymentGatewayInterface
 {
     public function createCheckout(PaymentAttempt $attempt): CheckoutSessionData;
 
-    public function parseAndVerifyWebhook(
-        PaymentWebhookRequestData $request,
-    ): PaymentWebhookData;
+    public function parseWebhook(Request $request): PaymentWebhookData;
+
+    public function fetchPayment(PaymentAttempt $attempt): GatewayPaymentData;
 }
 ```
 
-`CheckoutSessionData` يوحد القيم التي قد يعيدها أي مزود:
+كل Adapter يعيد قيمًا موحدة؛ تحفظ بيانات الجلسة في `payment_attempts`، ويستخدم `amount` و`currency` للتحقق من القيم المحفوظة في `payments`:
 
 ```text
+provider
 provider_reference
-checkout_url nullable
-client_secret nullable
-expires_at nullable
-```
-
-`PaymentWebhookData` يعيد بيانات موحدة بعد تحقق الـAdapter من Signature:
-
-```text
-provider_event_id
-provider_reference
+checkout_mode
+checkout_url
+client_token
+public_config
+expires_at
 status
 amount
 currency
-occurred_at
 ```
 
-يختار `PaymentGatewayManager` الـAdapter من `config/payments.php` باستخدام `PAYMENT_GATEWAY`. لا يدخل اسم المزود إلى Use Cases الخدمات المدفوعة.
+`public_config` جزء من `CheckoutSessionData` فقط ولا يخزن في قاعدة البيانات؛ يستخدم لإرجاع القيم العامة التي تحتاجها واجهة المزود مثل Publishable Key. استقبال `PaymentAttempt` في `fetchPayment` يسمح للـAdapter بالاستعلام باستخدام `provider_reference`، أو`gateway_request_id` إذا حدث Timeout قبل استلام مرجع المزود.
 
-### 10.8 دورة إنشاء الدفع
+يحدد المزود من Environment:
 
-1. يتحقق الـBackend من هوية المشتري وصلاحية الوصول للـWorkspace أوTalent Application.
-2. يتحقق من أهلية الخدمة:
-   - Qader Expert Opinion: Talent متاحة للـWorkspace في Marketplace.
-   - Detailed Rejection Feedback: الـApplication تخص Talent profile تابعة للمستخدم وحالتها `rejected`.
-   - Profile Expert Review: الـApplication تخص Talent profile تابعة للمستخدم وحالتها `accepted`.
-3. يتحقق أن بيانات التقرير موجودة قبل السماح بالدفع حتى لا يدفع المستخدم مقابل تقرير فارغ.
-4. يقرأ السعر والعملة من `PaidServicesSettings` ويحفظ Snapshot.
-5. ينشئ أويعيد سجل `payments` باستخدام `purchase_key` داخل Database transaction مع Lock مناسب.
-6. يعيد Attempt صالحًا ما زال `pending`، أويُنشئ `payment_attempts` جديدًا إذا انتهت المحاولة السابقة أوباءت بالفشل.
-7. يستدعي الـGateway خارج Database transaction الطويلة.
-8. يحفظ `provider_reference` ووقت الانتهاء على Attempt، ويعيد بيانات Checkout المناسبة للـFrontend.
-9. Redirect من الـFrontend لا يغير حالة الدفع ولا يمنح الوصول.
+```text
+PAYMENT_GATEWAY=provider_name
+```
 
-### 10.9 دورة الـWebhook ومنح الوصول
+لا يغير Redirect من الـFrontend حالة الدفع. حالة `paid` تسجل بعد تحقق الـBackend من Webhook الخاص بالمزود.
 
-1. يستقبل Endpoint عام الـWebhook دون Bearer Token أو`X-Authorization` لأن المتصل هو مزود الدفع.
-2. يختار Adapter من `{provider}` ويتحقق من Signature قبل معالجة البيانات.
-3. يسجل Event باستخدام `provider_event_id`؛ الـEvent المكرر يعاد له نجاح دون معالجة ثانية.
-4. يطابق `provider_reference` مع Payment Attempt، ثم يصل إلى Payment الأساسية ويتحقق من المبلغ والعملة المخزنين.
-5. يحدث Attempt وPayment داخل Transaction و`lockForUpdate`.
-6. عند نجاح الدفع يضبط Attempt وPayment إلى `paid` ويسجل `paid_at` مرة واحدة.
-7. وجود Payment مدفوع هو إثبات الوصول؛ لا نضيف جدول Entitlements مستقل في المرحلة الحالية.
-8. تسجل Notification/Event بعد Commit دون تأخير استجابة الـWebhook.
+### 10.9 الـEndpoints
 
-### 10.10 نطاق الوصول لكل خدمة
-
-| الخدمة | مالك الوصول | الهدف | مدة الوصول |
-| --- | --- | --- | --- |
-| Qader Expert Opinion | Workspace | Talent | دائم لهذا الـWorkspace وهذه الموهبة |
-| Detailed Rejection Feedback | Talent user | Talent Application مرفوضة | دائم لمحاولة التقديم المحددة |
-| Profile Expert Review | Talent user | Talent Application مقبولة | دائم لمحاولة التقديم المحددة |
-
-- أعضاء الـWorkspace لا يرون Qader Expert Opinion إلا إذا كان لديهم حق عرض Marketplace داخل نفس الـWorkspace.
-- Payment خاصة بـWorkspace أخرى لا تمنح الوصول.
-- تقرير Talent القديم يظل متاحًا لصاحبه، لكنه لا يفتح تقرير طلب تقديم جديد.
-
-### 10.11 الـEndpoints المقترحة
-
-Client Portal:
+#### 10.9.1 العميل
 
 ```text
 POST /api/v1/client/workspaces/{workspace}/talent-marketplace/{talent}/expert-opinion/checkout
 GET  /api/v1/client/workspaces/{workspace}/payments/{payment:reference}
+GET  /api/v1/client/workspaces/{workspace}/talent-marketplace/{talent}/expert-opinion
 ```
 
-Talent Portal:
+يرسل Endpoint الـCheckout هيدر `Idempotency-Key` بقيمة UUID، ويعيد نفس Payment عند تكرار نفس المفتاح ونفس الطلب.
+
+الـFlow:
+
+1. يتحقق الـBackend من عضوية المستخدم في الـWorkspace.
+2. يتحقق من `client.marketplace.view` عند Checkout.
+3. يأخذ `owner_client_id` من الـWorkspace ولا يستقبله من الطلب.
+4. يحفظ الدفع مرتبطًا بالمالك والموهبة.
+5. عند عرض التقرير يتحقق من `client.marketplace.view`.
+6. يبحث عن أي Payment حالتها `paid` لنفس `owner_client_id + talent_id + service`.
+
+#### 10.9.2 الموهبة
 
 ```text
-POST /api/v1/talent/applications/{application}/detailed-feedback/checkout
-POST /api/v1/talent/applications/{application}/profile-expert-review/checkout
+POST /api/v1/talent/applications/{application}/evaluation/checkout
 GET  /api/v1/talent/payments/{payment:reference}
+GET  /api/v1/talent/applications/{application}/evaluation
 ```
 
-Webhook عام:
+يرسل Endpoint الـCheckout هيدر `Idempotency-Key` بالقواعد نفسها.
+
+الـBackend يحدد الخدمة والسعر من حالة Application، ولا يطلب من الموهبة إرسال اسم الخدمة.
+
+#### 10.9.3 الـWebhook
 
 ```text
 POST /api/v1/webhooks/payments/{provider}
 ```
 
-- Endpoints الشراء تستخدم المصادقة والصلاحيات العادية مع `X-Authorization`.
-- Endpoint الـWebhook لا يستخدم مصادقة المستخدم أوAPI Key، ويعتمد على Signature الخاصة بالمزود مع Rate Limit.
-- تفاصيل Marketplace وTalent Application تعيد حالة الشراء والسعر، وتعيد التقرير فقط عند وجود Payment مدفوع صالح.
+- لا يحتاج Bearer Token أو`X-Authorization` لأن المتصل هو مزود الدفع، ولا يثق النظام في ذلك كحماية بديلة عن توقيع المزود.
+- يقبل `{provider}` من قائمة الـAdapters المسجلة في `config/payments.php` فقط، ويرفض أي قيمة أخرى قبل قراءة الحدث.
+- يعمل عبر HTTPS فقط، مع حد لحجم الطلب وRate Limit مخصص لا يمنع Retries الطبيعية للمزود.
+- يحتفظ بالـRaw request body دون إعادة Encoding حتى يتحقق Adapter من HMAC أوSignature أوShared Secret بالطريقة الرسمية للمزود.
+- تستخدم مقارنة ثابتة الزمن للأسرار والتوقيعات، ويطبق Timestamp tolerance ومنع Replay عندما يوفر المزود Timestamp موقعًا.
+- تحفظ أسرار الـWebhook في Environment فقط، ولا تدخل Logs أو`payload` أوResponses.
+- لا يثق في قيم Payload ولا يطابق Payment أويسجل Event قبل نجاح التحقق من التوقيع؛ يجوز للـAdapter قراءتها فقط بالقدر المطلوب لحساب توقيع المزود. الطلب غير الصحيح يرفض دون أي تغيير في قاعدة البيانات.
+- بعد التحقق يطابق `provider_reference` أو`gateway_request_id` مع Attempt تابعة لنفس المزود، ويتحقق من أن الحدث يخص بيئة التشغيل الحالية عند توفير المزود قيمة Test/Live.
+- يتحقق من المبلغ بعد تحويله إلى Minor Units، والعملة، والمرجع الداخلي قبل تحويل الحالة إلى `paid`.
+- يسجل الحدث مرة واحدة باستخدام Unique على `payment_attempt_id + event_id`؛ الحدث المكرر يعيد `2xx` دون إرسال Job ثانية.
+- بعد حفظ الحدث يرسل `ProcessPaymentWebhookJob` ويعيد `2xx` سريعًا؛ الأعمال الجانبية لا تنفذ داخل Request الخاصة بالمزود.
+- تعالج الـJob الحدث داخل Database transaction مع `lockForUpdate` على Payment وAttempt، ولا تسمح بإرجاع `paid` إلى حالة أقدم بسبب حدث متأخر.
+- تحديث `paid` يتم بشكل شرطي مرة واحدة، ثم ترسل الإشعارات بعد Commit حتى لا يتكرر فتح التقرير أوالإشعار.
+- يخزن `payload` منقحًا ومشفرًا بالقدر اللازم لإعادة المعالجة فقط، دون بيانات بطاقة أوCVV أوAuthorization headers أوأسرار التوقيع.
+- Redirect ونتيجة SDK في الـFrontend يستخدمان لعرض الحالة فقط، ولا يمنحان الوصول ولا يحدثان Payment.
+- `ReconcilePendingPaymentsCommand` يراجع المحاولات العالقة مع المزود عند فقد Webhook، دون افتراض فشل العملية أونجاحها من غياب الحدث وحده.
 
-### 10.12 إعدادات البيئة
+### 10.10 البيانات المعادة قبل وبعد الدفع
 
-`config/payments.php`:
+قبل الدفع يعاد للواجهة:
 
-```php
-return [
-    'default' => env('PAYMENT_GATEWAY', 'fake'),
-
-    'gateways' => [
-        'fake' => [
-            'driver' => FakePaymentGateway::class,
-        ],
-    ],
-];
+```json
+{
+  "is_available": true,
+  "is_purchased": false,
+  "can_purchase": true,
+  "can_view": false,
+  "price": {
+    "amount": "250.0000",
+    "currency": "EGP"
+  }
+}
 ```
 
-Local وTesting:
+بعد الدفع ومع صلاحية العرض:
 
-```env
-PAYMENT_GATEWAY=fake
+```json
+{
+  "is_available": true,
+  "is_purchased": true,
+  "can_purchase": false,
+  "can_view": true,
+  "price": {
+    "amount": "250.0000",
+    "currency": "EGP"
+  }
+}
 ```
 
-Production بعد اختيار المزود:
+`is_purchased` تخص حساب المالك عند العميل، ولا تخص المستخدم الذي دفع وحده.
 
-```env
-PAYMENT_GATEWAY=provider_name
-PAYMENT_PROVIDER_API_KEY=
-PAYMENT_PROVIDER_WEBHOOK_SECRET=
-```
+### 10.11 ترتيب التنفيذ
 
-- `FakePaymentGateway` يسجل فقط في بيئات `local` و`testing`.
-- محاكاة النجاح أوالفشل لا تكون متاحة في Production.
-- اختبارات Feature تستدعي Fake Adapter أوWebhook service ولا تتصل بشبكة خارجية.
-
-### 10.13 متطلبات الأمان والاعتمادية
-
-- لا تثق في أي Success قادم من Frontend.
-- تحقق من Webhook signature والمبلغ والعملة والمرجع.
-- استخدم Idempotency وDatabase locks لمنع تكرار الدفع أوالإشعارات.
-- لا تسجل Secrets أوبيانات بطاقات أوPayload غير منقح في Logs.
-- يمنع Mass Assignment لحالة الدفع والمبلغ والعملة من Requests المستخدم.
-- سعر المعاملة لا يأتي من Frontend؛ يرسل Frontend معرف الخدمة والهدف فقط.
-- لا يمكن للمستخدم طلب Payment تخص مستخدمًا أوWorkspace أوTalent Application أخرى.
-- يتم التعامل مع Webhook بسرعة، ويمكن نقل الأعمال الجانبية إلى Queue بعد حفظ الحالة بأمان.
-
-### 10.14 Dependency مطلوب لدعم إعادة التقديم
-
-الموديل المعتمد:
-
-```text
-User account
-└── Talent row = Job Profile 1
-    ├── Talent Application 1 = Attempt 1
-    ├── Talent Application 2 = Attempt 2
-    └── Talent Application N = Attempt N
-```
-
-- جدول `talents` الحالي هو الـJob Profile، وليس مجرد هوية حساب الموهبة.
-- كل صف في `talent_applications` هو محاولة تقديم كاملة ومستقلة، ولا نضيف جدول `talent_application_attempts`.
-- إعادة التقديم تنشئ Talent Application جديدة مرتبطة بنفس `talent_id` وتستخدم بيانات الـJob Profile نفسها.
-- كل Application تحتفظ بالـSnapshot والحالة وتعيين المراجع وقرار المراجعة وسياسة إعادة التقديم والتقييمات والمقابلات والتقرير والأحداث الخاصة بها من خلال العلاقات الحالية.
-- الدفع لتقرير Talent يرتبط مباشرة بـ`talent_application_id`؛ لذلك شراء تقرير Application قديمة لا يفتح تقرير Application جديدة.
-
-الوضع الحالي يحتاج تعديلًا لأن:
-
-- `talent_applications.talent_id` عليه Unique index يمنع أكثر من محاولة لنفس Talent profile.
-- `CreateTalentApplicationUseCase` وRepository يستخدمان `firstOrCreate(['talent_id' => ...])` ويعيدان الطلب القديم.
-
-قبل تنفيذ الدفع وإعادة التقديم:
-
-1. يزال Unique المنفرد من `talent_applications.talent_id` ويستبدل Index عاديًا.
-2. ينشأ Talent Application جديد عند إعادة التقديم المسموح بدل إعادة استخدام القديم.
-3. يمنع وجود أكثر من Application غير نهائية لنفس Talent profile عبر Business validation وTransaction lock.
-4. Endpoints «الطلب الحالي» تعيد أحدث Application فعالة أوأحدث محاولة بحسب الحالة، مع إمكانية الوصول للتقارير القديمة بالـApplication ID.
-5. العلاقات الحالية التي تستخدم `application_id` تظل كما هي لأنها ستشير طبيعيًا إلى محاولة التقديم الصحيحة.
-
-دعم أكثر من Job Profile مستقبلًا:
-
-- يسمح لحساب User بامتلاك أكثر من صف في `talents`، وكل صف يمثل Job Profile مستقلًا.
-- هذا سيتطلب مستقبلًا إزالة `unique(user_id)` من `talents` وتعديل علاقة المصادقة لاختيار الـJob Profile النشط.
-- كل Talent profile يمكن أن يكون لها عدة Talent Applications، وكل Application هي محاولة مستقلة.
-- لا ينفذ دعم تعدد Job Profiles الآن؛ ربط الطلب والدفع بـTalent/Application بدل User مباشرة يترك الامتداد ممكنًا.
-
-هذا التعديل يراجع كسكيما مستقلة قبل إنشاء Migration، لكنه شرط لصحة ربط الدفع بكل محاولة تقديم.
-
-### 10.15 ترتيب التنفيذ
-
-1. تعديل إعادة التقديم لإنشاء Talent Application جديدة لكل محاولة مع إعادة استخدام بيانات Talent profile.
-2. تنفيذ Platform Settings وأسعار الخدمات باستخدام `spatie/laravel-settings`.
-3. إنشاء Payments module والجداول والEnums والGateway contract.
-4. تنفيذ `FakePaymentGateway` واختبارات الحالات والـIdempotency داخل Docker.
-5. ربط الخدمات الثلاث وصلاحية إظهار التقارير.
-6. توليد OpenAPI وتحديث Apidog لكل Portal.
-7. اختيار مزود الدفع الفعلي وإضافة Adapter وWebhook verification الخاص به.
+1. إعادة استخدام صلاحية `client.marketplace.view` دون إضافة صلاحيات دفع جديدة.
+2. إنشاء جداول `payments`, `payment_attempts`, و`payment_webhook_events` والموديلات والـEnums اللازمة.
+3. إنشاء `PaymentGatewayInterface` وManager لاختيار المزود.
+4. تنفيذ `Idempotency-Key` على Endpoints بدء الدفع وإنشاء المحاولات.
+5. تنفيذ Checkout وقراءة حالة Payment.
+6. تنفيذ Webhook Adapter والتخزين الآمن للحدث قبل معالجته.
+7. ربط شراء العميل بـ`owner_client_id + talent_id`.
+8. ربط شراء الموهبة بـ`payer_user_id + talent_application_id`.
+9. تفعيل قفل تقارير التقييم بدل الإتاحة المجانية الحالية.
+10. إضافة الاختبارات وتحديث OpenAPI وApidog.
 
 ## 11. إكمال طلب التعيين بعد الإجراءات الخارجية
 
@@ -763,13 +816,14 @@ start_date = latest_accepted_offer.responded_at + latest_accepted_offer.notice_p
 
 ## 13. حالة جاهزية التنفيذ
 
-يمكن بدء التنفيذ دون اختيار Payment Gateway فعلية بالترتيب التالي:
+تم تنفيذ أساس الدفع الذي لا يعتمد على مزود:
 
-1. تعديل Talent Applications لدعم أكثر من Application لنفس Talent profile عند إعادة التقديم.
-2. تنفيذ Action إكمال Hiring Request وHired Talents.
-3. تنفيذ Platform Settings وأسعار الخدمات.
-4. تنفيذ Payments foundation و`FakePaymentGateway` وربط إظهار التقارير.
-5. توليد OpenAPI واختبارات Docker.
-6. إضافة Adapter مزود Production بعد اختياره واختباره في Sandbox الخاص به.
+1. استخدام صلاحية Marketplace الحالية للدفع وعرض Expert Opinion.
+2. جداول `payments`, `payment_attempts`, و`payment_webhook_events` والموديلات والـEnums.
+3. Gateway contract وManager وFake adapter للوكال والاختبارات.
+4. Idempotency على إنشاء الدفع، ومنع تكرار Webhooks، ومطابقة المبلغ والعملة.
+5. Checkout وقراءة حالة الدفع للعميل والموهبة.
+6. ربط الدفع بإظهار التقارير الثلاثة.
+7. Reconciliation مجدول واختبارات Docker.
 
-القرار الخارجي الوحيد المؤجل هو اسم بوابة الدفع وبيانات تكاملها؛ لا يمنع تنفيذ الأساس العام أوإكمال دورة طلب التعيين الحالية.
+المتبقي هو Adapter بوابة Production وبيانات اعتمادها وتجربة Sandbox وتحديث OpenAPI النهائي بعد اعتماد المزود. Action إكمال Hiring Request وHired Talents تظل دورة مستقلة عن الدفع الإلكتروني. Platform Settings وأسعار الخدمات منفذة بالفعل.

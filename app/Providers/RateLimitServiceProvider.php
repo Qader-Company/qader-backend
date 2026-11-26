@@ -127,6 +127,10 @@ class RateLimitServiceProvider extends ServiceProvider
                 $config['max_attempts'],
             )->by($request->ip());
         });
+
+        RateLimiter::for('payment-webhooks', fn (Request $request) => Limit::perMinute(
+            (int) config('payments.webhook.max_attempts_per_minute', 120),
+        )->by((string) $request->route('provider').'|'.$request->ip()));
     }
 
     private function loginKey(Request $request): string

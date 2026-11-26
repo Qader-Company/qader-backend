@@ -9,6 +9,9 @@ use App\Modules\V1\Clients\Domain\Models\Client;
 use App\Modules\V1\ContractTypes\Domain\Models\ContractType;
 use App\Modules\V1\Countries\Domain\Models\Country;
 use App\Modules\V1\JobTitles\Domain\Models\JobTitle;
+use App\Modules\V1\Payments\Domain\Models\Payment;
+use App\Modules\V1\Payments\Domain\ValueObjects\PaidServiceEnum;
+use App\Modules\V1\Payments\Domain\ValueObjects\PaymentStatusEnum;
 use App\Modules\V1\ProfessionalFields\Domain\Models\ProfessionalField;
 use App\Modules\V1\Skills\Domain\Models\Skill;
 use App\Modules\V1\TalentApplications\Domain\Models\TalentApplication;
@@ -22,6 +25,7 @@ use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use App\Modules\V1\Workspaces\Domain\Models\Workspace;
 use App\Modules\V1\Workspaces\Domain\Models\WorkspaceMember;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -139,7 +143,7 @@ class ClientTalentMarketplaceFlowTest extends TestCase
             ->assertJsonMissingPath('data.cv');
     }
 
-    public function test_client_can_open_an_available_expert_opinion_without_payment_for_now(): void
+    public function test_client_can_open_an_available_expert_opinion_after_payment(): void
     {
         $talent = $this->talent('expert-opinion@example.test', true, true);
         $application = TalentApplication::query()
@@ -165,6 +169,24 @@ class ClientTalentMarketplaceFlowTest extends TestCase
             'hr_report' => 'Strong leadership and collaboration.',
             'technical_report' => 'Advanced technical proficiency.',
             'psychology_report' => 'Adaptable and calm under pressure.',
+        ]);
+
+        $this->getJson($this->marketplaceUrl('/'.$talent->id))
+            ->assertOk()
+            ->assertJsonPath('data.expert_opinion_is_available', false);
+
+        Payment::query()->create([
+            'reference' => (string) Str::uuid(),
+            'idempotency_key' => (string) Str::uuid(),
+            'request_fingerprint' => hash('sha256', 'expert-opinion-'.$talent->id),
+            'payer_user_id' => $this->owner->id,
+            'owner_client_id' => $this->workspace->owner_client_id,
+            'talent_id' => $talent->id,
+            'service' => PaidServiceEnum::QADER_EXPERT_OPINION,
+            'amount' => '250.0000',
+            'currency' => 'EGP',
+            'status' => PaymentStatusEnum::PAID,
+            'paid_at' => now(),
         ]);
 
         $this->getJson($this->marketplaceUrl('/'.$talent->id))

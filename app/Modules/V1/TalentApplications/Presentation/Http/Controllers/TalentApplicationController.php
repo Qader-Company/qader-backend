@@ -21,9 +21,8 @@ class TalentApplicationController extends Controller
 {
     /**
      * @response 404 scenario="Application not submitted" {"success":false,"message":"No application has been submitted yet."}
-     * @response scenario="Application status" {"success":true,"data":{"id":1,"status":"under_review","status_label":"Under Review","application_status":"under_review","effective_status":"under_review","screen_state":"under_review","submitted_at":"2026-10-19T08:45:00.000000Z","review_decided_at":null,"reapply_at":null,"can_reapply":false,"is_blacklisted":false,"profile_completion_at_submission":100,"snapshot_version":1,"snapshot_captured_at":"2026-10-19T08:45:00.000000Z","submitted_cv":{"id":10,"file_name":"ahmed-cv.pdf","download_url":"http://localhost:8000/api/v1/talent/profile/media/10/download"},"evaluation_is_available":true,"interview":null,"current_interview":null,"interview_history":[],"faqs":[]}}
+     * @response scenario="Application status" {"success":true,"data":{"id":1,"status":"under_review","status_label":"Under Review","application_status":"under_review","effective_status":"under_review","screen_state":"under_review","submitted_at":"2026-10-19T08:45:00.000000Z","review_decided_at":null,"reapply_at":null,"can_reapply":false,"is_blacklisted":false,"profile_completion_at_submission":100,"snapshot_version":1,"snapshot_captured_at":"2026-10-19T08:45:00.000000Z","submitted_cv":{"id":10,"file_name":"ahmed-cv.pdf","download_url":"http://localhost:8000/api/v1/talent/profile/media/10/download"},"evaluation_is_available":false,"interview":null,"current_interview":null,"interview_history":[],"faqs":[]}}
      */
-
     public function show(
         Request $request,
         GetTalentProfileUseCase $profiles,

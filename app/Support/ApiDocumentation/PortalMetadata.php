@@ -31,6 +31,7 @@ class PortalMetadata extends Strategy
                 in_array('hiring-requests', $segments, true) => 'hiring-requests',
                 in_array('hiring-interviews', $segments, true) => 'hiring-interviews',
                 in_array('hiring-request-items', $segments, true) => 'hiring-request-items',
+                in_array('payments', $segments, true) || in_array('checkout', $segments, true) => 'payments',
                 default => $module,
             };
         }

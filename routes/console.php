@@ -3,6 +3,7 @@
 use App\Modules\V1\HiringRequests\Application\Services\HiringInterviewWorkflow;
 use App\Modules\V1\HiringRequests\Application\Services\HiringOfferExpirationService;
 use App\Modules\V1\Notifications\Application\Services\NotificationReminderService;
+use App\Modules\V1\Payments\Application\Services\ReconcilePendingPaymentsService;
 use App\Modules\V1\TalentApplications\Application\Services\InterviewStateSynchronizer;
 use App\Modules\V1\Trash\Application\Services\TrashService;
 use Illuminate\Foundation\Inspiring;
@@ -36,4 +37,9 @@ Schedule::call(fn () => app(NotificationReminderService::class)->sendDue())
 Schedule::call(fn () => app(TrashService::class)->removeExpired())
     ->name('trash:remove-expired')
     ->dailyAt('02:00')
+    ->withoutOverlapping();
+
+Schedule::call(fn () => app(ReconcilePendingPaymentsService::class)->run())
+    ->name('payments:reconcile')
+    ->everyFiveMinutes()
     ->withoutOverlapping();

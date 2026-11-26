@@ -11,6 +11,7 @@ use App\Modules\V1\Industries\Infrastructure\Providers\IndustryModuleServiceProv
 use App\Modules\V1\JobTitles\Infrastructure\Providers\JobTitleModuleServiceProvider;
 use App\Modules\V1\Languages\Infrastructure\Providers\LanguageModuleServiceProvider;
 use App\Modules\V1\Notifications\Infrastructure\Providers\NotificationModuleServiceProvider;
+use App\Modules\V1\Payments\Infrastructure\Providers\PaymentModuleServiceProvider;
 use App\Modules\V1\ProfessionalFields\Infrastructure\Providers\ProfessionalFieldModuleServiceProvider;
 use App\Modules\V1\Skills\Infrastructure\Providers\SkillModuleServiceProvider;
 use App\Modules\V1\TalentApplications\Infrastructure\Providers\TalentApplicationModuleServiceProvider;
@@ -63,6 +64,7 @@ return [
             ['prefix' => 'client/workspaces', 'file' => 'help-requests.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
             ['prefix' => 'client/trash', 'file' => 'trash.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
             ['prefix' => 'client/workspaces', 'file' => 'workspace-trash.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
+            ['prefix' => 'client/workspaces', 'file' => 'payments.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
             // Client notifications are per workspace: /client/{workspace}/notifications.
             ['prefix' => 'client', 'file' => 'notifications.php', 'api_key' => true, 'middlewares' => ['auth:sanctum', 'abilities:access,client']],
         ],
@@ -98,6 +100,16 @@ return [
                 'api_key' => true,
                 'middlewares' => ['auth:sanctum', 'abilities:access,talent'],
             ],
+            [
+                'prefix' => 'talent',
+                'file' => 'payments.php',
+                'api_key' => true,
+                'middlewares' => ['auth:sanctum', 'abilities:access,talent'],
+            ],
+        ],
+
+        'webhooks' => [
+            ['prefix' => 'webhooks/payments', 'file' => 'payments.php', 'api_key' => false],
         ],
 
         'shared' => [
@@ -128,6 +140,7 @@ return [
         HiringRequestModuleServiceProvider::class,
         LanguageModuleServiceProvider::class,
         NotificationModuleServiceProvider::class,
+        PaymentModuleServiceProvider::class,
         ProfessionalFieldModuleServiceProvider::class,
         SkillModuleServiceProvider::class,
         TalentApplicationModuleServiceProvider::class,

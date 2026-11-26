@@ -4,6 +4,9 @@ namespace Tests\Feature;
 
 use App\Http\Middleware\CheckApiKey;
 use App\Modules\V1\Admins\Domain\Models\Admin;
+use App\Modules\V1\Payments\Domain\Models\Payment;
+use App\Modules\V1\Payments\Domain\ValueObjects\PaidServiceEnum;
+use App\Modules\V1\Payments\Domain\ValueObjects\PaymentStatusEnum;
 use App\Modules\V1\TalentApplications\Domain\Models\TalentApplication;
 use App\Modules\V1\TalentApplications\Domain\Models\TalentEvaluation;
 use App\Modules\V1\TalentApplications\Domain\ValueObjects\TalentApplicationStatusEnum;
@@ -11,6 +14,7 @@ use App\Modules\V1\Talents\Domain\Models\Talent;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Modules\V1\Users\Domain\ValueObjects\PortalTypeEnum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -25,10 +29,16 @@ class TalentEvaluationReadTest extends TestCase
         $this->withoutMiddleware(CheckApiKey::class);
     }
 
-    public function test_profile_exposes_unlocked_evaluation_access_without_embedding_the_evaluation(): void
+    public function test_profile_exposes_evaluation_only_after_payment_without_embedding_the_evaluation(): void
     {
         [$user, $talent, $application] = $this->createEvaluatedTalent();
         Sanctum::actingAs($user, ['access', 'talent']);
+
+        $this->getJson('/api/v1/talent/profile')
+            ->assertOk()
+            ->assertJsonPath('data.evaluation_is_available', false);
+
+        $this->recordPaidEvaluation($user, $talent, $application);
 
         $this->getJson('/api/v1/talent/profile')
             ->assertOk()
@@ -42,10 +52,11 @@ class TalentEvaluationReadTest extends TestCase
             ->assertJsonMissingPath('data.evaluation');
     }
 
-    public function test_talent_can_read_the_dedicated_evaluation_without_payment_for_now(): void
+    public function test_talent_can_read_the_dedicated_evaluation_after_payment(): void
     {
-        [$user, , $application] = $this->createEvaluatedTalent();
+        [$user, $talent, $application] = $this->createEvaluatedTalent();
         Sanctum::actingAs($user, ['access', 'talent']);
+        $this->recordPaidEvaluation($user, $talent, $application);
 
         $this->getJson('/api/v1/talent/profile/evaluation')
             ->assertOk()
@@ -73,7 +84,7 @@ class TalentEvaluationReadTest extends TestCase
         $talent = Talent::query()->create(['user_id' => $user->id]);
         $application = TalentApplication::query()->create([
             'talent_id' => $talent->id,
-            'status' => TalentApplicationStatusEnum::UNDER_REVIEW,
+            'status' => TalentApplicationStatusEnum::ACCEPTED,
             'submitted_at' => now(),
             'submission_snapshot' => [],
             'profile_completion_at_submission' => 100,
@@ -116,6 +127,23 @@ class TalentEvaluationReadTest extends TestCase
             'type' => PortalTypeEnum::TALENT,
             'is_active' => true,
             'email_verified_at' => now(),
+        ]);
+    }
+
+    private function recordPaidEvaluation(User $user, Talent $talent, TalentApplication $application): void
+    {
+        Payment::query()->create([
+            'reference' => (string) Str::uuid(),
+            'idempotency_key' => (string) Str::uuid(),
+            'request_fingerprint' => hash('sha256', 'evaluation-'.$application->id),
+            'payer_user_id' => $user->id,
+            'talent_id' => $talent->id,
+            'talent_application_id' => $application->id,
+            'service' => PaidServiceEnum::PROFILE_EXPERT_REVIEW,
+            'amount' => '10.0000',
+            'currency' => 'USD',
+            'status' => PaymentStatusEnum::PAID,
+            'paid_at' => now(),
         ]);
     }
 }

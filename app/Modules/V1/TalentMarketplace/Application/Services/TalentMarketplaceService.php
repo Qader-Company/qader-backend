@@ -71,7 +71,6 @@ class TalentMarketplaceService
             $member,
             ClientPermissionEnum::TALENT_SELECTIONS_MANAGE->value,
         );
-
         $query = $this->availableQuery($workspace)->with(self::CARD_RELATIONS);
         $this->applyFilters($query, $filters);
         $this->applySort($query, $workspace, $filters['sort'] ?? 'highest_match');
@@ -98,7 +97,6 @@ class TalentMarketplaceService
             $member,
             ClientPermissionEnum::TALENT_SELECTIONS_MANAGE->value,
         );
-
         $talent = $this->availableQuery($workspace)
             ->with(self::DETAIL_RELATIONS)
             ->findOrFail($talent->getKey());

@@ -284,6 +284,7 @@ class EndpointNames
                 'permissions' => 'List Workspace Permissions', 'status' => 'Update Workspace Role Status',
                 'filters' => 'List Talent Marketplace Filters',
                 'expertOpinion' => 'Get Qader Expert Opinion',
+                'checkout' => str_contains($route->uri(), 'expert-opinion') ? 'Purchase Qader Expert Opinion' : 'Purchase Talent Evaluation',
                 'dashboard' => 'Get Workspace Dashboard',
                 'taxCard' => 'View or Download Workspace Tax Card',
                 'destroy' => match (true) {
@@ -291,6 +292,16 @@ class EndpointNames
                     str_contains($route->uri(), '/members/') => 'Remove Workspace Member',
                     default => 'Delete Workspace Role',
                 },
+                default => Str::headline($route->getActionMethod()),
+            };
+        }
+
+        if ($module === 'payments') {
+            return match ($route->getActionMethod()) {
+                'checkout' => str_contains($route->uri(), 'expert-opinion')
+                    ? 'Purchase Qader Expert Opinion'
+                    : 'Purchase Talent Evaluation',
+                'show' => 'Get Payment Status',
                 default => Str::headline($route->getActionMethod()),
             };
         }

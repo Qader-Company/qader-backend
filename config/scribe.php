@@ -27,7 +27,7 @@ return [
                 'domains' => ['*'],
             ],
             'include' => [],
-            'exclude' => [],
+            'exclude' => ['api/v1/webhooks/payments/*'],
         ],
     ],
 
