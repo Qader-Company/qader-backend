@@ -16,8 +16,7 @@ class Payment extends Model
 {
     protected $fillable = [
         'reference',
-        'idempotency_key',
-        'request_fingerprint',
+        'purchase_key',
         'payer_user_id',
         'owner_client_id',
         'talent_id',

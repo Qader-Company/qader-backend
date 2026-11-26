@@ -134,8 +134,7 @@ class TalentEvaluationReadTest extends TestCase
     {
         Payment::query()->create([
             'reference' => (string) Str::uuid(),
-            'idempotency_key' => (string) Str::uuid(),
-            'request_fingerprint' => hash('sha256', 'evaluation-'.$application->id),
+            'purchase_key' => hash('sha256', 'evaluation-'.$application->id),
             'payer_user_id' => $user->id,
             'talent_id' => $talent->id,
             'talent_application_id' => $application->id,

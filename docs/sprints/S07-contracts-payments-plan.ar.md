@@ -381,8 +381,7 @@ client.marketplace.view
 | --- | --- | --- |
 | `id` | bigint | المعرف الداخلي |
 | `reference` | uuid/string unique | مرجع آمن يعاد للـFrontend |
-| `idempotency_key` | uuid | مفتاح يرسله الـFrontend لمنع تكرار إنشاء عملية الشراء |
-| `request_fingerprint` | char(64) | بصمة الحقول المؤثرة لكشف إعادة استخدام المفتاح مع طلب مختلف |
+| `purchase_key` | char(64) unique | بصمة يولدها الـBackend من الخدمة والهدف لضمان وجود Payment واحدة لكل استحقاق |
 | `payer_user_id` | FK users | المستخدم الذي بدأ عملية الدفع |
 | `owner_client_id` | nullable FK clients | مالك حساب العميل عند شراء Expert Opinion |
 | `talent_id` | nullable FK talents | الموهبة المستهدفة في Expert Opinion |
@@ -400,8 +399,9 @@ client.marketplace.view
 - `talent_application_id` يمتلئ مع خدمتي الموهبة فقط.
 - السعر والعملة لا يستقبلهما الـBackend من الـFrontend؛ يقرآن من `PaidServicesSettings` ويحفظان كما كانا وقت بدء الدفع.
 - لا تخزن بيانات بطاقة أوCVV أوأسرار المزود.
-- يطبق Unique مركب على `payer_user_id + idempotency_key`.
-- إذا تكرر المفتاح مع `request_fingerprint` نفسها يعاد نفس الدفع، وإذا اختلفت البصمة يعاد `409 Conflict`.
+- يولد الـBackend `purchase_key` ولا يستقبلها من الـFrontend.
+- تعاد Payment نفسها عند تكرار Checkout لنفس الخدمة والهدف.
+- إذا كانت المحاولة الحالية فعالة تعاد جلسة الدفع نفسها، وإذا انتهت بالفشل أوالإلغاء أوالانتهاء تنشأ `payment_attempt` جديدة تحت Payment نفسها.
 - وجود صف `paid` مطابق هو إثبات أن التقرير مفتوح.
 
 #### 10.5.2 جدول `payment_attempts`
@@ -610,7 +610,7 @@ GET  /api/v1/client/workspaces/{workspace}/payments/{payment:reference}
 GET  /api/v1/client/workspaces/{workspace}/talent-marketplace/{talent}/expert-opinion
 ```
 
-يرسل Endpoint الـCheckout هيدر `Idempotency-Key` بقيمة UUID، ويعيد نفس Payment عند تكرار نفس المفتاح ونفس الطلب.
+لا يرسل الـFrontend `Idempotency-Key`. يولد الـBackend `purchase_key` من `owner_client_id + talent_id + service` ويعيد Payment نفسها عند تكرار الطلب.
 
 الـFlow:
 
@@ -629,7 +629,7 @@ GET  /api/v1/talent/payments/{payment:reference}
 GET  /api/v1/talent/applications/{application}/evaluation
 ```
 
-يرسل Endpoint الـCheckout هيدر `Idempotency-Key` بالقواعد نفسها.
+لا يرسل الـFrontend مفتاح منع تكرار. يولد الـBackend `purchase_key` من الخدمة والـApplication المستهدفة ويعيد Payment نفسها عند التكرار.
 
 الـBackend يحدد الخدمة والسعر من حالة Application، ولا يطلب من الموهبة إرسال اسم الخدمة.
 
@@ -695,7 +695,7 @@ POST /api/v1/webhooks/payments/{provider}
 1. إعادة استخدام صلاحية `client.marketplace.view` دون إضافة صلاحيات دفع جديدة.
 2. إنشاء جداول `payments`, `payment_attempts`, و`payment_webhook_events` والموديلات والـEnums اللازمة.
 3. إنشاء `PaymentGatewayInterface` وManager لاختيار المزود.
-4. تنفيذ `Idempotency-Key` على Endpoints بدء الدفع وإنشاء المحاولات.
+4. تنفيذ `purchase_key` داخل الـBackend وإعادة استخدام Payment مع إنشاء محاولات متعددة عند الحاجة.
 5. تنفيذ Checkout وقراءة حالة Payment.
 6. تنفيذ Webhook Adapter والتخزين الآمن للحدث قبل معالجته.
 7. ربط شراء العميل بـ`owner_client_id + talent_id`.

@@ -177,8 +177,7 @@ class ClientTalentMarketplaceFlowTest extends TestCase
 
         Payment::query()->create([
             'reference' => (string) Str::uuid(),
-            'idempotency_key' => (string) Str::uuid(),
-            'request_fingerprint' => hash('sha256', 'expert-opinion-'.$talent->id),
+            'purchase_key' => hash('sha256', 'expert-opinion-'.$talent->id),
             'payer_user_id' => $this->owner->id,
             'owner_client_id' => $this->workspace->owner_client_id,
             'talent_id' => $talent->id,

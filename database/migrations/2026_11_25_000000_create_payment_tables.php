@@ -11,8 +11,7 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table): void {
             $table->id();
             $table->uuid('reference')->unique();
-            $table->uuid('idempotency_key');
-            $table->char('request_fingerprint', 64);
+            $table->char('purchase_key', 64)->unique();
             $table->foreignId('payer_user_id')->constrained('users')->restrictOnDelete();
             $table->foreignId('owner_client_id')->nullable()->constrained('clients')->restrictOnDelete();
             $table->foreignId('talent_id')->nullable()->constrained('talents')->restrictOnDelete();
@@ -24,7 +23,6 @@ return new class extends Migration
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['payer_user_id', 'idempotency_key'], 'payments_payer_idempotency_unique');
             $table->index(['owner_client_id', 'talent_id', 'service', 'status'], 'payments_client_access_index');
             $table->index(['payer_user_id', 'talent_application_id', 'service', 'status'], 'payments_talent_access_index');
         });

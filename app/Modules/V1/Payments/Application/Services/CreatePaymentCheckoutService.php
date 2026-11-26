@@ -14,10 +14,8 @@ use App\Modules\V1\Talents\Domain\Models\Talent;
 use App\Modules\V1\Users\Domain\Models\User;
 use App\Modules\V1\Workspaces\Domain\Models\Workspace;
 use App\Settings\PaidServicesSettings;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class CreatePaymentCheckoutService
@@ -29,84 +27,73 @@ class CreatePaymentCheckoutService
     ) {}
 
     /** @return array{payment: Payment, attempt: ?PaymentAttempt, session: ?CheckoutSessionData} */
-    public function forClient(User $user, Workspace $workspace, Talent $talent, string $idempotencyKey): array
+    public function forClient(User $user, Workspace $workspace, Talent $talent): array
     {
-        return $this->create($user, PaidServiceEnum::QADER_EXPERT_OPINION, $idempotencyKey, [
+        return $this->create($user, PaidServiceEnum::QADER_EXPERT_OPINION, [
             'owner_client_id' => $workspace->owner_client_id,
             'talent_id' => $talent->id,
         ]);
     }
 
     /** @return array{payment: Payment, attempt: ?PaymentAttempt, session: ?CheckoutSessionData} */
-    public function forTalent(User $user, TalentApplication $application, string $idempotencyKey): array
+    public function forTalent(User $user, TalentApplication $application): array
     {
         $service = $this->access->evaluationService($application)
             ?? throw new NotFoundHttpException(__('payments.evaluation_not_purchasable'));
 
-        return $this->create($user, $service, $idempotencyKey, [
+        return $this->create($user, $service, [
             'talent_id' => $application->talent_id,
             'talent_application_id' => $application->id,
         ]);
     }
 
     /** @param array<string, int|null> $target @return array{payment: Payment, attempt: ?PaymentAttempt, session: ?CheckoutSessionData} */
-    private function create(User $user, PaidServiceEnum $service, string $idempotencyKey, array $target): array
+    private function create(User $user, PaidServiceEnum $service, array $target): array
     {
         $gateway = $this->gateways->default();
         $price = $service->price($this->settings);
-        $fingerprint = hash('sha256', json_encode([$user->id, $service->value, $target, $price], JSON_THROW_ON_ERROR));
+        $purchaseKey = $this->purchaseKey($service, $target);
+        $payment = Payment::query()->firstOrCreate([
+            'purchase_key' => $purchaseKey,
+        ], [
+            'reference' => (string) Str::uuid(),
+            'payer_user_id' => $user->id,
+            ...$target,
+            'service' => $service,
+            'amount' => $price['amount'],
+            'currency' => $price['currency'],
+            'status' => PaymentStatusEnum::PENDING,
+        ]);
 
-        $payment = Payment::query()
-            ->where('payer_user_id', $user->id)
-            ->where('idempotency_key', $idempotencyKey)
-            ->first();
+        $checkout = DB::transaction(function () use ($payment, $gateway): array {
+            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
 
-        if ($payment && ! hash_equals($payment->request_fingerprint, $fingerprint)) {
-            throw new ConflictHttpException(__('payments.idempotency_conflict'));
-        }
+            if ($payment->status === PaymentStatusEnum::PAID) {
+                return ['payment' => $payment, 'attempt' => null];
+            }
 
-        $payment ??= Payment::query()
-            ->where($target)
-            ->where('service', $service->value)
-            ->where('status', PaymentStatusEnum::PAID->value)
-            ->latest('id')
-            ->first();
-
-        if ($payment?->status === PaymentStatusEnum::PAID) {
-            return ['payment' => $payment, 'attempt' => null, 'session' => null];
-        }
-
-        try {
-            $attempt = DB::transaction(function () use (&$payment, $user, $service, $idempotencyKey, $fingerprint, $price, $target, $gateway): PaymentAttempt {
-                $payment ??= Payment::query()->create([
-                    'reference' => (string) Str::uuid(),
-                    'idempotency_key' => $idempotencyKey,
-                    'request_fingerprint' => $fingerprint,
-                    'payer_user_id' => $user->id,
-                    ...$target,
-                    'service' => $service,
-                    'amount' => $price['amount'],
-                    'currency' => $price['currency'],
-                    'status' => PaymentStatusEnum::PENDING,
-                ]);
-
-                return $payment->attempts()->latest('id')->firstOrCreate([], [
+            $attempt = $payment->attempts()->latest('id')->first();
+            if ($attempt === null || $attempt->attempt_status->isFinal()) {
+                $attempt = $payment->attempts()->create([
                     'gateway_request_id' => (string) Str::uuid(),
                     'provider' => $gateway->name(),
                     'attempt_status' => PaymentAttemptStatusEnum::PENDING,
                 ]);
-            });
-        } catch (UniqueConstraintViolationException) {
-            $payment = Payment::query()
-                ->where('payer_user_id', $user->id)
-                ->where('idempotency_key', $idempotencyKey)
-                ->firstOrFail();
 
-            if (! hash_equals($payment->request_fingerprint, $fingerprint)) {
-                throw new ConflictHttpException(__('payments.idempotency_conflict'));
+                $payment->forceFill([
+                    'status' => PaymentStatusEnum::PENDING,
+                    'paid_at' => null,
+                ])->save();
             }
 
-            $attempt = $payment->attempts()->latest('id')->firstOrFail();
+            return ['payment' => $payment, 'attempt' => $attempt];
+        });
+
+        $payment = $checkout['payment'];
+        $attempt = $checkout['attempt'];
+
+        if ($attempt === null) {
+            return ['payment' => $payment, 'attempt' => null, 'session' => null];
         }
 
         if ($attempt->checkout_mode !== null) {
@@ -126,6 +113,17 @@ class CreatePaymentCheckoutService
         $payment->forceFill(['status' => PaymentStatusEnum::PROCESSING])->save();
 
         return ['payment' => $payment->fresh(), 'attempt' => $attempt->fresh(), 'session' => $session];
+    }
+
+    /** @param array<string, int|null> $target */
+    private function purchaseKey(PaidServiceEnum $service, array $target): string
+    {
+        ksort($target);
+
+        return hash('sha256', json_encode([
+            'service' => $service->value,
+            'target' => $target,
+        ], JSON_THROW_ON_ERROR));
     }
 
     private function sessionFrom(PaymentAttempt $attempt): CheckoutSessionData

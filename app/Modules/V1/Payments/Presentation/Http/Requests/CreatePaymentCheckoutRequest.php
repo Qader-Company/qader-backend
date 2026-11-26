@@ -10,12 +10,4 @@ class CreatePaymentCheckoutRequest extends FormRequest
     {
         return [];
     }
-
-    public function idempotencyKey(): string
-    {
-        return validator(
-            ['idempotency_key' => $this->header('Idempotency-Key')],
-            ['idempotency_key' => ['required', 'uuid']],
-        )->validate()['idempotency_key'];
-    }
 }

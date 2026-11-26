@@ -17,8 +17,6 @@ use Illuminate\Http\Request;
 class TalentPaymentController extends Controller
 {
     /**
-     * @header Idempotency-Key 18cf61e5-26a9-40a1-8d50-a4890ccab791
-     *
      * @response scenario="Checkout created" {"success":true,"data":{"payment":{"reference":"7b846da6-4cf8-42a3-aebc-e47d97d79261","service":"detailed_rejection_feedback","amount":"100.0000","currency":"EGP","status":"processing","paid_at":null,"created_at":"2026-11-25T12:00:00.000000Z"},"checkout":{"mode":"redirect","checkout_url":"https://gateway.example/checkout/456","client_token":null,"public_config":{},"expires_at":"2026-11-25T12:30:00+00:00"}}}
      * @response 404 scenario="Application has no purchasable report" {"success":false,"message":"This evaluation is not available for purchase."}
      */
@@ -33,7 +31,7 @@ class TalentPaymentController extends Controller
         abort_unless($evaluations->hasReport($application), 404);
 
         return ApiResponse::success(new PaymentCheckoutResource(
-            $payments->forTalent($request->user(), $application, $request->idempotencyKey()),
+            $payments->forTalent($request->user(), $application),
         ));
     }
 

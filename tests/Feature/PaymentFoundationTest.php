@@ -28,14 +28,13 @@ class PaymentFoundationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_checkout_is_idempotent_for_the_same_talent_application(): void
+    public function test_backend_reuses_the_same_payment_and_active_attempt_for_the_same_purchase(): void
     {
         [$user, $application] = $this->acceptedTalentApplication();
-        $key = (string) Str::uuid();
         $service = app(CreatePaymentCheckoutService::class);
 
-        $first = $service->forTalent($user, $application, $key);
-        $second = $service->forTalent($user, $application, $key);
+        $first = $service->forTalent($user, $application);
+        $second = $service->forTalent($user, $application);
 
         $this->assertSame($first['payment']->id, $second['payment']->id);
         $this->assertSame($first['attempt']->id, $second['attempt']->id);
@@ -43,13 +42,32 @@ class PaymentFoundationTest extends TestCase
         $this->assertDatabaseCount('payment_attempts', 1);
     }
 
+    public function test_backend_creates_a_new_attempt_after_the_previous_attempt_fails(): void
+    {
+        [$user, $application] = $this->acceptedTalentApplication();
+        $service = app(CreatePaymentCheckoutService::class);
+        $first = $service->forTalent($user, $application);
+
+        $first['attempt']->update([
+            'attempt_status' => PaymentAttemptStatusEnum::FAILED,
+            'completed_at' => now(),
+        ]);
+        $first['payment']->update(['status' => PaymentStatusEnum::FAILED]);
+
+        $second = $service->forTalent($user, $application);
+
+        $this->assertSame($first['payment']->id, $second['payment']->id);
+        $this->assertNotSame($first['attempt']->id, $second['attempt']->id);
+        $this->assertDatabaseCount('payments', 1);
+        $this->assertDatabaseCount('payment_attempts', 2);
+    }
+
     public function test_signed_webhook_marks_payment_paid_and_duplicate_is_ignored(): void
     {
         [$user, $application] = $this->acceptedTalentApplication();
         $payment = Payment::query()->create([
             'reference' => (string) Str::uuid(),
-            'idempotency_key' => (string) Str::uuid(),
-            'request_fingerprint' => hash('sha256', 'webhook-test'),
+            'purchase_key' => hash('sha256', 'webhook-test'),
             'payer_user_id' => $user->id,
             'talent_id' => $application->talent_id,
             'talent_application_id' => $application->id,
@@ -128,8 +146,7 @@ class PaymentFoundationTest extends TestCase
 
         Payment::query()->create([
             'reference' => (string) Str::uuid(),
-            'idempotency_key' => (string) Str::uuid(),
-            'request_fingerprint' => hash('sha256', 'shared-owner-purchase'),
+            'purchase_key' => hash('sha256', 'shared-owner-purchase'),
             'payer_user_id' => $ownerUser->id,
             'owner_client_id' => $owner->id,
             'talent_id' => $talent->id,
